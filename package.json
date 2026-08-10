@@ -1,0 +1,26 @@
+{
+  "name": "keurflow",
+  "private": true,
+  "version": "0.1.0",
+  "description": "KeurFlow — suivi, transparence et traçabilité des projets immobiliers pour la diaspora africaine",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build:web": "npm run build --workspace=apps/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:diff": "supabase db diff",
+    "supabase:push": "supabase db push",
+    "supabase:gen-types": "supabase gen types typescript --local > packages/types/src/database.generated.ts"
+  },
+  "devDependencies": {}
+}
