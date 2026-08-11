@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MarkAllReadButton, MarkReadButton } from "./notification-actions";
+
+export const metadata: Metadata = { title: "Notifications — KeurFlow" };
 
 const TYPE_LABELS: Record<string, string> = {
   new_expense: "Nouvelle dépense",
