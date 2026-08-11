@@ -6,6 +6,8 @@ L'app tourne en production sur **https://web-keurflow.vercel.app** (Vercel, proj
 
 **Stripe est encore en mode test** — les paiements ne débitent personne pour de vrai. Voir §2 pour passer en mode live.
 
+**⚠️ L'inscription par email est actuellement cassée pour de vrais utilisateurs** — voir §0, bloquant tant qu'aucun domaine n'est vérifié.
+
 ## Fait
 
 - [x] Projet Vercel créé et lié au repo GitHub (`Root Directory = apps/web`, déploiement auto sur push `main`).
@@ -14,7 +16,20 @@ L'app tourne en production sur **https://web-keurflow.vercel.app** (Vercel, proj
 - [x] En-têtes de sécurité (CSP, HSTS, X-Frame-Options...) vérifiés actifs en prod.
 - [x] `robots.txt` / `sitemap.xml`, pages légales (`/mentions-legales`, `/cgu`, `/confidentialite` — **modèles à compléter**, voir §4).
 - [x] CI GitHub Actions active sur chaque PR.
-- [x] SMTP personnalisé configuré dans Supabase (Authentication → SMTP Settings) — **obligatoire**, pas optionnel : le service email intégré de Supabase est fait pour les tests, il n'est pas fiable pour de vrais envois de confirmation/réinitialisation en production. Sans ça, les emails n'arrivent jamais et les utilisateurs retentent leur inscription en boucle, créant des comptes fantômes non confirmés à chaque tentative (vu en pratique pendant ce déploiement).
+- [x] SMTP personnalisé (Resend) activé dans Supabase — connexion fonctionnelle, mais voir §0 : reste bloqué en mode sandbox.
+
+## 0. BLOQUANT — Email de confirmation ne fonctionne pas pour de vrais utilisateurs
+
+**Symptôme observé** : l'inscription échoue avec `Error sending confirmation email`, ou "réussit" silencieusement sans rien envoyer.
+
+**Cause identifiée** (diagnostiquée en direct sur la prod) :
+- Le service email intégré de Supabase (sans SMTP personnalisé) n'est pas fiable en production — normal, prévu pour les tests uniquement.
+- SMTP personnalisé (Resend) activé, mais **sans domaine vérifié** : le sender `onboarding@resend.dev` de Resend ne peut livrer qu'à l'adresse exacte du compte Resend lui-même — toute autre adresse (même un simple `+test1` sur la même boîte Gmail) est rejetée. Confirmé en testant les deux cas.
+- Effet de bord découvert au passage (comportement Supabase normal, pas un bug) : si on s'inscrit avec un email qui a déjà un compte confirmé, Supabase répond "succès" sans rien envoyer — anti-énumération. Peut ressembler à un email perdu alors qu'aucun n'a jamais été censé partir.
+
+**Fix requis** : acheter/utiliser un nom de domaine, le vérifier sur Resend (https://resend.com/domains, enregistrements DNS fournis), changer le **Sender email** dans Supabase pour une adresse de ce domaine (ex. `noreply@tondomaine.com`). Ce domaine peut aussi servir de domaine personnalisé pour l'app elle-même (§3) — un seul achat pour les deux besoins.
+
+**Tant que ce n'est pas fait** : personne ne peut créer de compte fonctionnel via `/signup` en production (aucun email de confirmation ne partira jamais réellement). Les comptes de test existants (`rouna50@gmail.com`, `harounaniaka@gmail.com`) restent utilisables pour se connecter, eux.
 
 ## Reste à faire avant un vrai lancement public
 
@@ -29,9 +44,15 @@ Le projet Supabase contient des organisations/chantiers créés pendant les phas
 3. Créer un endpoint webhook **live** pointant vers `https://web-keurflow.vercel.app/api/webhooks/stripe` (ou le domaine final), récupérer son secret.
 4. Remplacer dans Vercel : `STRIPE_SECRET_KEY`, `STRIPE_PRODUCT_ID_INDIVIDUAL`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` par les valeurs **live**.
 
-### 3. Domaine personnalisé (optionnel)
+### 3. Domaine personnalisé (en pratique requis, voir §0)
 
-Vercel Dashboard → Project → Settings → Domains → ajouter le domaine, suivre les instructions DNS. Une fois fait, mettre à jour `NEXT_PUBLIC_APP_URL` dans Vercel et le Site URL/Redirect URLs dans Supabase Auth avec le nouveau domaine, puis redéployer.
+Pas juste "joli à avoir" — c'est le fix du blocage email de §0. Une fois le domaine acheté :
+
+1. Vercel Dashboard → Project → Settings → Domains → ajouter le domaine, suivre les instructions DNS.
+2. Resend → Domains → ajouter le même domaine, suivre ses instructions DNS (enregistrements différents de ceux de Vercel, les deux coexistent).
+3. Mettre à jour `NEXT_PUBLIC_APP_URL` dans Vercel et le Site URL/Redirect URLs dans Supabase Auth avec le nouveau domaine.
+4. Mettre à jour le Sender email dans Supabase SMTP Settings avec une adresse du nouveau domaine.
+5. Redéployer.
 
 ### 4. Pages légales
 
