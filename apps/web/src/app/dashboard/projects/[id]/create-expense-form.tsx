@@ -13,6 +13,7 @@ import { createClient } from "@/lib/supabase/client";
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { attachDocument, createExpense } from "./actions";
 
 export function CreateExpenseForm({
@@ -24,6 +25,7 @@ export function CreateExpenseForm({
   currencyCode: string;
   minorUnit: number;
 }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const {
@@ -72,6 +74,7 @@ export function CreateExpenseForm({
 
       reset({ projectId, currencyCode, category: "materials" });
       setReceiptFile(null);
+      close();
     });
   });
 

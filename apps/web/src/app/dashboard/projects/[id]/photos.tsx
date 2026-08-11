@@ -3,12 +3,14 @@
 import { useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { attachPhoto } from "./actions";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const MAX_BYTES = 15 * 1024 * 1024;
 
 export function UploadPhotoForm({ projectId }: { projectId: string }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
@@ -54,6 +56,7 @@ export function UploadPhotoForm({ projectId }: { projectId: string }) {
 
       if (fileInputRef.current) fileInputRef.current.value = "";
       setCaption("");
+      close();
     });
   };
 

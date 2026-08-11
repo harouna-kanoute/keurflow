@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { createMilestoneSchema, type CreateMilestoneInput } from "@keurflow/validation";
 import { FormField } from "@/components/form-field";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { createMilestone, updateMilestoneStatus } from "./actions";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -54,6 +55,7 @@ export function AddMilestoneForm({
   projectId: string;
   nextOrderIndex: number;
 }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -74,6 +76,7 @@ export function AddMilestoneForm({
         return;
       }
       reset({ projectId, orderIndex: nextOrderIndex + 1 });
+      close();
     });
   });
 

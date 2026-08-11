@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatMoney } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
+import { DonutChart } from "@/components/donut-chart";
 
 export interface AgencyProjectRow {
   id: string;
@@ -90,29 +91,46 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
         <ul className="mt-4 flex flex-col gap-2">
           {filtered.map((project) => {
             const minorUnit = minorUnitFor(project.currencyCode);
+            const spentPercent =
+              project.budgetMinor > 0
+                ? Math.round((project.spentMinor / project.budgetMinor) * 100)
+                : 0;
             return (
               <li key={project.id}>
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-stone-900 dark:text-stone-100">
-                      {project.name}
-                    </span>
-                    <span className="text-xs text-stone-500 dark:text-stone-400">
-                      {project.countryName} · {STATUS_LABELS[project.status] ?? project.status}
-                    </span>
-                    {project.delayed && (
-                      <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-300">
-                        En retard
+                  <div className="flex items-center gap-3">
+                    <DonutChart
+                      size={36}
+                      strokeWidth={4}
+                      total={100}
+                      segments={[
+                        {
+                          value: Math.min(spentPercent, 100),
+                          colorClassName: "text-clay-600 dark:text-clay-500",
+                        },
+                      ]}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-stone-900 dark:text-stone-100">
+                        {project.name}
                       </span>
-                    )}
-                    {project.toReviewCount > 0 && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                        {project.toReviewCount} à vérifier
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
+                        {project.countryName} · {STATUS_LABELS[project.status] ?? project.status}
                       </span>
-                    )}
+                      {project.delayed && (
+                        <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-900/40 dark:text-red-300">
+                          En retard
+                        </span>
+                      )}
+                      {project.toReviewCount > 0 && (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                          {project.toReviewCount} à vérifier
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-stone-500 dark:text-stone-400">
                     {formatMoney(project.spentMinor, project.currencyCode, minorUnit)} /{" "}

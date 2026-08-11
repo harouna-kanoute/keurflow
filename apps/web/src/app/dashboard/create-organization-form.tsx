@@ -8,11 +8,13 @@ import { COUNTRIES } from "@keurflow/config";
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { createOrganization } from "./actions";
 
 const ACTIVE_COUNTRIES = COUNTRIES.filter((c) => c.active);
 
 export function CreateOrganizationForm() {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -24,7 +26,11 @@ export function CreateOrganizationForm() {
   const onSubmit = handleSubmit((data) => {
     startTransition(async () => {
       const result = await createOrganization(data);
-      if (result?.error) setError("root", { message: result.error });
+      if (result?.error) {
+        setError("root", { message: result.error });
+        return;
+      }
+      close();
     });
   });
 
