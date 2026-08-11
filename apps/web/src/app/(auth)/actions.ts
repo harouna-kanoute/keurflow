@@ -47,6 +47,10 @@ export async function signUp(input: SignUpInput): Promise<ActionResult> {
     },
   });
   if (error) {
+    console.error("[signUp] Supabase error:", error.status, error.code, error.message);
+    if (error.code === "over_email_send_rate_limit") {
+      return { error: "Trop de tentatives. Réessayez dans quelques minutes." };
+    }
     if (error.message.toLowerCase().includes("already")) {
       return { error: "Un compte existe déjà avec cet email." };
     }
