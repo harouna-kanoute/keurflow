@@ -19,5 +19,5 @@ Une phase à la fois. Après chaque phase : TypeScript, ESLint, tests, build, te
 - [x] **Phase 14** — Application mobile (Expo)
 - [x] **Phase 15** — Abonnements + essai 7 jours
 - [x] **Phase 16** — Security audit
-- [ ] **Phase 17** — Performance + UX
-- [ ] **Phase 18** — Production
+- [x] **Phase 17** — Performance + UX
+- [ ] **Phase 18** — Production — code prêt (headers de sécurité, CI, pages légales, checklist), déploiement réel en attente : voir `docs/PRODUCTION_CHECKLIST.md`

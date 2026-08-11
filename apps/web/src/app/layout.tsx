@@ -12,10 +12,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const TITLE = "KeurFlow — Votre projet en Afrique. Votre argent. Votre visibilité.";
+const DESCRIPTION =
+  "Suivez vos financements, dépenses, justificatifs et travaux depuis n'importe où dans le monde.";
+
 export const metadata: Metadata = {
-  title: "KeurFlow — Votre projet en Afrique. Votre argent. Votre visibilité.",
-  description:
-    "Suivez vos financements, dépenses, justificatifs et travaux depuis n'importe où dans le monde.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, locale: "fr_FR", type: "website" },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

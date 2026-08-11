@@ -1,0 +1,42 @@
+name: CI
+
+# Mirrors the roadmap's own stated process (docs/ROADMAP.md): "après chaque
+# phase: TypeScript, ESLint, tests, build" — this was run manually every
+# phase; automating it here so it can't be skipped on future PRs.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  typecheck-lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+
+  build-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - run: npm ci
+      # Placeholder values only — the build never connects to Supabase/Stripe
+      # (every real client is constructed lazily at request time, not at
+      # module load or build time), this just satisfies non-null env reads
+      # during static analysis / prerendering of the static routes.
+      - run: npm run build --workspace=apps/web
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
+          NEXT_PUBLIC_APP_URL: https://placeholder.example.com

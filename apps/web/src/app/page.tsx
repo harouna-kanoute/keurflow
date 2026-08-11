@@ -88,6 +88,18 @@ export default function Home() {
           </dd>
         </dl>
       </div>
+
+      <div className="flex gap-4 text-xs text-zinc-400 dark:text-zinc-600">
+        <Link href="/mentions-legales" className="hover:text-zinc-600 dark:hover:text-zinc-400">
+          Mentions légales
+        </Link>
+        <Link href="/cgu" className="hover:text-zinc-600 dark:hover:text-zinc-400">
+          CGU
+        </Link>
+        <Link href="/confidentialite" className="hover:text-zinc-600 dark:hover:text-zinc-400">
+          Confidentialité
+        </Link>
+      </div>
     </div>
   );
 }
