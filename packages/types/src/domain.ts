@@ -181,6 +181,8 @@ export interface ProjectDocument {
   filename: string;
   mimeType: string;
   size: number;
+  expenseId: string | null;
+  fundingId: string | null;
   createdAt: string;
 }
 
