@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { calculateExpenseTotal } from "@keurflow/business";
+import { calculateExpenseTotal, hasOrgRoleAtLeast, hasProjectRoleAtLeast } from "@keurflow/business";
+import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import {
   createExpenseSchema,
   createFundingSchema,
   createMilestoneSchema,
+  inviteProjectMemberSchema,
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
   uploadDocumentSchema,
@@ -13,12 +15,14 @@ import {
   type CreateExpenseInput,
   type CreateFundingInput,
   type CreateMilestoneInput,
+  type InviteProjectMemberInput,
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
   type UploadDocumentInput,
   type UploadPhotoInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
@@ -272,6 +276,112 @@ export async function attachPhoto(
 
   if (error) {
     console.error("[attachPhoto] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function inviteProjectMember(input: InviteProjectMemberInput): Promise<ActionResult> {
+  const parsed = inviteProjectMemberSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("organization_id")
+    .eq("id", parsed.data.projectId)
+    .maybeSingle();
+  if (!project) return { error: GENERIC_ERROR };
+
+  // Manual authorization check (mirrors the RLS rule for project_members
+  // writes) is required here because the admin client used below bypasses
+  // RLS entirely — it's the only way to look up or create a user by email,
+  // which no RLS-scoped query can ever do (§62). The project_members insert
+  // itself still goes through the RLS-respecting client further down, so
+  // this check is defense in depth, not the sole gate.
+  const [{ data: orgMembership }, { data: projectMembership }] = await Promise.all([
+    supabase
+      .from("organization_members")
+      .select("role")
+      .eq("organization_id", project.organization_id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+    supabase
+      .from("project_members")
+      .select("role")
+      .eq("project_id", parsed.data.projectId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+  ]);
+
+  const authorized =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_manager"));
+  if (!authorized) return { error: GENERIC_ERROR };
+
+  const admin = createAdminClient();
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  // The common case: this person has never signed up. inviteUserByEmail
+  // creates their auth.users row and emails them a sign-up link.
+  const { data: invited, error: inviteError } = await admin.auth.admin.inviteUserByEmail(
+    parsed.data.email,
+    { redirectTo: `${appUrl}/auth/callback` },
+  );
+
+  let invitedUserId = invited?.user?.id;
+
+  if (inviteError) {
+    if (inviteError.code === "over_email_send_rate_limit") {
+      return { error: "Trop de tentatives. Réessayez dans quelques minutes." };
+    }
+    if (!inviteError.message.toLowerCase().includes("already")) {
+      console.error("[inviteProjectMember] invite error:", inviteError.code, inviteError.message);
+      return { error: GENERIC_ERROR };
+    }
+
+    // Already registered — the admin API has no lookup-by-email, so this
+    // scans users to find them. Fine at agency scale; would need a proper
+    // index if this ever needs to work across a much larger user base.
+    const { data: existing, error: listError } = await admin.auth.admin.listUsers({
+      perPage: 1000,
+    });
+    if (listError) {
+      console.error("[inviteProjectMember] listUsers error:", listError.message);
+      return { error: GENERIC_ERROR };
+    }
+    invitedUserId = existing.users.find((u) => u.email?.toLowerCase() === parsed.data.email)?.id;
+    if (!invitedUserId) return { error: GENERIC_ERROR };
+  }
+
+  // RLS (project_members_manage) re-validates authorization on this insert
+  // independently of the manual check above.
+  const { error: memberError } = await supabase.from("project_members").insert({
+    project_id: parsed.data.projectId,
+    user_id: invitedUserId,
+    role: parsed.data.role,
+    status: "invited",
+  });
+
+  if (memberError) {
+    if (memberError.code === "23505") {
+      return { error: "Cette personne est déjà membre de ce chantier." };
+    }
+    console.error(
+      "[inviteProjectMember] member insert error:",
+      memberError.code,
+      memberError.message,
+    );
     return { error: GENERIC_ERROR };
   }
 
