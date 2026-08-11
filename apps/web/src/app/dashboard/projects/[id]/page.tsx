@@ -18,6 +18,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
+import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
+import { PhotoGallery, UploadPhotoForm } from "./photos";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -123,6 +125,34 @@ export default async function ProjectDetailPage({
   }));
   const approvedTotal = getBudgetConsumptionPercent(project.budget_minor, expenseList);
   const remainingBudget = getRemainingBudget(project.budget_minor, expenseList);
+
+  const { data: milestones } = await supabase
+    .from("milestones")
+    .select("id, name, status")
+    .eq("project_id", project.id)
+    .order("order_index", { ascending: true });
+
+  const { data: photoRows } = await supabase
+    .from("photos")
+    .select("id, storage_path, caption")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  let photos: { id: string; url: string | null; caption: string | null }[] = [];
+  if (photoRows && photoRows.length > 0) {
+    const { data: signedUrls } = await supabase.storage
+      .from("project-photos")
+      .createSignedUrls(
+        photoRows.map((p) => p.storage_path),
+        3600,
+      );
+    photos = photoRows.map((p, i) => ({
+      id: p.id,
+      caption: p.caption,
+      url: signedUrls?.[i]?.signedUrl ?? null,
+    }));
+  }
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -256,6 +286,36 @@ export default async function ProjectDetailPage({
             currencyCode={project.currency_code}
             minorUnit={minorUnit}
           />
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            Étapes
+          </p>
+          {milestones && milestones.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {milestones.map((milestone) => (
+                <li
+                  key={milestone.id}
+                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <span className="text-zinc-900 dark:text-zinc-100">{milestone.name}</span>
+                  <MilestoneStatusSelect milestone={milestone} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucune étape.</p>
+          )}
+          <AddMilestoneForm projectId={project.id} nextOrderIndex={milestones?.length ?? 0} />
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            Photos
+          </p>
+          <PhotoGallery photos={photos} />
+          <UploadPhotoForm projectId={project.id} />
         </div>
       </div>
     </div>
