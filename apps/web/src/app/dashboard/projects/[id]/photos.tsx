@@ -98,6 +98,10 @@ export function PhotoGallery({
             key={photo.id}
             src={photo.url}
             alt={photo.caption ?? ""}
+            width={300}
+            height={300}
+            loading="lazy"
+            decoding="async"
             className="aspect-square w-full rounded-lg object-cover"
           />
         ) : null,

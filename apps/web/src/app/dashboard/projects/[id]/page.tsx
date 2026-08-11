@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -43,6 +44,19 @@ const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const supabase = await createClient();
+  // RLS-scoped like the page itself — a project this viewer can't see
+  // simply yields no row, so the tab title falls back to the generic label.
+  const { data: project } = await supabase.from("projects").select("name").eq("id", id).maybeSingle();
+  return { title: project ? `${project.name} — KeurFlow` : "Chantier — KeurFlow" };
+}
 
 export default async function ProjectDetailPage({
   params,

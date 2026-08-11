@@ -1,4 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = { title: "Connexion — KeurFlow" };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

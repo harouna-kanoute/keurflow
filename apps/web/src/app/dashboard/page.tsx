@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -24,6 +25,8 @@ const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   agency: "Agence immobilière",
   company: "Entreprise",
 };
+
+export const metadata: Metadata = { title: "Tableau de bord — KeurFlow" };
 
 export default async function DashboardPage() {
   const supabase = await createClient();

@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatMoney, getTrialDaysRemaining, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
 import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { ManageBillingButton, SubscribeButton } from "./billing-actions";
+
+export const metadata: Metadata = { title: "Abonnement — KeurFlow" };
 
 const STATUS_LABELS: Record<string, string> = {
   trialing: "Essai en cours",
