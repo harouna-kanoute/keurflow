@@ -142,36 +142,36 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-50 px-6 py-24 text-center dark:bg-black">
+    <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-cream px-6 py-24 text-center dark:bg-stone-950">
       <div>
-        <p className="text-sm font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <p className="text-sm font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
           KeurFlow
         </p>
-        <h1 className="mt-2 text-2xl font-semibold text-black dark:text-zinc-50">
+        <h1 className="mt-2 text-2xl font-semibold text-stone-900 dark:text-stone-50">
           Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
         </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{user.email}</p>
+        <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">{user.email}</p>
         <Link
           href="/dashboard/notifications"
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
         >
           Notifications
           {!!unreadNotificationCount && (
-            <span className="rounded-full bg-black px-2 py-0.5 text-xs font-medium text-white dark:bg-white dark:text-black">
+            <span className="rounded-full bg-clay-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-clay-700 dark:bg-clay-500 dark:hover:bg-clay-600">
               {unreadNotificationCount}
             </span>
           )}
         </Link>
         <Link
           href="/dashboard/billing"
-          className="mt-1 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="mt-1 inline-block text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
         >
           Abonnement
         </Link>
         {organization && (
           <Link
             href="/dashboard/audit-log"
-            className="mt-1 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="mt-1 inline-block text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
           >
             Journal d&apos;activité
           </Link>
@@ -195,23 +195,23 @@ export default async function DashboardPage() {
       )}
 
       {organization ? (
-        <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
           </p>
-          <p className="mt-1 text-lg font-semibold text-black dark:text-zinc-50">
+          <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-50">
             {organization.name}
           </p>
           <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-            <dt className="text-zinc-500 dark:text-zinc-400">Votre rôle</dt>
-            <dd className="text-right text-zinc-900 dark:text-zinc-100">{membership?.role}</dd>
-            <dt className="text-zinc-500 dark:text-zinc-400">Membres</dt>
-            <dd className="text-right text-zinc-900 dark:text-zinc-100">{memberCount ?? 1}</dd>
+            <dt className="text-stone-500 dark:text-stone-400">Votre rôle</dt>
+            <dd className="text-right text-stone-900 dark:text-stone-100">{membership?.role}</dd>
+            <dt className="text-stone-500 dark:text-stone-400">Membres</dt>
+            <dd className="text-right text-stone-900 dark:text-stone-100">{memberCount ?? 1}</dd>
           </dl>
         </div>
       ) : (
         <div className="flex w-full max-w-sm flex-col items-center">
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-sm text-stone-500 dark:text-stone-400">
             Aucune organisation associée à votre compte pour l&apos;instant.
           </p>
           <CreateOrganizationForm />
@@ -229,7 +229,7 @@ export default async function DashboardPage() {
 
       {organization && !isAgencyView && (
         <div className="w-full max-w-md text-left">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Mes projets
           </p>
           {projectSummaries.length > 0 ? (
@@ -240,10 +240,10 @@ export default async function DashboardPage() {
                   <li key={project.id}>
                     <Link
                       href={`/dashboard/projects/${project.id}`}
-                      className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                      className="block rounded-xl border border-stone-200 bg-white px-4 py-3 hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
                           {project.name}
                         </span>
                         {project.toReviewCount > 0 && (
@@ -252,28 +252,28 @@ export default async function DashboardPage() {
                           </span>
                         )}
                       </div>
-                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
                         <div
-                          className="h-full rounded-full bg-black dark:bg-white"
+                          className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
                           style={{ width: `${project.progressPercent}%` }}
                         />
                       </div>
                       <dl className="mt-2 grid grid-cols-3 gap-x-2 text-xs">
                         <div>
-                          <dt className="text-zinc-500 dark:text-zinc-400">Budget</dt>
-                          <dd className="text-zinc-900 dark:text-zinc-100">
+                          <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
+                          <dd className="text-stone-900 dark:text-stone-100">
                             {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-zinc-500 dark:text-zinc-400">Financé</dt>
-                          <dd className="text-zinc-900 dark:text-zinc-100">
+                          <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
+                          <dd className="text-stone-900 dark:text-stone-100">
                             {formatMoney(project.funded, project.currency_code, minorUnit)}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-zinc-500 dark:text-zinc-400">Dépensé</dt>
-                          <dd className="text-zinc-900 dark:text-zinc-100">
+                          <dt className="text-stone-500 dark:text-stone-400">Dépensé</dt>
+                          <dd className="text-stone-900 dark:text-stone-100">
                             {formatMoney(project.spent, project.currency_code, minorUnit)}
                           </dd>
                         </div>
@@ -284,7 +284,7 @@ export default async function DashboardPage() {
               })}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucun chantier créé.</p>
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucun chantier créé.</p>
           )}
           <CreateProjectForm organizationId={organization.id} />
         </div>
@@ -293,7 +293,7 @@ export default async function DashboardPage() {
       <form action={signOut}>
         <button
           type="submit"
-          className="flex h-10 items-center justify-center rounded-full border border-zinc-300 px-5 text-sm font-medium text-zinc-900 dark:border-zinc-700 dark:text-zinc-100"
+          className="flex h-10 items-center justify-center rounded-full border border-stone-300 px-5 text-sm font-medium text-stone-900 dark:border-stone-700 dark:text-stone-100"
         >
           Se déconnecter
         </button>

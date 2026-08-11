@@ -53,7 +53,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
         <select
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
         >
           <option value="">Tous les pays</option>
           {countries.map((c) => (
@@ -65,7 +65,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
         >
           <option value="">Tous les statuts</option>
           {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -74,7 +74,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+        <label className="flex items-center gap-1.5 text-sm text-stone-700 dark:text-stone-300">
           <input
             type="checkbox"
             checked={delayedOnly}
@@ -85,7 +85,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">Aucun chantier.</p>
+        <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Aucun chantier.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {filtered.map((project) => {
@@ -94,13 +94,13 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
               <li key={project.id}>
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <span className="font-medium text-stone-900 dark:text-stone-100">
                       {project.name}
                     </span>
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    <span className="text-xs text-stone-500 dark:text-stone-400">
                       {project.countryName} · {STATUS_LABELS[project.status] ?? project.status}
                     </span>
                     {project.delayed && (
@@ -114,7 +114,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
                       </span>
                     )}
                   </div>
-                  <span className="text-zinc-500 dark:text-zinc-400">
+                  <span className="text-stone-500 dark:text-stone-400">
                     {formatMoney(project.spentMinor, project.currencyCode, minorUnit)} /{" "}
                     {formatMoney(project.budgetMinor, project.currencyCode, minorUnit)}
                   </span>

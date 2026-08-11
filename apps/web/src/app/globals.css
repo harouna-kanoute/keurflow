@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #faf6f0;
+  --foreground: #1c1917;
 }
 
 @theme inline {
@@ -10,17 +10,35 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Brand accent — terracotta/clay (spec §92: "africain contemporain, premium,
+     éviter les clichés visuels"). Used for CTAs, active states and progress
+     indicators; body text and neutral surfaces stay on Tailwind's stone
+     ramp, a warm gray that reads better than zinc against the cream
+     background below. */
+  --color-clay-50: #fcf4ef;
+  --color-clay-100: #f8e4d7;
+  --color-clay-200: #f0c7ac;
+  --color-clay-300: #e4a47d;
+  --color-clay-400: #d57d52;
+  --color-clay-500: #c2542d;
+  --color-clay-600: #a8431f;
+  --color-clay-700: #8a3419;
+  --color-clay-800: #6e2a16;
+  --color-clay-900: #542213;
+
+  --color-cream: #faf6f0;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1c1917;
+    --foreground: #f5f0ea;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }

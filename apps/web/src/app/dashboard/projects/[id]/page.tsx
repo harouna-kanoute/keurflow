@@ -234,59 +234,59 @@ export default async function ProjectDetailPage({
     .order("created_at", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center gap-6 bg-cream px-6 py-16 dark:bg-stone-950">
       <div className="w-full max-w-lg">
         <Link
           href="/dashboard"
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
         >
           ← Retour
         </Link>
 
         <div className="mt-4 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">
+            <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
               {project.name}
             </h1>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
               {project.city ? `${project.city} — ` : ""}
               {STATUS_LABELS[project.status] ?? project.status}
             </p>
           </div>
           <Link
             href={`/dashboard/projects/${project.id}/a-verifier`}
-            className="shrink-0 rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-300"
+            className="shrink-0 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-500 dark:border-stone-700 dark:text-stone-300"
           >
             À vérifier
           </Link>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+        <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Budget
           </p>
-          <p className="mt-1 text-2xl font-semibold text-black dark:text-zinc-50">
+          <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-50">
             {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
           </p>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
             <div
-              className="h-full rounded-full bg-black dark:bg-white"
+              className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
               style={{ width: `${coveragePercent}%` }}
             />
           </div>
           <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-            <dt className="text-zinc-500 dark:text-zinc-400">Financé</dt>
-            <dd className="text-right text-zinc-900 dark:text-zinc-100">
+            <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
+            <dd className="text-right text-stone-900 dark:text-stone-100">
               {formatMoney(totalFunded, project.currency_code, minorUnit)} ({coveragePercent}%)
             </dd>
-            <dt className="text-zinc-500 dark:text-zinc-400">
+            <dt className="text-stone-500 dark:text-stone-400">
               {fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
             </dt>
-            <dd className="text-right text-zinc-900 dark:text-zinc-100">
+            <dd className="text-right text-stone-900 dark:text-stone-100">
               {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
             </dd>
-            <dt className="text-zinc-500 dark:text-zinc-400">Dépensé (approuvé)</dt>
-            <dd className="text-right text-zinc-900 dark:text-zinc-100">
+            <dt className="text-stone-500 dark:text-stone-400">Dépensé (approuvé)</dt>
+            <dd className="text-right text-stone-900 dark:text-stone-100">
               {formatMoney(project.budget_minor - remainingBudget, project.currency_code, minorUnit)} (
               {approvedTotal}%)
             </dd>
@@ -294,7 +294,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Financements
           </p>
           {fundings && fundings.length > 0 ? (
@@ -302,20 +302,20 @@ export default async function ProjectDetailPage({
               {fundings.map((funding) => (
                 <li
                   key={funding.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
                 >
-                  <span className="text-zinc-900 dark:text-zinc-100">
+                  <span className="text-stone-900 dark:text-stone-100">
                     {paymentMethodLabels.get(funding.payment_method_id) ?? "—"}
                     {funding.reference ? ` · ${funding.reference}` : ""}
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
+                  <span className="text-stone-500 dark:text-stone-400">
                     {formatMoney(funding.amount_minor, funding.currency_code, minorUnit)}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               Aucun financement enregistré.
             </p>
           )}
@@ -327,7 +327,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Dépenses
           </p>
           {expenses && expenses.length > 0 ? (
@@ -339,20 +339,20 @@ export default async function ProjectDetailPage({
                 return (
                   <li
                     key={expense.id}
-                    className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                    className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-zinc-900 dark:text-zinc-100">
+                      <span className="text-stone-900 dark:text-stone-100">
                         {CATEGORY_LABELS.get(expense.category) ?? expense.category}
                         {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
                       </span>
-                      <span className="text-zinc-500 dark:text-zinc-400">
+                      <span className="text-stone-500 dark:text-stone-400">
                         {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
                       </span>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                       <ExpenseStatusBadge status={expense.status} />
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="text-xs text-stone-500 dark:text-stone-400">
                         {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
                       </span>
                     </div>
@@ -366,7 +366,7 @@ export default async function ProjectDetailPage({
               })}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               Aucune dépense enregistrée.
             </p>
           )}
@@ -378,7 +378,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Étapes
           </p>
           {milestones && milestones.length > 0 ? (
@@ -386,21 +386,21 @@ export default async function ProjectDetailPage({
               {milestones.map((milestone) => (
                 <li
                   key={milestone.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
                 >
-                  <span className="text-zinc-900 dark:text-zinc-100">{milestone.name}</span>
+                  <span className="text-stone-900 dark:text-stone-100">{milestone.name}</span>
                   <MilestoneStatusSelect milestone={milestone} />
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucune étape.</p>
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucune étape.</p>
           )}
           <AddMilestoneForm projectId={project.id} nextOrderIndex={milestones?.length ?? 0} />
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Photos
           </p>
           <PhotoGallery photos={photos} />
@@ -408,7 +408,7 @@ export default async function ProjectDetailPage({
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Membres
           </p>
           {members && members.length > 0 ? (
@@ -416,30 +416,30 @@ export default async function ProjectDetailPage({
               {members.map((member) => (
                 <li
                   key={member.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
                 >
-                  <span className="text-zinc-900 dark:text-zinc-100">
+                  <span className="text-stone-900 dark:text-stone-100">
                     {memberNames.get(member.user_id) ?? "Membre"}
                     {member.status === "invited" && (
-                      <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                      <span className="ml-2 text-xs text-stone-500 dark:text-stone-400">
                         (invité·e)
                       </span>
                     )}
                   </span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
+                  <span className="text-stone-500 dark:text-stone-400">
                     {PROJECT_ROLE_LABELS[member.role] ?? member.role}
                   </span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucun membre.</p>
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucun membre.</p>
           )}
           {canApprove && <InviteMemberForm projectId={project.id} />}
         </div>
 
         <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Rapports
           </p>
           {reports && reports.length > 0 ? (
@@ -447,13 +447,13 @@ export default async function ProjectDetailPage({
               {reports.map((report) => (
                 <li
                   key={report.id}
-                  className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  className="rounded-xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900"
                 >
                   <details>
-                    <summary className="cursor-pointer text-zinc-900 dark:text-zinc-100">
+                    <summary className="cursor-pointer text-stone-900 dark:text-stone-100">
                       {report.period_start} → {report.period_end}
                     </summary>
-                    <pre className="mt-3 whitespace-pre-wrap font-sans text-zinc-600 dark:text-zinc-400">
+                    <pre className="mt-3 whitespace-pre-wrap font-sans text-stone-600 dark:text-stone-400">
                       {report.summary}
                     </pre>
                   </details>
@@ -461,7 +461,7 @@ export default async function ProjectDetailPage({
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
               Aucun rapport généré.
             </p>
           )}
