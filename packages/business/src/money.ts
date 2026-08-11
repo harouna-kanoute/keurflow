@@ -10,6 +10,22 @@ export function fromMajorUnits(amountMinor: number, minorUnit: number): number {
   return amountMinor / 10 ** minorUnit;
 }
 
+export interface CurrencyAmount {
+  amountMinor: number;
+  currencyCode: string;
+}
+
+// Never sum raw amounts across different currencies — an agency's projects
+// can each be in a different one, and cross-currency conversion is out of
+// MVP scope (§100). Returns one total per currency actually present.
+export function sumByCurrency(amounts: readonly CurrencyAmount[]): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const { amountMinor, currencyCode } of amounts) {
+    totals[currencyCode] = (totals[currencyCode] ?? 0) + amountMinor;
+  }
+  return totals;
+}
+
 export function formatMoney(
   amountMinor: number,
   currencyCode: string,

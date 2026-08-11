@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, fromMajorUnits, toMinorUnits } from "./money";
+import { formatMoney, fromMajorUnits, sumByCurrency, toMinorUnits } from "./money";
 
 describe("toMinorUnits", () => {
   it("scales by the currency's minor unit", () => {
@@ -39,5 +39,20 @@ describe("formatMoney", () => {
 
   it("formats zero without throwing", () => {
     expect(() => formatMoney(0, "EUR", 2)).not.toThrow();
+  });
+});
+
+describe("sumByCurrency", () => {
+  it("sums within a currency but never mixes currencies together", () => {
+    const totals = sumByCurrency([
+      { amountMinor: 2_500_000, currencyCode: "EUR" },
+      { amountMinor: 15_000_000, currencyCode: "XOF" },
+      { amountMinor: 500_000, currencyCode: "EUR" },
+    ]);
+    expect(totals).toEqual({ EUR: 3_000_000, XOF: 15_000_000 });
+  });
+
+  it("returns an empty object for no amounts", () => {
+    expect(sumByCurrency([])).toEqual({});
   });
 });
