@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatMoney } from "@keurflow/business";
+import {
+  formatMoney,
+  getApprovedExpensesTotal,
+  getMilestoneProgressPercent,
+  getTotalFunded,
+} from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
@@ -73,6 +78,40 @@ export default async function DashboardPage() {
         .order("created_at", { ascending: false })
     : { data: null };
 
+  // Per-project aggregates for the "Mes projets" view (§47: progression,
+  // budget, financé, dépensé, à vérifier). Plain per-table queries, each
+  // already RLS-scoped — fine at B2C scale (a handful of projects); an
+  // agency-scale dashboard (Phase 11+) would want a single aggregated view
+  // instead of N+1 round-trips.
+  const projectSummaries = await Promise.all(
+    (projects ?? []).map(async (project) => {
+      const [{ data: fundings }, { data: expenses }, { data: milestones }] = await Promise.all([
+        supabase.from("fundings").select("amount_minor").eq("project_id", project.id),
+        supabase.from("expenses").select("amount_minor, status").eq("project_id", project.id),
+        supabase.from("milestones").select("status").eq("project_id", project.id),
+      ]);
+
+      const expenseList = (expenses ?? []).map((e) => ({
+        amountMinor: e.amount_minor,
+        status: e.status as "pending" | "needs_information" | "approved" | "rejected",
+      }));
+
+      return {
+        ...project,
+        progressPercent: getMilestoneProgressPercent(
+          (milestones ?? []).map((m) => ({
+            status: m.status as "pending" | "in_progress" | "completed" | "delayed",
+          })),
+        ),
+        funded: getTotalFunded((fundings ?? []).map((f) => ({ amountMinor: f.amount_minor }))),
+        spent: getApprovedExpensesTotal(expenseList),
+        toReviewCount: expenseList.filter(
+          (e) => e.status === "pending" || e.status === "needs_information",
+        ).length,
+      };
+    }),
+  );
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-50 px-6 py-24 text-center dark:bg-black">
       <div>
@@ -110,29 +149,60 @@ export default async function DashboardPage() {
       )}
 
       {organization && (
-        <div className="w-full max-w-sm text-left">
+        <div className="w-full max-w-md text-left">
           <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-            Chantiers
+            Mes projets
           </p>
-          {projects && projects.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {projects.map((project) => (
-                <li key={project.id}>
-                  <Link
-                    href={`/dashboard/projects/${project.id}`}
-                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
-                  >
-                    <span className="text-zinc-900 dark:text-zinc-100">{project.name}</span>
-                    <span className="text-zinc-500 dark:text-zinc-400">
-                      {formatMoney(
-                        project.budget_minor,
-                        project.currency_code,
-                        minorUnitFor(project.currency_code),
-                      )}
-                    </span>
-                  </Link>
-                </li>
-              ))}
+          {projectSummaries.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-3">
+              {projectSummaries.map((project) => {
+                const minorUnit = minorUnitFor(project.currency_code);
+                return (
+                  <li key={project.id}>
+                    <Link
+                      href={`/dashboard/projects/${project.id}`}
+                      className="block rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                          {project.name}
+                        </span>
+                        {project.toReviewCount > 0 && (
+                          <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            {project.toReviewCount} à vérifier
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+                        <div
+                          className="h-full rounded-full bg-black dark:bg-white"
+                          style={{ width: `${project.progressPercent}%` }}
+                        />
+                      </div>
+                      <dl className="mt-2 grid grid-cols-3 gap-x-2 text-xs">
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">Budget</dt>
+                          <dd className="text-zinc-900 dark:text-zinc-100">
+                            {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">Financé</dt>
+                          <dd className="text-zinc-900 dark:text-zinc-100">
+                            {formatMoney(project.funded, project.currency_code, minorUnit)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-zinc-500 dark:text-zinc-400">Dépensé</dt>
+                          <dd className="text-zinc-900 dark:text-zinc-100">
+                            {formatMoney(project.spent, project.currency_code, minorUnit)}
+                          </dd>
+                        </div>
+                      </dl>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucun chantier créé.</p>
@@ -141,11 +211,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-        Le tableau de bord des chantiers complet arrive en Phase 10 — pour l&apos;instant, cette
-        page confirme que l&apos;authentification et la structure multi-tenant fonctionnent de bout
-        en bout.
-      </p>
       <form action={signOut}>
         <button
           type="submit"
