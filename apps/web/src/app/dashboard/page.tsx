@@ -6,6 +6,7 @@ import {
   getMilestoneProgressPercent,
   getTotalFunded,
   getTrialDaysRemaining,
+  isBillablePlan,
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
@@ -85,15 +86,8 @@ export default async function DashboardPage() {
         .single()
     : { data: null };
 
-  const { data: subscriptionPlan } = subscription
-    ? await supabase.from("plans").select("price_minor").eq("code", subscription.plan_code).single()
-    : { data: null };
-
   const showTrialBanner =
-    !!subscription &&
-    !!subscriptionPlan &&
-    subscriptionPlan.price_minor > 0 &&
-    subscription.status === "trialing";
+    !!subscription && isBillablePlan(subscription.plan_code) && subscription.status === "trialing";
   const trialDaysRemaining = subscription ? getTrialDaysRemaining(subscription.trial_ends_at) : 0;
 
   // Agencies/companies get a different view (AgencyDashboard, §10) — it does

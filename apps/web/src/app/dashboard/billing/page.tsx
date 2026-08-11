@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatMoney, getTrialDaysRemaining, hasOrgRoleAtLeast } from "@keurflow/business";
+import { formatMoney, getTrialDaysRemaining, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
 import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { ManageBillingButton, SubscribeButton } from "./billing-actions";
@@ -65,11 +65,25 @@ export default async function BillingPage({
         .single()
     : { data: null };
 
+  const isBillableTrack = !!subscription && isBillablePlan(subscription.plan_code);
+
+  // individual_trial is itself priced at 0 (it's the trial row) — the price
+  // actually shown/charged is the "individual" plan's, fetched separately
+  // so the trial view can say what it converts to.
+  const { data: paidIndividualPlan } =
+    isBillableTrack && plan?.price_minor === 0
+      ? await supabase
+          .from("plans")
+          .select("price_minor, currency_code")
+          .eq("code", "individual")
+          .single()
+      : { data: null };
+
   const canManageBilling = hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin");
   const trialDaysRemaining = subscription
     ? getTrialDaysRemaining(subscription.trial_ends_at)
     : 0;
-  const isPaidPlan = !!plan && plan.price_minor > 0;
+  const displayPrice = paidIndividualPlan ?? plan;
 
   return (
     <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -109,9 +123,14 @@ export default async function BillingPage({
 
               <dt className="text-zinc-500 dark:text-zinc-400">Prix</dt>
               <dd className="text-right text-zinc-900 dark:text-zinc-100">
-                {plan.price_minor > 0
-                  ? `${formatMoney(plan.price_minor, plan.currency_code, 2)} / mois`
-                  : "—"}
+                {displayPrice && displayPrice.price_minor > 0 ? (
+                  <>
+                    {formatMoney(displayPrice.price_minor, displayPrice.currency_code, 2)} / mois
+                    {paidIndividualPlan && " (après l'essai)"}
+                  </>
+                ) : (
+                  "—"
+                )}
               </dd>
 
               {subscription.status === "trialing" && (
@@ -135,7 +154,7 @@ export default async function BillingPage({
               )}
             </dl>
 
-            {canManageBilling && isPaidPlan && (
+            {canManageBilling && isBillableTrack && (
               <div className="mt-6 flex flex-col gap-3">
                 {subscription.status !== "active" && <SubscribeButton organizationId={membership.organization_id} />}
                 {subscription.stripe_customer_id && (

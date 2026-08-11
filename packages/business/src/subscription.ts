@@ -3,14 +3,21 @@ export interface SubscriptionLike {
   trialEndsAt: string | null;
 }
 
-export interface PlanLike {
-  priceCentsMinor: number;
+const BILLABLE_PLAN_CODES = new Set(["individual_trial", "individual"]);
+
+// Only the individual plan family is billable right now — agency plans stay
+// free pending a B2B pricing decision (spec §100 TODO). This is driven by
+// the plan *code*, not its price: individual_trial itself is priced at 0
+// minor units (it's the trial row), so gating on price directly would never
+// fire during the very trial it's meant to end.
+export function isBillablePlan(planCode: string): boolean {
+  return BILLABLE_PLAN_CODES.has(planCode);
 }
 
 // Days left in the trial, clamped to 0 — never negative, and 0 for plans
 // without a trial (trialEndsAt null). Mirrors the display side of the
 // enforcement that actually happens server-side in create_project()
-// (supabase/migrations/20260811310000_project_limits.sql).
+// (supabase/migrations/20260811330000_project_limits_fix.sql).
 export function getTrialDaysRemaining(trialEndsAt: string | null, now: Date = new Date()): number {
   if (!trialEndsAt) return 0;
   const msRemaining = new Date(trialEndsAt).getTime() - now.getTime();
@@ -22,16 +29,20 @@ export function isTrialExpired(trialEndsAt: string | null, now: Date = new Date(
   return new Date(trialEndsAt).getTime() < now.getTime();
 }
 
-// A free plan (priceCentsMinor === 0, e.g. the still-unpriced agency plans —
-// see spec §100 TODO) is never blocked, whatever the subscription status.
-// For a paid plan, blocked once the trial has lapsed with no paid
-// subscription behind it, or once billing has actually failed/lapsed.
+// A non-billable plan (currently: any agency tier) is never blocked,
+// whatever the subscription status. For a billable plan, blocked once the
+// trial has lapsed with no paid subscription behind it, or once billing has
+// actually failed/lapsed.
 export function isSubscriptionBlocked(
   subscription: SubscriptionLike,
-  plan: PlanLike,
+  planCode: string,
   now: Date = new Date(),
 ): boolean {
-  if (plan.priceCentsMinor <= 0) return false;
+  if (!isBillablePlan(planCode)) return false;
   if (subscription.status === "trialing") return isTrialExpired(subscription.trialEndsAt, now);
-  return subscription.status === "past_due" || subscription.status === "canceled" || subscription.status === "incomplete";
+  return (
+    subscription.status === "past_due" ||
+    subscription.status === "canceled" ||
+    subscription.status === "incomplete"
+  );
 }

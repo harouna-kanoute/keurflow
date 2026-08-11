@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { hasOrgRoleAtLeast } from "@keurflow/business";
+import { hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
 import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -41,15 +41,25 @@ export async function createCheckoutSession(organizationId: string): Promise<Act
   if (!auth) return { error: GENERIC_ERROR };
   const { supabase, user } = auth;
 
-  const priceId = process.env.STRIPE_PRICE_ID_INDIVIDUAL;
-  if (!priceId) return { error: GENERIC_ERROR };
+  const productId = process.env.STRIPE_PRODUCT_ID_INDIVIDUAL;
+  if (!productId) return { error: GENERIC_ERROR };
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id")
+    .select("plan_code, stripe_customer_id")
     .eq("organization_id", organizationId)
     .single();
-  if (!subscription) return { error: GENERIC_ERROR };
+  // isBillablePlan, not a plain "does a row exist" check: individual_trial
+  // is itself priced at 0 (it's the trial row) — checkout always targets
+  // the "individual" plan specifically, the only paid plan right now.
+  if (!subscription || !isBillablePlan(subscription.plan_code)) return { error: GENERIC_ERROR };
+
+  const { data: plan } = await supabase
+    .from("plans")
+    .select("price_minor, currency_code")
+    .eq("code", "individual")
+    .single();
+  if (!plan || plan.price_minor <= 0) return { error: GENERIC_ERROR };
 
   const stripe = getStripe();
   // subscriptions has no UPDATE policy for `authenticated` (writes are
@@ -75,7 +85,17 @@ export async function createCheckoutSession(organizationId: string): Promise<Act
     session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [
+        {
+          price_data: {
+            product: productId,
+            currency: plan.currency_code.toLowerCase(),
+            unit_amount: plan.price_minor,
+            recurring: { interval: "month" },
+          },
+          quantity: 1,
+        },
+      ],
       success_url: `${APP_URL}/dashboard/billing?checkout=success`,
       cancel_url: `${APP_URL}/dashboard/billing?checkout=cancelled`,
       metadata: { organization_id: organizationId },
