@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createOrganizationSchema, type CreateOrganizationInput } from "@keurflow/validation";
+import {
+  createOrganizationSchema,
+  createProjectSchema,
+  type CreateOrganizationInput,
+  type CreateProjectInput,
+} from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
@@ -35,6 +40,44 @@ export async function createOrganization(input: CreateOrganizationInput): Promis
 
   if (error) {
     console.error("[createOrganization] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function createProject(input: CreateProjectInput): Promise<ActionResult> {
+  const parsed = createProjectSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+
+  const { data: country } = await supabase
+    .from("countries")
+    .select("id")
+    .eq("code", parsed.data.countryCode)
+    .single();
+
+  if (!country) return { error: GENERIC_ERROR };
+
+  // create_project() is SECURITY DEFINER: it checks the caller's
+  // organization role server-side (owner/admin/manager) and, if authorized,
+  // inserts the project row and the caller's project_owner membership row
+  // atomically (see migration 20260811170000_project_members.sql).
+  const { error } = await supabase.rpc("create_project", {
+    p_organization_id: parsed.data.organizationId,
+    p_name: parsed.data.name,
+    p_description: parsed.data.description ?? null,
+    p_project_type: parsed.data.projectType,
+    p_country_id: country.id,
+    p_city: parsed.data.city ?? null,
+    p_budget_minor: parsed.data.budgetMinor,
+    p_currency_code: parsed.data.currencyCode,
+  });
+
+  if (error) {
+    console.error("[createProject] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
   }
 
