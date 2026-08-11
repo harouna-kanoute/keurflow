@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "C:/Users/UPRB/AppData/Local/Microsoft/WinGet/Packages/OpenJS.NodeJS.LTS_Microsoft.Winget.Source_8wekyb3d8bbwe/node-v24.19.0-win-x64/node.exe",
+      "runtimeArgs": [
+        "D:/Projets/KeurFlow/node_modules/next/dist/bin/next",
+        "dev",
+        "D:/Projets/KeurFlow/apps/web",
+        "-p",
+        "3000"
+      ],
+      "port": 3000
+    }
+  ]
+}
