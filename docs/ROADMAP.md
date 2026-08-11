@@ -4,20 +4,20 @@ Une phase à la fois. Après chaque phase : TypeScript, ESLint, tests, build, te
 
 - [x] **Phase 0** — Audit du repository
 - [x] **Phase 1** — Architecture (monorepo, tooling, packages partagés, structure Supabase)
-- [ ] **Phase 2** — Authentication (Supabase Auth, profils, trigger de création)
-- [ ] **Phase 3** — Organizations + multi-tenancy
-- [ ] **Phase 4** — Database + RLS + Storage
-- [ ] **Phase 5** — Core business logic
-- [ ] **Phase 6** — Projects
-- [ ] **Phase 7** — Budget + financements
-- [ ] **Phase 8** — Dépenses + justificatifs + validation
-- [ ] **Phase 9** — Photos + étapes
-- [ ] **Phase 10** — Dashboard particulier
-- [ ] **Phase 11** — Dashboard agence
-- [ ] **Phase 12** — Gestion clients agence
-- [ ] **Phase 13** — Rapports + notifications
-- [ ] **Phase 14** — Application mobile (Expo)
-- [ ] **Phase 15** — Abonnements + essai 7 jours
-- [ ] **Phase 16** — Security audit
+- [x] **Phase 2** — Authentication (Supabase Auth, profils, trigger de création)
+- [x] **Phase 3** — Organizations + multi-tenancy
+- [x] **Phase 4** — Database + RLS + Storage
+- [x] **Phase 5** — Core business logic
+- [x] **Phase 6** — Projects
+- [x] **Phase 7** — Budget + financements
+- [x] **Phase 8** — Dépenses + justificatifs + validation
+- [x] **Phase 9** — Photos + étapes
+- [x] **Phase 10** — Dashboard particulier
+- [x] **Phase 11** — Dashboard agence
+- [x] **Phase 12** — Gestion clients agence (invitation de membres de projet)
+- [x] **Phase 13** — Rapports + notifications
+- [x] **Phase 14** — Application mobile (Expo)
+- [x] **Phase 15** — Abonnements + essai 7 jours
+- [x] **Phase 16** — Security audit
 - [ ] **Phase 17** — Performance + UX
 - [ ] **Phase 18** — Production
