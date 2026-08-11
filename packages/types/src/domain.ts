@@ -14,6 +14,16 @@ import type {
 // database.generated.ts from the real Postgres schema. Monetary amounts are
 // always integers in the currency's minor unit (see @keurflow/business/money).
 
+export interface Profile {
+  id: string;
+  fullName: string | null;
+  phone: string | null;
+  avatarUrl: string | null;
+  countryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Country {
   id: string;
   code: string;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   formatMoney,
   getBudgetConsumptionPercent,
@@ -24,9 +25,17 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-16 bg-zinc-50 px-6 py-24 text-center dark:bg-black">
       <div className="flex flex-col items-center">
-        <span className="mb-6 text-sm font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
-          KeurFlow
-        </span>
+        <div className="mb-6 flex items-center gap-4">
+          <span className="text-sm font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            KeurFlow
+          </span>
+          <Link
+            href="/login"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            Se connecter
+          </Link>
+        </div>
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-black sm:text-5xl dark:text-zinc-50">
           Votre projet en Afrique. Votre argent. Votre visibilité.
         </h1>
@@ -36,9 +45,12 @@ export default function Home() {
           monde.
         </p>
         <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row">
-          <span className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-medium text-white dark:bg-white dark:text-black">
+          <Link
+            href="/signup"
+            className="flex h-12 items-center justify-center rounded-full bg-black px-6 text-base font-medium text-white dark:bg-white dark:text-black"
+          >
             Commencer gratuitement
-          </span>
+          </Link>
           <span className="text-sm text-zinc-500 dark:text-zinc-400">
             7 jours gratuits, sans carte bancaire
           </span>

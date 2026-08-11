@@ -2,7 +2,7 @@
 
 Structure:
 
-- `migrations/` — SQL versionné (schéma, RLS, fonctions `SECURITY DEFINER`). Vide jusqu'à la Phase 4.
+- `migrations/` — SQL versionné (schéma, RLS, fonctions `SECURITY DEFINER`). Le schéma multi-tenant complet (organizations, projects, expenses, ...) arrive en Phase 4 ; seule `profiles` existe pour l'instant (nécessaire à l'auth, Phase 2).
 - `functions/` — Edge Functions (opérations privilégiées : recalcul de dépenses, webhook Stripe, invitations).
 - `seed/` — Données DEMO fictives uniquement (`Harouna`, `Agence ABC`). Jamais de données réelles.
 
