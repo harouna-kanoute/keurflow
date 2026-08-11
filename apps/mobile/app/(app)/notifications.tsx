@@ -1,0 +1,161 @@
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { supabase } from "../../src/lib/supabase";
+import { colors } from "../../src/theme";
+
+const TYPE_LABELS: Record<string, string> = {
+  new_expense: "Nouvelle dépense",
+  expense_needs_review: "Informations demandées",
+  document_added: "Document ajouté",
+  expense_approved: "Dépense approuvée",
+  expense_rejected: "Dépense rejetée",
+  milestone_completed: "Étape terminée",
+  milestone_delayed: "Étape en retard",
+  report_created: "Rapport généré",
+  member_invited: "Membre invité",
+};
+
+type Notification = {
+  id: string;
+  project_id: string | null;
+  type: string;
+  title: string;
+  body: string | null;
+  read_at: string | null;
+  created_at: string;
+};
+
+export default function NotificationsScreen() {
+  const [notifications, setNotifications] = useState<Notification[] | null>(null);
+
+  const load = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // RLS (notifications_select_own) already scopes this to the caller.
+    const { data } = await supabase
+      .from("notifications")
+      .select("id, project_id, type, title, body, read_at, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    setNotifications(data ?? []);
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const markRead = useCallback(async (id: string) => {
+    setNotifications((prev) =>
+      prev ? prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)) : prev,
+    );
+    await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  }, []);
+
+  const markAllRead = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    setNotifications((prev) => (prev ? prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date().toISOString() })) : prev));
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("user_id", user.id)
+      .is("read_at", null);
+  }, []);
+
+  if (notifications === null) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.text} />
+      </View>
+    );
+  }
+
+  const unreadCount = notifications.filter((n) => !n.read_at).length;
+
+  return (
+    <FlatList
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={styles.list}
+      data={notifications}
+      keyExtractor={(item) => item.id}
+      ListHeaderComponent={
+        unreadCount > 0 ? (
+          <Pressable style={styles.markAllButton} onPress={markAllRead}>
+            <Text style={styles.markAllText}>Tout marquer comme lu</Text>
+          </Pressable>
+        ) : null
+      }
+      ListEmptyComponent={<Text style={styles.empty}>Aucune notification pour l'instant.</Text>}
+      renderItem={({ item }) => (
+        <View style={[styles.card, !item.read_at && styles.cardUnread]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>{item.title}</Text>
+            {item.body && <Text style={styles.cardBody}>{item.body}</Text>}
+            <Pressable
+              disabled={!item.project_id}
+              onPress={() => item.project_id && router.push(`/projects/${item.project_id}`)}
+            >
+              <Text style={styles.cardMeta}>
+                {TYPE_LABELS[item.type] ?? item.type}
+                {item.project_id ? " · Voir le chantier" : ""}
+              </Text>
+            </Pressable>
+          </View>
+          {!item.read_at && (
+            <Pressable style={styles.readButton} onPress={() => markRead(item.id)}>
+              <Text style={styles.readButtonText}>Marquer comme lu</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" },
+  list: { padding: 16, gap: 8 },
+  empty: { fontSize: 13, color: colors.textMuted, textAlign: "center", marginTop: 24 },
+  markAllButton: {
+    alignSelf: "flex-end",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  markAllText: { fontSize: 13, fontWeight: "600", color: colors.text },
+  card: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "flex-start",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.card,
+    padding: 12,
+  },
+  cardUnread: { backgroundColor: "#f4f4f5", borderColor: colors.borderStrong },
+  cardTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
+  cardBody: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  cardMeta: { fontSize: 11, color: colors.textMuted, marginTop: 6, textDecorationLine: "underline" },
+  readButton: {
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  readButtonText: { fontSize: 11, fontWeight: "600", color: colors.text },
+});
