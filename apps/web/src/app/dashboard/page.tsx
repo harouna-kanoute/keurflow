@@ -5,6 +5,8 @@ import {
   getApprovedExpensesTotal,
   getMilestoneProgressPercent,
   getTotalFunded,
+  getTrialDaysRemaining,
+  isBillablePlan,
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
@@ -73,6 +75,20 @@ export default async function DashboardPage() {
         .eq("organization_id", organization.id)
         .eq("status", "active")
     : { count: null };
+
+  // RLS (subscriptions_select_members) scopes this the same way — a
+  // subscription row always exists once an organization does (§15, Phase 15).
+  const { data: subscription } = organization
+    ? await supabase
+        .from("subscriptions")
+        .select("plan_code, status, trial_ends_at")
+        .eq("organization_id", organization.id)
+        .single()
+    : { data: null };
+
+  const showTrialBanner =
+    !!subscription && isBillablePlan(subscription.plan_code) && subscription.status === "trialing";
+  const trialDaysRemaining = subscription ? getTrialDaysRemaining(subscription.trial_ends_at) : 0;
 
   // Agencies/companies get a different view (AgencyDashboard, §10) — it does
   // its own project/expense/document/member fetching, so the individual
@@ -143,7 +159,29 @@ export default async function DashboardPage() {
             </span>
           )}
         </Link>
+        <Link
+          href="/dashboard/billing"
+          className="mt-1 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        >
+          Abonnement
+        </Link>
       </div>
+
+      {showTrialBanner && (
+        <div className="w-full max-w-sm rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
+          {trialDaysRemaining > 0 ? (
+            <>
+              Votre essai gratuit se termine dans {trialDaysRemaining} jour
+              {trialDaysRemaining > 1 ? "s" : ""}.{" "}
+            </>
+          ) : (
+            <>Votre essai gratuit est terminé. </>
+          )}
+          <Link href="/dashboard/billing" className="font-medium underline">
+            Passer à l&apos;abonnement payant
+          </Link>
+        </div>
+      )}
 
       {organization ? (
         <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-900">

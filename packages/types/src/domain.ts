@@ -8,6 +8,7 @@ import type {
   OrganizationType,
   ProjectRole,
   ProjectStatus,
+  SubscriptionStatus,
 } from "./enums";
 
 // Application-level domain types, hand-written for use before Phase 4 generates
@@ -204,4 +205,15 @@ export interface Plan {
   currencyCode: string;
   trialDays: number;
   features: Record<string, boolean>;
+}
+
+export interface Subscription {
+  id: string;
+  organizationId: string;
+  planCode: string;
+  status: SubscriptionStatus;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  trialEndsAt: string | null;
+  currentPeriodEnd: string | null;
 }

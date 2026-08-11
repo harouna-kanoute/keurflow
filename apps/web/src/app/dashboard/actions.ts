@@ -120,6 +120,16 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
   });
 
   if (error) {
+    // KF001/KF002 are the custom errcodes raised by create_project() itself
+    // (supabase/migrations/20260811310000_project_limits.sql) — trial
+    // expired / no active subscription, or the plan's project limit is
+    // reached. Everything else stays generic per §68.
+    if (error.code === "KF001") {
+      return { error: "Votre essai est terminé. Passez à l'abonnement payant pour continuer." };
+    }
+    if (error.code === "KF002") {
+      return { error: "Limite de chantiers atteinte pour votre plan actuel." };
+    }
     console.error("[createProject] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
   }
