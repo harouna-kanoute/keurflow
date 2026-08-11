@@ -1,8 +1,8 @@
 export default function Loading() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-zinc-50 dark:bg-black">
+    <div className="flex flex-1 items-center justify-center bg-cream dark:bg-stone-950">
       <div
-        className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100"
+        className="h-6 w-6 animate-spin rounded-full border-2 border-stone-300 border-t-stone-900 dark:border-stone-700 dark:border-t-stone-100"
         role="status"
         aria-label="Chargement"
       />

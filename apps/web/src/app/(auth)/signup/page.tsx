@@ -31,8 +31,8 @@ export default function SignUpPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-black dark:text-zinc-50">Créer un compte</h1>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">7 jours gratuits, sans carte bancaire.</p>
+      <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Créer un compte</h1>
+      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">7 jours gratuits, sans carte bancaire.</p>
       <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
         <FormField
           id="fullName"
@@ -87,9 +87,9 @@ export default function SignUpPage() {
           {isPending ? "Création…" : "Créer mon compte"}
         </SubmitButton>
       </form>
-      <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
         Déjà un compte ?{" "}
-        <Link href="/login" className="font-medium text-zinc-900 underline dark:text-zinc-100">
+        <Link href="/login" className="font-medium text-stone-900 underline dark:text-stone-100">
           Se connecter
         </Link>
       </p>

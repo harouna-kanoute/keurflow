@@ -78,25 +78,25 @@ export default async function ToReviewPage({
   const isEmpty = pending.length + needsInfo.length + missingDocs.length + (milestones?.length ?? 0) === 0;
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
       <div className="w-full max-w-lg">
         <Link
           href={`/dashboard/projects/${project.id}`}
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
         >
           ← Retour au chantier
         </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-black dark:text-zinc-50">À vérifier</h1>
-        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{project.name}</p>
+        <h1 className="mt-4 text-2xl font-semibold text-stone-900 dark:text-stone-50">À vérifier</h1>
+        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{project.name}</p>
 
         {isEmpty && (
-          <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">Rien à vérifier pour le moment.</p>
+          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">Rien à vérifier pour le moment.</p>
         )}
 
         {pending.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            <h2 className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
               Dépenses à valider ({pending.length})
             </h2>
             <ul className="mt-2 flex flex-col gap-2">
@@ -121,7 +121,7 @@ export default async function ToReviewPage({
 
         {needsInfo.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            <h2 className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
               Demandes d&apos;informations ({needsInfo.length})
             </h2>
             <ul className="mt-2 flex flex-col gap-2">
@@ -146,7 +146,7 @@ export default async function ToReviewPage({
 
         {missingDocs.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            <h2 className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
               Dépenses sans justificatif ({missingDocs.length})
             </h2>
             <ul className="mt-2 flex flex-col gap-2">
@@ -171,7 +171,7 @@ export default async function ToReviewPage({
 
         {milestones && milestones.length > 0 && (
           <section className="mt-6">
-            <h2 className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            <h2 className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
               Étapes en retard ({milestones.length})
             </h2>
             <ul className="mt-2 flex flex-col gap-2">

@@ -40,8 +40,8 @@ export default async function BillingPage({
 
   if (!membership) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-zinc-50 px-6 py-24 text-center dark:bg-black">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-cream px-6 py-24 text-center dark:bg-stone-950">
+        <p className="text-sm text-stone-500 dark:text-stone-400">
           Aucune organisation associée à votre compte pour l&apos;instant.
         </p>
         <Link href="/dashboard" className="text-sm underline">
@@ -89,16 +89,16 @@ export default async function BillingPage({
   const displayPrice = paidIndividualPlan ?? plan;
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
       <div className="w-full max-w-md">
         <Link
           href="/dashboard"
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
         >
           ← Retour
         </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-black dark:text-zinc-50">Abonnement</h1>
+        <h1 className="mt-4 text-2xl font-semibold text-stone-900 dark:text-stone-50">Abonnement</h1>
 
         {checkout === "success" && (
           <p className="mt-4 rounded-xl bg-green-100 px-4 py-3 text-sm text-green-800 dark:bg-green-900/40 dark:text-green-300">
@@ -106,26 +106,26 @@ export default async function BillingPage({
           </p>
         )}
         {checkout === "cancelled" && (
-          <p className="mt-4 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <p className="mt-4 rounded-xl bg-stone-100 px-4 py-3 text-sm text-stone-700 dark:bg-stone-800 dark:text-stone-300">
             Paiement annulé — vous pouvez réessayer à tout moment.
           </p>
         )}
 
         {plan && subscription ? (
-          <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+          <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900">
+            <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
               Plan actuel
             </p>
-            <p className="mt-1 text-lg font-semibold text-black dark:text-zinc-50">{plan.label}</p>
+            <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-50">{plan.label}</p>
 
             <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-zinc-500 dark:text-zinc-400">Statut</dt>
-              <dd className="text-right text-zinc-900 dark:text-zinc-100">
+              <dt className="text-stone-500 dark:text-stone-400">Statut</dt>
+              <dd className="text-right text-stone-900 dark:text-stone-100">
                 {STATUS_LABELS[subscription.status] ?? subscription.status}
               </dd>
 
-              <dt className="text-zinc-500 dark:text-zinc-400">Prix</dt>
-              <dd className="text-right text-zinc-900 dark:text-zinc-100">
+              <dt className="text-stone-500 dark:text-stone-400">Prix</dt>
+              <dd className="text-right text-stone-900 dark:text-stone-100">
                 {displayPrice && displayPrice.price_minor > 0 ? (
                   <>
                     {formatMoney(displayPrice.price_minor, displayPrice.currency_code, 2)} / mois
@@ -138,8 +138,8 @@ export default async function BillingPage({
 
               {subscription.status === "trialing" && (
                 <>
-                  <dt className="text-zinc-500 dark:text-zinc-400">Essai</dt>
-                  <dd className="text-right text-zinc-900 dark:text-zinc-100">
+                  <dt className="text-stone-500 dark:text-stone-400">Essai</dt>
+                  <dd className="text-right text-stone-900 dark:text-stone-100">
                     {trialDaysRemaining > 0
                       ? `${trialDaysRemaining} jour${trialDaysRemaining > 1 ? "s" : ""} restant${trialDaysRemaining > 1 ? "s" : ""}`
                       : "Terminé"}
@@ -149,8 +149,8 @@ export default async function BillingPage({
 
               {subscription.current_period_end && (
                 <>
-                  <dt className="text-zinc-500 dark:text-zinc-400">Renouvellement</dt>
-                  <dd className="text-right text-zinc-900 dark:text-zinc-100">
+                  <dt className="text-stone-500 dark:text-stone-400">Renouvellement</dt>
+                  <dd className="text-right text-stone-900 dark:text-stone-100">
                     {new Date(subscription.current_period_end).toLocaleDateString("fr-FR")}
                   </dd>
                 </>
@@ -167,13 +167,13 @@ export default async function BillingPage({
             )}
 
             {!canManageBilling && (
-              <p className="mt-6 text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="mt-6 text-xs text-stone-500 dark:text-stone-400">
                 Seuls les propriétaires et administrateurs peuvent gérer l&apos;abonnement.
               </p>
             )}
           </div>
         ) : (
-          <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
             Aucun abonnement trouvé pour cette organisation.
           </p>
         )}

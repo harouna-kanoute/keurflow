@@ -15,7 +15,7 @@ export function MarkReadButton({ notificationId }: { notificationId: string }) {
           await markNotificationRead(notificationId);
         })
       }
-      className="shrink-0 rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300"
+      className="shrink-0 rounded-full border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300"
     >
       Marquer comme lu
     </button>
@@ -34,7 +34,7 @@ export function MarkAllReadButton() {
           await markAllNotificationsRead();
         })
       }
-      className="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium text-zinc-700 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300"
+      className="rounded-full border border-stone-300 px-4 py-1.5 text-sm font-medium text-stone-700 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300"
     >
       Tout marquer comme lu
     </button>

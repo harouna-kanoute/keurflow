@@ -1,10 +1,10 @@
 function SkeletonBlock({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-zinc-200 dark:bg-zinc-800 ${className}`} />;
+  return <div className={`animate-pulse rounded-2xl bg-stone-200 dark:bg-stone-800 ${className}`} />;
 }
 
 export default function ProjectLoading() {
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
       <div className="w-full max-w-lg">
         <SkeletonBlock className="h-4 w-16" />
         <SkeletonBlock className="mt-4 h-8 w-64" />

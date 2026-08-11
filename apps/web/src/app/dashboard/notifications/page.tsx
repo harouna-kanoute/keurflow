@@ -40,17 +40,17 @@ export default async function NotificationsPage() {
   const unreadCount = (notifications ?? []).filter((n) => !n.read_at).length;
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-zinc-50 px-6 py-16 dark:bg-black">
+    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
       <div className="w-full max-w-lg">
         <Link
           href="/dashboard"
-          className="text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
         >
           ← Retour
         </Link>
 
         <div className="mt-4 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-black dark:text-zinc-50">Notifications</h1>
+          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">Notifications</h1>
           {unreadCount > 0 && <MarkAllReadButton />}
         </div>
 
@@ -61,21 +61,21 @@ export default async function NotificationsPage() {
                 key={notification.id}
                 className={`rounded-xl border px-4 py-3 text-sm ${
                   notification.read_at
-                    ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
-                    : "border-zinc-300 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800"
+                    ? "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
+                    : "border-stone-300 bg-stone-100 dark:border-stone-700 dark:bg-stone-800"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    <p className="font-medium text-stone-900 dark:text-stone-100">
                       {notification.title}
                     </p>
                     {notification.body && (
-                      <p className="mt-0.5 text-zinc-600 dark:text-zinc-400">
+                      <p className="mt-0.5 text-stone-600 dark:text-stone-400">
                         {notification.body}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">
+                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-500">
                       {TYPE_LABELS[notification.type] ?? notification.type}
                       {notification.project_id && (
                         <>
@@ -96,7 +96,7 @@ export default async function NotificationsPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
             Aucune notification pour l&apos;instant.
           </p>
         )}
