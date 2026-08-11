@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { CreateProjectForm } from "./create-project-form";
+import { AgencyDashboard } from "./agency-dashboard";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -67,10 +68,15 @@ export default async function DashboardPage() {
         .eq("status", "active")
     : { count: null };
 
+  // Agencies/companies get a different view (AgencyDashboard, §10) — it does
+  // its own project/expense/document/member fetching, so the individual
+  // "Mes projets" queries below are skipped entirely for those org types.
+  const isAgencyView = organization?.type === "agency" || organization?.type === "company";
+
   // RLS (projects_select_org_or_project_members) filters this to projects
   // this user can actually see — filtering by organization_id here is just
   // for clarity, not the security boundary itself.
-  const { data: projects } = organization
+  const { data: projects } = organization && !isAgencyView
     ? await supabase
         .from("projects")
         .select("id, name, status, budget_minor, currency_code")
@@ -80,9 +86,7 @@ export default async function DashboardPage() {
 
   // Per-project aggregates for the "Mes projets" view (§47: progression,
   // budget, financé, dépensé, à vérifier). Plain per-table queries, each
-  // already RLS-scoped — fine at B2C scale (a handful of projects); an
-  // agency-scale dashboard (Phase 11+) would want a single aggregated view
-  // instead of N+1 round-trips.
+  // already RLS-scoped — fine at B2C scale (a handful of projects).
   const projectSummaries = await Promise.all(
     (projects ?? []).map(async (project) => {
       const [{ data: fundings }, { data: expenses }, { data: milestones }] = await Promise.all([
@@ -148,7 +152,16 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {organization && (
+      {organization && isAgencyView && (
+        <>
+          <AgencyDashboard organizationId={organization.id} />
+          <div className="w-full max-w-md text-left">
+            <CreateProjectForm organizationId={organization.id} />
+          </div>
+        </>
+      )}
+
+      {organization && !isAgencyView && (
         <div className="w-full max-w-md text-left">
           <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
             Mes projets
