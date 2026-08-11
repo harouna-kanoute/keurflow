@@ -16,6 +16,23 @@ export function getTotalFunded(fundings: readonly FundingLike[]): number {
   return fundings.reduce((sum, f) => sum + f.amountMinor, 0);
 }
 
+// How much of the budget hasn't been funded yet — independent of spending.
+// A project can be fully funded but not yet spent, or partly spent before
+// being fully funded; funding coverage and budget consumption are tracked
+// separately on purpose.
+export function getFundingGap(budgetMinor: number, fundings: readonly FundingLike[]): number {
+  return budgetMinor - getTotalFunded(fundings);
+}
+
+export function getFundingCoveragePercent(
+  budgetMinor: number,
+  fundings: readonly FundingLike[],
+): number {
+  if (budgetMinor <= 0) return 0;
+  const funded = getTotalFunded(fundings);
+  return Math.min(100, Math.max(0, Math.round((funded / budgetMinor) * 100)));
+}
+
 export function getApprovedExpensesTotal(expenses: readonly ExpenseLike[]): number {
   return expenses
     .filter((e) => e.status === "approved")

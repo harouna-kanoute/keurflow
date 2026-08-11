@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   getApprovedExpensesTotal,
   getBudgetConsumptionPercent,
+  getFundingCoveragePercent,
+  getFundingGap,
   getPendingExpensesTotal,
   getRemainingBudget,
   getTotalFunded,
@@ -22,6 +24,31 @@ describe("getTotalFunded", () => {
 
   it("returns 0 for no fundings", () => {
     expect(getTotalFunded([])).toBe(0);
+  });
+});
+
+describe("getFundingGap", () => {
+  it("is the budget minus what's been funded so far", () => {
+    expect(getFundingGap(2_000_000, fundings)).toBe(500_000);
+  });
+
+  it("can go negative when over-funded", () => {
+    expect(getFundingGap(1_000_000, fundings)).toBe(-500_000);
+  });
+});
+
+describe("getFundingCoveragePercent", () => {
+  it("computes a rounded percentage, independent of spending", () => {
+    expect(getFundingCoveragePercent(2_000_000, fundings)).toBe(75);
+  });
+
+  it("clamps at 100 when over-funded", () => {
+    expect(getFundingCoveragePercent(1_000_000, fundings)).toBe(100);
+  });
+
+  it("returns 0 for a zero or negative budget instead of dividing by zero", () => {
+    expect(getFundingCoveragePercent(0, fundings)).toBe(0);
+    expect(getFundingCoveragePercent(-500, fundings)).toBe(0);
   });
 });
 
