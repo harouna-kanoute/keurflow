@@ -168,6 +168,14 @@ export default async function DashboardPage() {
         >
           Abonnement
         </Link>
+        {organization && (
+          <Link
+            href="/dashboard/audit-log"
+            className="mt-1 inline-block text-sm text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            Journal d&apos;activité
+          </Link>
+        )}
       </div>
 
       {showTrialBanner && (
