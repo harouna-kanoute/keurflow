@@ -20,6 +20,7 @@ import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
 import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
+import { InviteMemberForm } from "./invite-member-form";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -34,6 +35,13 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_LABELS = new Map(EXPENSE_CATEGORIES.map((c) => [c.code, c.label]));
+
+const PROJECT_ROLE_LABELS: Record<string, string> = {
+  project_owner: "Propriétaire",
+  project_manager: "Responsable",
+  project_member: "Collaborateur",
+  project_viewer: "Client (lecture seule)",
+};
 
 export default async function ProjectDetailPage({
   params,
@@ -153,6 +161,26 @@ export default async function ProjectDetailPage({
       url: signedUrls?.[i]?.signedUrl ?? null,
     }));
   }
+
+  const { data: members } = await supabase
+    .from("project_members")
+    .select("id, user_id, role, status")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: true });
+
+  // profiles_select_shared_context (Phase 12) is what makes these names
+  // visible — without it, this query would only ever return the caller's
+  // own profile row, per profiles_select_own.
+  const memberProfiles = members?.length
+    ? await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in(
+          "id",
+          members.map((m) => m.user_id),
+        )
+    : { data: [] };
+  const memberNames = new Map((memberProfiles.data ?? []).map((p) => [p.id, p.full_name]));
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -316,6 +344,37 @@ export default async function ProjectDetailPage({
           </p>
           <PhotoGallery photos={photos} />
           <UploadPhotoForm projectId={project.id} />
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            Membres
+          </p>
+          {members && members.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {members.map((member) => (
+                <li
+                  key={member.id}
+                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <span className="text-zinc-900 dark:text-zinc-100">
+                    {memberNames.get(member.user_id) ?? "Membre"}
+                    {member.status === "invited" && (
+                      <span className="ml-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        (invité·e)
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    {PROJECT_ROLE_LABELS[member.role] ?? member.role}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucun membre.</p>
+          )}
+          {canApprove && <InviteMemberForm projectId={project.id} />}
         </div>
       </div>
     </div>
