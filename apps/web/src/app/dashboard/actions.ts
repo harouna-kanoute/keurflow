@@ -8,6 +8,7 @@ import {
   type CreateProjectInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
+import { logAudit } from "@/lib/audit";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
@@ -108,7 +109,7 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
   // organization role server-side (owner/admin/manager) and, if authorized,
   // inserts the project row and the caller's project_owner membership row
   // atomically (see migration 20260811170000_project_members.sql).
-  const { error } = await supabase.rpc("create_project", {
+  const { data: newProject, error } = await supabase.rpc("create_project", {
     p_organization_id: parsed.data.organizationId,
     p_name: parsed.data.name,
     p_description: parsed.data.description ?? null,
@@ -132,6 +133,21 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
     }
     console.error("[createProject] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user && newProject) {
+    await logAudit({
+      organizationId: parsed.data.organizationId,
+      projectId: newProject.id,
+      userId: user.id,
+      action: "project_created",
+      entityType: "project",
+      entityId: newProject.id,
+      metadata: { name: parsed.data.name },
+    });
   }
 
   revalidatePath("/dashboard");

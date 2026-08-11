@@ -19,6 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
+import { ExpenseComments, type ExpenseCommentView } from "./expense-comments";
 import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
@@ -117,6 +118,35 @@ export default async function ProjectDetailPage({
   for (const doc of documents ?? []) {
     if (!doc.expense_id) continue;
     documentCountByExpense.set(doc.expense_id, (documentCountByExpense.get(doc.expense_id) ?? 0) + 1);
+  }
+
+  const expenseIds = (expenses ?? []).map((e) => e.id);
+  const { data: expenseComments } =
+    expenseIds.length > 0
+      ? await supabase
+          .from("expense_comments")
+          .select("id, expense_id, user_id, content, created_at")
+          .in("expense_id", expenseIds)
+          .order("created_at", { ascending: true })
+      : { data: [] };
+
+  const commenterIds = [...new Set((expenseComments ?? []).map((c) => c.user_id))];
+  const { data: commenterProfiles } =
+    commenterIds.length > 0
+      ? await supabase.from("profiles").select("id, full_name").in("id", commenterIds)
+      : { data: [] };
+  const commenterNames = new Map((commenterProfiles ?? []).map((p) => [p.id, p.full_name ?? "Utilisateur"]));
+
+  const commentsByExpense = new Map<string, ExpenseCommentView[]>();
+  for (const c of expenseComments ?? []) {
+    const list = commentsByExpense.get(c.expense_id) ?? [];
+    list.push({
+      id: c.id,
+      authorName: commenterNames.get(c.user_id) ?? "Utilisateur",
+      content: c.content,
+      createdAt: c.created_at,
+    });
+    commentsByExpense.set(c.expense_id, list);
   }
 
   // Determines whether to render the approve/reject/needs-info buttons —
@@ -223,6 +253,12 @@ export default async function ProjectDetailPage({
               {STATUS_LABELS[project.status] ?? project.status}
             </p>
           </div>
+          <Link
+            href={`/dashboard/projects/${project.id}/a-verifier`}
+            className="shrink-0 rounded-full border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-300"
+          >
+            À vérifier
+          </Link>
         </div>
 
         <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -321,6 +357,10 @@ export default async function ProjectDetailPage({
                       </span>
                     </div>
                     <ExpenseStatusActions expenseId={expense.id} canApprove={canApprove} />
+                    <ExpenseComments
+                      expenseId={expense.id}
+                      comments={commentsByExpense.get(expense.id) ?? []}
+                    />
                   </li>
                 );
               })}

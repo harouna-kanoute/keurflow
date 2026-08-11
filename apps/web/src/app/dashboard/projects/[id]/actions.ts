@@ -15,6 +15,7 @@ import {
 import { CURRENCIES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import {
+  createExpenseCommentSchema,
   createExpenseSchema,
   createFundingSchema,
   createMilestoneSchema,
@@ -24,6 +25,7 @@ import {
   updateMilestoneStatusSchema,
   uploadDocumentSchema,
   uploadPhotoSchema,
+  type CreateExpenseCommentInput,
   type CreateExpenseInput,
   type CreateFundingInput,
   type CreateMilestoneInput,
@@ -37,6 +39,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProjectAudience, notifyUsers } from "@/lib/notifications";
+import { logAudit } from "@/lib/audit";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -63,19 +66,37 @@ export async function createFunding(input: CreateFundingInput): Promise<ActionRe
 
   // created_by defaults to auth.uid() in the DB; RLS (fundings_insert_non_viewers)
   // is the authoritative check on whether this user may log a funding here.
-  const { error } = await supabase.from("fundings").insert({
-    project_id: parsed.data.projectId,
-    amount_minor: parsed.data.amountMinor,
-    currency_code: parsed.data.currencyCode,
-    payment_method_id: paymentMethod.id,
-    reference: parsed.data.reference ?? null,
-    description: parsed.data.description ?? null,
-    funding_date: parsed.data.fundingDate,
-  });
+  const { data: funding, error } = await supabase
+    .from("fundings")
+    .insert({
+      project_id: parsed.data.projectId,
+      amount_minor: parsed.data.amountMinor,
+      currency_code: parsed.data.currencyCode,
+      payment_method_id: paymentMethod.id,
+      reference: parsed.data.reference ?? null,
+      description: parsed.data.description ?? null,
+      funding_date: parsed.data.fundingDate,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("[createFunding] Supabase error:", error.code, error.message);
+  if (error || !funding) {
+    console.error("[createFunding] Supabase error:", error?.code, error?.message);
     return { error: GENERIC_ERROR };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    await logAudit({
+      projectId: parsed.data.projectId,
+      userId: user.id,
+      action: "funding_created",
+      entityType: "funding",
+      entityId: funding.id,
+      metadata: { amountMinor: parsed.data.amountMinor, currencyCode: parsed.data.currencyCode },
+    });
   }
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
@@ -152,6 +173,14 @@ export async function createExpense(input: CreateExpenseInput): Promise<CreateEx
       title: "Nouvelle dépense enregistrée",
       body: formatMoney(amountMinor, parsed.data.currencyCode, minorUnitFor(parsed.data.currencyCode)),
     });
+    await logAudit({
+      projectId: parsed.data.projectId,
+      userId: user.id,
+      action: "expense_created",
+      entityType: "expense",
+      entityId: expense.id,
+      metadata: { category: parsed.data.category, amountMinor },
+    });
   }
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
@@ -173,19 +202,23 @@ export async function attachDocument(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("documents").insert({
-    project_id: parsed.data.projectId,
-    document_type: parsed.data.documentType,
-    storage_path: storagePath,
-    filename: parsed.data.filename,
-    mime_type: parsed.data.mimeType,
-    size: parsed.data.size,
-    expense_id: parsed.data.expenseId ?? null,
-    funding_id: parsed.data.fundingId ?? null,
-  });
+  const { data: document, error } = await supabase
+    .from("documents")
+    .insert({
+      project_id: parsed.data.projectId,
+      document_type: parsed.data.documentType,
+      storage_path: storagePath,
+      filename: parsed.data.filename,
+      mime_type: parsed.data.mimeType,
+      size: parsed.data.size,
+      expense_id: parsed.data.expenseId ?? null,
+      funding_id: parsed.data.fundingId ?? null,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("[attachDocument] Supabase error:", error.code, error.message);
+  if (error || !document) {
+    console.error("[attachDocument] Supabase error:", error?.code, error?.message);
     return { error: GENERIC_ERROR };
   }
 
@@ -200,6 +233,14 @@ export async function attachDocument(
       type: "document_added",
       title: "Nouveau document ajouté",
       body: parsed.data.filename,
+    });
+    await logAudit({
+      projectId: parsed.data.projectId,
+      userId: user.id,
+      action: "document_uploaded",
+      entityType: "document",
+      entityId: document.id,
+      metadata: { filename: parsed.data.filename, documentType: parsed.data.documentType },
     });
   }
 
@@ -253,6 +294,66 @@ export async function updateExpenseStatus(input: UpdateExpenseStatusInput): Prom
         type: notification.type,
         title: notification.title,
         body: expense.category,
+      });
+    }
+    if (user) {
+      await logAudit({
+        projectId: expense.project_id,
+        userId: user.id,
+        action:
+          parsed.data.status === "approved"
+            ? "expense_approved"
+            : parsed.data.status === "rejected"
+              ? "expense_rejected"
+              : "expense_updated",
+        entityType: "expense",
+        entityId: parsed.data.expenseId,
+        metadata: { status: parsed.data.status },
+      });
+    }
+    revalidatePath(`/dashboard/projects/${expense.project_id}`);
+  }
+  return {};
+}
+
+export async function createExpenseComment(input: CreateExpenseCommentInput): Promise<ActionResult> {
+  const parsed = createExpenseCommentSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+
+  const { data: expense } = await supabase
+    .from("expenses")
+    .select("project_id, created_by")
+    .eq("id", parsed.data.expenseId)
+    .single();
+
+  // RLS (expense_comments_insert_non_viewers) is the authoritative check.
+  const { data: comment, error } = await supabase
+    .from("expense_comments")
+    .insert({
+      expense_id: parsed.data.expenseId,
+      content: parsed.data.content,
+    })
+    .select("id")
+    .single();
+
+  if (error || !comment) {
+    console.error("[createExpenseComment] Supabase error:", error?.code, error?.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  if (expense) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      await logAudit({
+        projectId: expense.project_id,
+        userId: user.id,
+        action: "comment_created",
+        entityType: "expense_comment",
+        entityId: comment.id,
       });
     }
     revalidatePath(`/dashboard/projects/${expense.project_id}`);
@@ -316,26 +417,35 @@ export async function updateMilestoneStatus(
     return { error: GENERIC_ERROR };
   }
 
-  if (milestone && (parsed.data.status === "completed" || parsed.data.status === "delayed")) {
+  if (milestone) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user) {
-      const audience = await getProjectAudience(supabase, milestone.project_id, user.id);
-      await notifyUsers({
-        userIds: audience,
+      if (parsed.data.status === "completed" || parsed.data.status === "delayed") {
+        const audience = await getProjectAudience(supabase, milestone.project_id, user.id);
+        await notifyUsers({
+          userIds: audience,
+          projectId: milestone.project_id,
+          type: parsed.data.status === "completed" ? "milestone_completed" : "milestone_delayed",
+          title:
+            parsed.data.status === "completed"
+              ? "Étape terminée"
+              : "Étape en retard",
+          body: milestone.name,
+        });
+      }
+      await logAudit({
         projectId: milestone.project_id,
-        type: parsed.data.status === "completed" ? "milestone_completed" : "milestone_delayed",
-        title:
-          parsed.data.status === "completed"
-            ? "Étape terminée"
-            : "Étape en retard",
-        body: milestone.name,
+        userId: user.id,
+        action: "milestone_updated",
+        entityType: "milestone",
+        entityId: parsed.data.milestoneId,
+        metadata: { status: parsed.data.status, name: milestone.name },
       });
     }
+    revalidatePath(`/dashboard/projects/${milestone.project_id}`);
   }
-
-  if (milestone) revalidatePath(`/dashboard/projects/${milestone.project_id}`);
   return {};
 }
 
@@ -354,18 +464,35 @@ export async function attachPhoto(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("photos").insert({
-    project_id: parsed.data.projectId,
-    milestone_id: parsed.data.milestoneId ?? null,
-    expense_id: parsed.data.expenseId ?? null,
-    storage_path: storagePath,
-    caption: parsed.data.caption ?? null,
-    taken_at: parsed.data.takenAt ?? null,
-  });
+  const { data: photo, error } = await supabase
+    .from("photos")
+    .insert({
+      project_id: parsed.data.projectId,
+      milestone_id: parsed.data.milestoneId ?? null,
+      expense_id: parsed.data.expenseId ?? null,
+      storage_path: storagePath,
+      caption: parsed.data.caption ?? null,
+      taken_at: parsed.data.takenAt ?? null,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("[attachPhoto] Supabase error:", error.code, error.message);
+  if (error || !photo) {
+    console.error("[attachPhoto] Supabase error:", error?.code, error?.message);
     return { error: GENERIC_ERROR };
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    await logAudit({
+      projectId: parsed.data.projectId,
+      userId: user.id,
+      action: "photo_uploaded",
+      entityType: "photo",
+      entityId: photo.id,
+    });
   }
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
@@ -455,21 +582,25 @@ export async function inviteProjectMember(input: InviteProjectMemberInput): Prom
 
   // RLS (project_members_manage) re-validates authorization on this insert
   // independently of the manual check above.
-  const { error: memberError } = await supabase.from("project_members").insert({
-    project_id: parsed.data.projectId,
-    user_id: invitedUserId,
-    role: parsed.data.role,
-    status: "invited",
-  });
+  const { data: newMember, error: memberError } = await supabase
+    .from("project_members")
+    .insert({
+      project_id: parsed.data.projectId,
+      user_id: invitedUserId,
+      role: parsed.data.role,
+      status: "invited",
+    })
+    .select("id")
+    .single();
 
-  if (memberError) {
-    if (memberError.code === "23505") {
+  if (memberError || !newMember) {
+    if (memberError?.code === "23505") {
       return { error: "Cette personne est déjà membre de ce chantier." };
     }
     console.error(
       "[inviteProjectMember] member insert error:",
-      memberError.code,
-      memberError.message,
+      memberError?.code,
+      memberError?.message,
     );
     return { error: GENERIC_ERROR };
   }
@@ -481,6 +612,15 @@ export async function inviteProjectMember(input: InviteProjectMemberInput): Prom
     type: "member_invited",
     title: "Nouveau membre invité",
     body: parsed.data.email,
+  });
+  await logAudit({
+    projectId: parsed.data.projectId,
+    organizationId: project.organization_id,
+    userId: user.id,
+    action: "member_invited",
+    entityType: "project_member",
+    entityId: newMember.id,
+    metadata: { email: parsed.data.email, role: parsed.data.role },
   });
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
@@ -568,15 +708,19 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
     toReviewCount,
   });
 
-  const { error } = await supabase.from("reports").insert({
-    project_id: parsed.data.projectId,
-    period_start: parsed.data.periodStart,
-    period_end: parsed.data.periodEnd,
-    summary,
-  });
+  const { data: report, error } = await supabase
+    .from("reports")
+    .insert({
+      project_id: parsed.data.projectId,
+      period_start: parsed.data.periodStart,
+      period_end: parsed.data.periodEnd,
+      summary,
+    })
+    .select("id")
+    .single();
 
-  if (error) {
-    console.error("[createReport] Supabase error:", error.code, error.message);
+  if (error || !report) {
+    console.error("[createReport] Supabase error:", error?.code, error?.message);
     return { error: GENERIC_ERROR };
   }
 
@@ -591,6 +735,14 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
       type: "report_created",
       title: "Nouveau rapport disponible",
       body: `${parsed.data.periodStart} → ${parsed.data.periodEnd}`,
+    });
+    await logAudit({
+      projectId: parsed.data.projectId,
+      userId: reportUser.id,
+      action: "report_created",
+      entityType: "report",
+      entityId: report.id,
+      metadata: { periodStart: parsed.data.periodStart, periodEnd: parsed.data.periodEnd },
     });
   }
 
