@@ -21,6 +21,7 @@
     "react-dom": "19.2.8",
     "react-hook-form": "^7.54.2",
     "server-only": "^0.0.1",
+    "stripe": "^22.5.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
