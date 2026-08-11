@@ -88,3 +88,5 @@ Thumbs.db
 *.sqlite
 *.db
 /tmp/
+
+.vercel

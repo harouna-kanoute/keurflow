@@ -20,4 +20,4 @@ Une phase à la fois. Après chaque phase : TypeScript, ESLint, tests, build, te
 - [x] **Phase 15** — Abonnements + essai 7 jours
 - [x] **Phase 16** — Security audit
 - [x] **Phase 17** — Performance + UX
-- [ ] **Phase 18** — Production — code prêt (headers de sécurité, CI, pages légales, checklist), déploiement réel en attente : voir `docs/PRODUCTION_CHECKLIST.md`
+- [x] **Phase 18** — Production — déployé sur https://web-keurflow.vercel.app (Stripe encore en mode test). Reste : mode live Stripe, nettoyage des données de test, domaine personnalisé — voir `docs/PRODUCTION_CHECKLIST.md`
