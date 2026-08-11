@@ -5,9 +5,13 @@ import { useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { signUpSchema, type SignUpInput } from "@keurflow/validation";
+import { COUNTRIES } from "@keurflow/config";
 import { FormField } from "@/components/form-field";
+import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
 import { signUp } from "../actions";
+
+const ACTIVE_COUNTRIES = COUNTRIES.filter((c) => c.active);
 
 export default function SignUpPage() {
   const [isPending, startTransition] = useTransition();
@@ -45,6 +49,23 @@ export default function SignUpPage() {
           error={errors.email?.message}
           {...register("email")}
         />
+        <FormSelect
+          id="countryCode"
+          label="Pays du projet"
+          autoComplete="country"
+          defaultValue=""
+          error={errors.countryCode?.message}
+          {...register("countryCode")}
+        >
+          <option value="" disabled>
+            Sélectionner un pays
+          </option>
+          {ACTIVE_COUNTRIES.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
+        </FormSelect>
         <FormField
           id="password"
           label="Mot de passe"
