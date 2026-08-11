@@ -4,8 +4,19 @@ import {
   countryCodeSchema,
   currencyCodeSchema,
   isoDateSchema,
+  paymentMethodCodeSchema,
   uuidSchema,
 } from "./common";
+
+describe("paymentMethodCodeSchema", () => {
+  it("accepts an active payment method code", () => {
+    expect(paymentMethodCodeSchema.safeParse("wave").success).toBe(true);
+  });
+
+  it("rejects an unknown code", () => {
+    expect(paymentMethodCodeSchema.safeParse("bitcoin").success).toBe(false);
+  });
+});
 
 describe("countryCodeSchema", () => {
   it("accepts an active country code", () => {

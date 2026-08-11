@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { formatMoney } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
@@ -116,18 +117,20 @@ export default async function DashboardPage() {
           {projects && projects.length > 0 ? (
             <ul className="mt-2 flex flex-col gap-2">
               {projects.map((project) => (
-                <li
-                  key={project.id}
-                  className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
-                >
-                  <span className="text-zinc-900 dark:text-zinc-100">{project.name}</span>
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    {formatMoney(
-                      project.budget_minor,
-                      project.currency_code,
-                      minorUnitFor(project.currency_code),
-                    )}
-                  </span>
+                <li key={project.id}>
+                  <Link
+                    href={`/dashboard/projects/${project.id}`}
+                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+                  >
+                    <span className="text-zinc-900 dark:text-zinc-100">{project.name}</span>
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      {formatMoney(
+                        project.budget_minor,
+                        project.currency_code,
+                        minorUnitFor(project.currency_code),
+                      )}
+                    </span>
+                  </Link>
                 </li>
               ))}
             </ul>
