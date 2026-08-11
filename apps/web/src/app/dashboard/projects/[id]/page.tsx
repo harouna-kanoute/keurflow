@@ -1,9 +1,23 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { formatMoney, getFundingCoveragePercent, getFundingGap, getTotalFunded } from "@keurflow/business";
-import { CURRENCIES } from "@keurflow/config";
+import {
+  canApproveExpense,
+  DOCUMENTATION_STATUS_LABEL,
+  deriveDocumentationStatus,
+  formatMoney,
+  getBudgetConsumptionPercent,
+  getFundingCoveragePercent,
+  getFundingGap,
+  getRemainingBudget,
+  getTotalFunded,
+  hasOrgRoleAtLeast,
+} from "@keurflow/business";
+import { CURRENCIES, EXPENSE_CATEGORIES } from "@keurflow/config";
+import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { CreateFundingForm } from "./create-funding-form";
+import { CreateExpenseForm } from "./create-expense-form";
+import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -16,6 +30,8 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Terminé",
   archived: "Archivé",
 };
+
+const CATEGORY_LABELS = new Map(EXPENSE_CATEGORIES.map((c) => [c.code, c.label]));
 
 export default async function ProjectDetailPage({
   params,
@@ -37,7 +53,7 @@ export default async function ProjectDetailPage({
   // guessed from another tenant's data (spec §64/§82).
   const { data: project } = await supabase
     .from("projects")
-    .select("id, name, project_type, city, status, budget_minor, currency_code")
+    .select("id, organization_id, name, project_type, city, status, budget_minor, currency_code")
     .eq("id", id)
     .maybeSingle();
 
@@ -59,6 +75,54 @@ export default async function ProjectDetailPage({
   const fundingGap = getFundingGap(project.budget_minor, fundingList);
   const coveragePercent = getFundingCoveragePercent(project.budget_minor, fundingList);
   const minorUnit = minorUnitFor(project.currency_code);
+
+  const { data: expenses } = await supabase
+    .from("expenses")
+    .select("id, amount_minor, currency_code, category, supplier_name, expense_date, status")
+    .eq("project_id", project.id)
+    .order("expense_date", { ascending: false });
+
+  const { data: documents } = await supabase
+    .from("documents")
+    .select("expense_id")
+    .eq("project_id", project.id)
+    .not("expense_id", "is", null);
+
+  const documentCountByExpense = new Map<string, number>();
+  for (const doc of documents ?? []) {
+    if (!doc.expense_id) continue;
+    documentCountByExpense.set(doc.expense_id, (documentCountByExpense.get(doc.expense_id) ?? 0) + 1);
+  }
+
+  // Determines whether to render the approve/reject/needs-info buttons —
+  // UI convenience only. RLS (expenses_update_own_pending_or_managers) is
+  // the actual authority on whether the update succeeds (§69/§83).
+  const { data: orgMembership } = await supabase
+    .from("organization_members")
+    .select("role")
+    .eq("organization_id", project.organization_id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  const { data: projectMembership } = await supabase
+    .from("project_members")
+    .select("role")
+    .eq("project_id", project.id)
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .maybeSingle();
+
+  const canApprove =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
+    (!!projectMembership && canApproveExpense(projectMembership.role as ProjectRole));
+
+  const expenseList = (expenses ?? []).map((e) => ({
+    amountMinor: e.amount_minor,
+    status: e.status as "pending" | "needs_information" | "approved" | "rejected",
+  }));
+  const approvedTotal = getBudgetConsumptionPercent(project.budget_minor, expenseList);
+  const remainingBudget = getRemainingBudget(project.budget_minor, expenseList);
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -106,6 +170,11 @@ export default async function ProjectDetailPage({
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
             </dd>
+            <dt className="text-zinc-500 dark:text-zinc-400">Dépensé (approuvé)</dt>
+            <dd className="text-right text-zinc-900 dark:text-zinc-100">
+              {formatMoney(project.budget_minor - remainingBudget, project.currency_code, minorUnit)} (
+              {approvedTotal}%)
+            </dd>
           </dl>
         </div>
 
@@ -136,6 +205,53 @@ export default async function ProjectDetailPage({
             </p>
           )}
           <CreateFundingForm
+            projectId={project.id}
+            currencyCode={project.currency_code}
+            minorUnit={minorUnit}
+          />
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            Dépenses
+          </p>
+          {expenses && expenses.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {expenses.map((expense) => {
+                const documentationStatus = deriveDocumentationStatus(
+                  documentCountByExpense.get(expense.id) ?? 0,
+                );
+                return (
+                  <li
+                    key={expense.id}
+                    className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-zinc-900 dark:text-zinc-100">
+                        {CATEGORY_LABELS.get(expense.category) ?? expense.category}
+                        {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
+                      </span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <ExpenseStatusBadge status={expense.status} />
+                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                        {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
+                      </span>
+                    </div>
+                    <ExpenseStatusActions expenseId={expense.id} canApprove={canApprove} />
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              Aucune dépense enregistrée.
+            </p>
+          )}
+          <CreateExpenseForm
             projectId={project.id}
             currencyCode={project.currency_code}
             minorUnit={minorUnit}
