@@ -16,6 +16,8 @@ import {
 import { CURRENCIES, EXPENSE_CATEGORIES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
+import { Modal } from "@/components/modal";
+import { DonutChart } from "@/components/donut-chart";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
@@ -45,6 +47,17 @@ const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };
+
+function SectionHeader({ title, children }: { title: string; children?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between">
+      <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+        {title}
+      </p>
+      {children}
+    </div>
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -178,6 +191,7 @@ export default async function ProjectDetailPage({
   }));
   const approvedTotal = getBudgetConsumptionPercent(project.budget_minor, expenseList);
   const remainingBudget = getRemainingBudget(project.budget_minor, expenseList);
+  const spentApproved = project.budget_minor - remainingBudget;
 
   const { data: milestones } = await supabase
     .from("milestones")
@@ -234,238 +248,270 @@ export default async function ProjectDetailPage({
     .order("created_at", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 bg-cream px-6 py-16 dark:bg-stone-950">
-      <div className="w-full max-w-lg">
-        <Link
-          href="/dashboard"
-          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
-        >
-          ← Retour
-        </Link>
-
-        <div className="mt-4 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
-              {project.name}
-            </h1>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
-              {project.city ? `${project.city} — ` : ""}
-              {STATUS_LABELS[project.status] ?? project.status}
-            </p>
-          </div>
+    <div className="flex flex-1 flex-col bg-cream px-6 py-10 dark:bg-stone-950">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <div>
           <Link
-            href={`/dashboard/projects/${project.id}/a-verifier`}
-            className="shrink-0 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-500 dark:border-stone-700 dark:text-stone-300"
+            href="/dashboard"
+            className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
           >
-            À vérifier
+            ← Retour
           </Link>
+
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+                {project.name}
+              </h1>
+              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+                {project.city ? `${project.city} — ` : ""}
+                {STATUS_LABELS[project.status] ?? project.status}
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/projects/${project.id}/a-verifier`}
+              className="shrink-0 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-500 dark:border-stone-700 dark:text-stone-300"
+            >
+              À vérifier
+            </Link>
+          </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900">
+        <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
           <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
             Budget
           </p>
-          <p className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-            {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
-          </p>
-          <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
-            <div
-              className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
-              style={{ width: `${coveragePercent}%` }}
+          <div className="mt-4 flex flex-wrap items-center gap-8">
+            <DonutChart
+              size={112}
+              strokeWidth={12}
+              total={Math.max(project.budget_minor, spentApproved)}
+              segments={[
+                { value: spentApproved, colorClassName: "text-clay-600 dark:text-clay-500" },
+              ]}
+              centerLabel={`${approvedTotal}%`}
+              centerSublabel="dépensé"
             />
+            <dl className="grid flex-1 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                  {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-stone-500 dark:text-stone-400">Financé ({coveragePercent}%)</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                  {formatMoney(totalFunded, project.currency_code, minorUnit)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-stone-500 dark:text-stone-400">
+                  {fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
+                </dt>
+                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                  {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-stone-500 dark:text-stone-400">Dépensé (approuvé)</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                  {formatMoney(spentApproved, project.currency_code, minorUnit)}
+                </dd>
+              </div>
+            </dl>
           </div>
-          <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-            <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
-            <dd className="text-right text-stone-900 dark:text-stone-100">
-              {formatMoney(totalFunded, project.currency_code, minorUnit)} ({coveragePercent}%)
-            </dd>
-            <dt className="text-stone-500 dark:text-stone-400">
-              {fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
-            </dt>
-            <dd className="text-right text-stone-900 dark:text-stone-100">
-              {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
-            </dd>
-            <dt className="text-stone-500 dark:text-stone-400">Dépensé (approuvé)</dt>
-            <dd className="text-right text-stone-900 dark:text-stone-100">
-              {formatMoney(project.budget_minor - remainingBudget, project.currency_code, minorUnit)} (
-              {approvedTotal}%)
-            </dd>
-          </dl>
         </div>
 
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Financements
-          </p>
-          {fundings && fundings.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {fundings.map((funding) => (
-                <li
-                  key={funding.id}
-                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
-                >
-                  <span className="text-stone-900 dark:text-stone-100">
-                    {paymentMethodLabels.get(funding.payment_method_id) ?? "—"}
-                    {funding.reference ? ` · ${funding.reference}` : ""}
-                  </span>
-                  <span className="text-stone-500 dark:text-stone-400">
-                    {formatMoney(funding.amount_minor, funding.currency_code, minorUnit)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-              Aucun financement enregistré.
-            </p>
-          )}
-          <CreateFundingForm
-            projectId={project.id}
-            currencyCode={project.currency_code}
-            minorUnit={minorUnit}
-          />
-        </div>
-
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Dépenses
-          </p>
-          {expenses && expenses.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {expenses.map((expense) => {
-                const documentationStatus = deriveDocumentationStatus(
-                  documentCountByExpense.get(expense.id) ?? 0,
-                );
-                return (
-                  <li
-                    key={expense.id}
-                    className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
-                  >
-                    <div className="flex items-center justify-between">
+        <div className="grid gap-8 lg:grid-cols-2">
+          <div className="flex flex-col gap-8">
+            <div>
+              <SectionHeader title="Financements">
+                <Modal triggerLabel="Financement" title="Nouveau financement" variant="secondary">
+                  <CreateFundingForm
+                    projectId={project.id}
+                    currencyCode={project.currency_code}
+                    minorUnit={minorUnit}
+                  />
+                </Modal>
+              </SectionHeader>
+              {fundings && fundings.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {fundings.map((funding) => (
+                    <li
+                      key={funding.id}
+                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                    >
                       <span className="text-stone-900 dark:text-stone-100">
-                        {CATEGORY_LABELS.get(expense.category) ?? expense.category}
-                        {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
+                        {paymentMethodLabels.get(funding.payment_method_id) ?? "—"}
+                        {funding.reference ? ` · ${funding.reference}` : ""}
                       </span>
                       <span className="text-stone-500 dark:text-stone-400">
-                        {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
+                        {formatMoney(funding.amount_minor, funding.currency_code, minorUnit)}
                       </span>
-                    </div>
-                    <div className="mt-2 flex items-center gap-2">
-                      <ExpenseStatusBadge status={expense.status} />
-                      <span className="text-xs text-stone-500 dark:text-stone-400">
-                        {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                  Aucun financement enregistré.
+                </p>
+              )}
+            </div>
+
+            <div>
+              <SectionHeader title="Dépenses">
+                <Modal triggerLabel="Dépense" title="Nouvelle dépense" variant="secondary">
+                  <CreateExpenseForm
+                    projectId={project.id}
+                    currencyCode={project.currency_code}
+                    minorUnit={minorUnit}
+                  />
+                </Modal>
+              </SectionHeader>
+              {expenses && expenses.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {expenses.map((expense) => {
+                    const documentationStatus = deriveDocumentationStatus(
+                      documentCountByExpense.get(expense.id) ?? 0,
+                    );
+                    return (
+                      <li
+                        key={expense.id}
+                        className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-stone-900 dark:text-stone-100">
+                            {CATEGORY_LABELS.get(expense.category) ?? expense.category}
+                            {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
+                          </span>
+                          <span className="text-stone-500 dark:text-stone-400">
+                            {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-2">
+                          <ExpenseStatusBadge status={expense.status} />
+                          <span className="text-xs text-stone-500 dark:text-stone-400">
+                            {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
+                          </span>
+                        </div>
+                        <ExpenseStatusActions expenseId={expense.id} canApprove={canApprove} />
+                        <ExpenseComments
+                          expenseId={expense.id}
+                          comments={commentsByExpense.get(expense.id) ?? []}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                  Aucune dépense enregistrée.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-8">
+            <div>
+              <SectionHeader title="Étapes">
+                <Modal triggerLabel="Étape" title="Nouvelle étape" variant="secondary">
+                  <AddMilestoneForm projectId={project.id} nextOrderIndex={milestones?.length ?? 0} />
+                </Modal>
+              </SectionHeader>
+              {milestones && milestones.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {milestones.map((milestone) => (
+                    <li
+                      key={milestone.id}
+                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                    >
+                      <span className="text-stone-900 dark:text-stone-100">{milestone.name}</span>
+                      <MilestoneStatusSelect milestone={milestone} />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Aucune étape.</p>
+              )}
+            </div>
+
+            <div>
+              <SectionHeader title="Photos">
+                <Modal triggerLabel="Photo" title="Ajouter une photo" variant="secondary">
+                  <UploadPhotoForm projectId={project.id} />
+                </Modal>
+              </SectionHeader>
+              <div className="mt-3">
+                <PhotoGallery photos={photos} />
+              </div>
+            </div>
+
+            <div>
+              <SectionHeader title="Membres">
+                {canApprove && (
+                  <Modal triggerLabel="Inviter" title="Inviter un membre" variant="secondary">
+                    <InviteMemberForm projectId={project.id} />
+                  </Modal>
+                )}
+              </SectionHeader>
+              {members && members.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {members.map((member) => (
+                    <li
+                      key={member.id}
+                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                    >
+                      <span className="text-stone-900 dark:text-stone-100">
+                        {memberNames.get(member.user_id) ?? "Membre"}
+                        {member.status === "invited" && (
+                          <span className="ml-2 text-xs text-stone-500 dark:text-stone-400">
+                            (invité·e)
+                          </span>
+                        )}
                       </span>
-                    </div>
-                    <ExpenseStatusActions expenseId={expense.id} canApprove={canApprove} />
-                    <ExpenseComments
-                      expenseId={expense.id}
-                      comments={commentsByExpense.get(expense.id) ?? []}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-              Aucune dépense enregistrée.
-            </p>
-          )}
-          <CreateExpenseForm
-            projectId={project.id}
-            currencyCode={project.currency_code}
-            minorUnit={minorUnit}
-          />
-        </div>
-
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Étapes
-          </p>
-          {milestones && milestones.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {milestones.map((milestone) => (
-                <li
-                  key={milestone.id}
-                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
-                >
-                  <span className="text-stone-900 dark:text-stone-100">{milestone.name}</span>
-                  <MilestoneStatusSelect milestone={milestone} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucune étape.</p>
-          )}
-          <AddMilestoneForm projectId={project.id} nextOrderIndex={milestones?.length ?? 0} />
-        </div>
-
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Photos
-          </p>
-          <PhotoGallery photos={photos} />
-          <UploadPhotoForm projectId={project.id} />
-        </div>
-
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Membres
-          </p>
-          {members && members.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {members.map((member) => (
-                <li
-                  key={member.id}
-                  className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
-                >
-                  <span className="text-stone-900 dark:text-stone-100">
-                    {memberNames.get(member.user_id) ?? "Membre"}
-                    {member.status === "invited" && (
-                      <span className="ml-2 text-xs text-stone-500 dark:text-stone-400">
-                        (invité·e)
+                      <span className="text-stone-500 dark:text-stone-400">
+                        {PROJECT_ROLE_LABELS[member.role] ?? member.role}
                       </span>
-                    )}
-                  </span>
-                  <span className="text-stone-500 dark:text-stone-400">
-                    {PROJECT_ROLE_LABELS[member.role] ?? member.role}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucun membre.</p>
-          )}
-          {canApprove && <InviteMemberForm projectId={project.id} />}
-        </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Aucun membre.</p>
+              )}
+            </div>
 
-        <div className="mt-6">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-            Rapports
-          </p>
-          {reports && reports.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-2">
-              {reports.map((report) => (
-                <li
-                  key={report.id}
-                  className="rounded-xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900"
-                >
-                  <details>
-                    <summary className="cursor-pointer text-stone-900 dark:text-stone-100">
-                      {report.period_start} → {report.period_end}
-                    </summary>
-                    <pre className="mt-3 whitespace-pre-wrap font-sans text-stone-600 dark:text-stone-400">
-                      {report.summary}
-                    </pre>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">
-              Aucun rapport généré.
-            </p>
-          )}
-          <CreateReportForm projectId={project.id} />
+            <div>
+              <SectionHeader title="Rapports">
+                <Modal triggerLabel="Rapport" title="Générer un rapport" variant="secondary">
+                  <CreateReportForm projectId={project.id} />
+                </Modal>
+              </SectionHeader>
+              {reports && reports.length > 0 ? (
+                <ul className="mt-3 flex flex-col gap-2">
+                  {reports.map((report) => (
+                    <li
+                      key={report.id}
+                      className="rounded-xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900"
+                    >
+                      <details>
+                        <summary className="cursor-pointer text-stone-900 dark:text-stone-100">
+                          {report.period_start} → {report.period_end}
+                        </summary>
+                        <pre className="mt-3 whitespace-pre-wrap font-sans text-stone-600 dark:text-stone-400">
+                          {report.summary}
+                        </pre>
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                  Aucun rapport généré.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { PAYMENT_METHODS } from "@keurflow/config";
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { createFunding } from "./actions";
 
 const ACTIVE_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m.active);
@@ -21,6 +22,7 @@ export function CreateFundingForm({
   currencyCode: string;
   minorUnit: number;
 }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -35,7 +37,11 @@ export function CreateFundingForm({
   const onSubmit = handleSubmit((data) => {
     startTransition(async () => {
       const result = await createFunding(data);
-      if (result?.error) setError("root", { message: result.error });
+      if (result?.error) {
+        setError("root", { message: result.error });
+        return;
+      }
+      close();
     });
   });
 

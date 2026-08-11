@@ -7,6 +7,7 @@ import { inviteProjectMemberSchema, type InviteProjectMemberInput } from "@keurf
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { inviteProjectMember } from "./actions";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -16,6 +17,7 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function InviteMemberForm({ projectId }: { projectId: string }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -36,6 +38,7 @@ export function InviteMemberForm({ projectId }: { projectId: string }) {
         return;
       }
       reset({ projectId, role: "project_viewer" });
+      close();
     });
   });
 

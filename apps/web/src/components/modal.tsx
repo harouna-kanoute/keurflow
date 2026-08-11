@@ -1,0 +1,73 @@
+"use client";
+
+import { createContext, useContext, useRef } from "react";
+
+// Forms rendered inside a Modal call useModalClose() to close it on success —
+// a context, not a prop, because the modal's own close() is created
+// client-side and Modal's `children` are often instantiated by a Server
+// Component caller, which can't pass a function down as a prop.
+const ModalCloseContext = createContext<(() => void) | null>(null);
+
+export function useModalClose(): () => void {
+  const close = useContext(ModalCloseContext);
+  return close ?? (() => {});
+}
+
+const TRIGGER_CLASSES: Record<"primary" | "secondary", string> = {
+  primary:
+    "flex h-9 items-center justify-center gap-1.5 rounded-full bg-clay-600 px-4 text-sm font-medium text-white transition-colors hover:bg-clay-700 dark:bg-clay-500 dark:hover:bg-clay-600",
+  secondary:
+    "flex h-9 items-center justify-center gap-1.5 rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 transition-colors hover:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:hover:border-stone-600",
+};
+
+// Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
+// for free — no client-side modal library needed for something this simple.
+export function Modal({
+  triggerLabel,
+  title,
+  variant = "primary",
+  children,
+}: {
+  triggerLabel: string;
+  title: string;
+  variant?: "primary" | "secondary";
+  children: React.ReactNode;
+}) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  const open = () => dialogRef.current?.showModal();
+  const close = () => dialogRef.current?.close();
+
+  return (
+    <>
+      <button type="button" onClick={open} className={TRIGGER_CLASSES[variant]}>
+        <span aria-hidden className="text-base leading-none">
+          +
+        </span>
+        {triggerLabel}
+      </button>
+      <dialog
+        ref={dialogRef}
+        onClick={(e) => {
+          if (e.target === dialogRef.current) close();
+        }}
+        className="fixed inset-0 m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-lg backdrop:bg-stone-900/50 dark:border-stone-800 dark:bg-stone-900 dark:backdrop:bg-black/70"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{title}</h2>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Fermer"
+            className="shrink-0 text-xl leading-none text-stone-400 hover:text-stone-900 dark:hover:text-stone-100"
+          >
+            ×
+          </button>
+        </div>
+        <div className="mt-4">
+          <ModalCloseContext.Provider value={close}>{children}</ModalCloseContext.Provider>
+        </div>
+      </dialog>
+    </>
+  );
+}

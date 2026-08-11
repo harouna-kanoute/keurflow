@@ -6,9 +6,11 @@ import { useForm } from "react-hook-form";
 import { createReportSchema, type CreateReportInput } from "@keurflow/validation";
 import { FormField } from "@/components/form-field";
 import { SubmitButton } from "@/components/submit-button";
+import { useModalClose } from "@/components/modal";
 import { createReport } from "./actions";
 
 export function CreateReportForm({ projectId }: { projectId: string }) {
+  const close = useModalClose();
   const [isPending, startTransition] = useTransition();
   const {
     register,
@@ -29,6 +31,7 @@ export function CreateReportForm({ projectId }: { projectId: string }) {
         return;
       }
       reset({ projectId });
+      close();
     });
   });
 
