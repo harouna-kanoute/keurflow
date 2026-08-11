@@ -21,6 +21,7 @@ import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
 import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
+import { CreateReportForm } from "./create-report-form";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -181,6 +182,12 @@ export default async function ProjectDetailPage({
         )
     : { data: [] };
   const memberNames = new Map((memberProfiles.data ?? []).map((p) => [p.id, p.full_name]));
+
+  const { data: reports } = await supabase
+    .from("reports")
+    .select("id, period_start, period_end, summary, created_at")
+    .eq("project_id", project.id)
+    .order("created_at", { ascending: false });
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-6 py-16 dark:bg-black">
@@ -375,6 +382,36 @@ export default async function ProjectDetailPage({
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">Aucun membre.</p>
           )}
           {canApprove && <InviteMemberForm projectId={project.id} />}
+        </div>
+
+        <div className="mt-6">
+          <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+            Rapports
+          </p>
+          {reports && reports.length > 0 ? (
+            <ul className="mt-2 flex flex-col gap-2">
+              {reports.map((report) => (
+                <li
+                  key={report.id}
+                  className="rounded-xl border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <details>
+                    <summary className="cursor-pointer text-zinc-900 dark:text-zinc-100">
+                      {report.period_start} → {report.period_end}
+                    </summary>
+                    <pre className="mt-3 whitespace-pre-wrap font-sans text-zinc-600 dark:text-zinc-400">
+                      {report.summary}
+                    </pre>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+              Aucun rapport généré.
+            </p>
+          )}
+          <CreateReportForm projectId={project.id} />
         </div>
       </div>
     </div>

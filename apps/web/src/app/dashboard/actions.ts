@@ -47,6 +47,49 @@ export async function createOrganization(input: CreateOrganizationInput): Promis
   return {};
 }
 
+export async function markNotificationRead(notificationId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // RLS (notifications_update_own) is the authoritative check — this can
+  // only ever touch the caller's own row regardless of what id is passed.
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId);
+
+  if (error) {
+    console.error("[markNotificationRead] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath("/dashboard/notifications");
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function markAllNotificationsRead(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  if (error) {
+    console.error("[markAllNotificationsRead] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath("/dashboard/notifications");
+  revalidatePath("/dashboard");
+  return {};
+}
+
 export async function createProject(input: CreateProjectInput): Promise<ActionResult> {
   const parsed = createProjectSchema.safeParse(input);
   if (!parsed.success) return { error: GENERIC_ERROR };

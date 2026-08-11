@@ -1,12 +1,24 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { calculateExpenseTotal, hasOrgRoleAtLeast, hasProjectRoleAtLeast } from "@keurflow/business";
+import {
+  calculateExpenseTotal,
+  deriveDocumentationStatus,
+  formatMoney,
+  generateProjectReportSummary,
+  getApprovedExpensesTotal,
+  getMilestoneProgressPercent,
+  getTotalFunded,
+  hasOrgRoleAtLeast,
+  hasProjectRoleAtLeast,
+} from "@keurflow/business";
+import { CURRENCIES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import {
   createExpenseSchema,
   createFundingSchema,
   createMilestoneSchema,
+  createReportSchema,
   inviteProjectMemberSchema,
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
@@ -15,6 +27,7 @@ import {
   type CreateExpenseInput,
   type CreateFundingInput,
   type CreateMilestoneInput,
+  type CreateReportInput,
   type InviteProjectMemberInput,
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
@@ -23,6 +36,11 @@ import {
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getProjectAudience, notifyUsers } from "@/lib/notifications";
+
+function minorUnitFor(currencyCode: string): number {
+  return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
+}
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
@@ -122,6 +140,20 @@ export async function createExpense(input: CreateExpenseInput): Promise<CreateEx
     }
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const audience = await getProjectAudience(supabase, parsed.data.projectId, user.id);
+    await notifyUsers({
+      userIds: audience,
+      projectId: parsed.data.projectId,
+      type: "new_expense",
+      title: "Nouvelle dépense enregistrée",
+      body: formatMoney(amountMinor, parsed.data.currencyCode, minorUnitFor(parsed.data.currencyCode)),
+    });
+  }
+
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
   return { expenseId: expense.id };
 }
@@ -157,6 +189,20 @@ export async function attachDocument(
     return { error: GENERIC_ERROR };
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const audience = await getProjectAudience(supabase, parsed.data.projectId, user.id);
+    await notifyUsers({
+      userIds: audience,
+      projectId: parsed.data.projectId,
+      type: "document_added",
+      title: "Nouveau document ajouté",
+      body: parsed.data.filename,
+    });
+  }
+
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
   return {};
 }
@@ -169,7 +215,7 @@ export async function updateExpenseStatus(input: UpdateExpenseStatusInput): Prom
 
   const { data: expense } = await supabase
     .from("expenses")
-    .select("project_id")
+    .select("project_id, created_by, category")
     .eq("id", parsed.data.expenseId)
     .single();
 
@@ -186,7 +232,31 @@ export async function updateExpenseStatus(input: UpdateExpenseStatusInput): Prom
     return { error: GENERIC_ERROR };
   }
 
-  if (expense) revalidatePath(`/dashboard/projects/${expense.project_id}`);
+  if (expense) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const notificationByStatus: Partial<
+      Record<typeof parsed.data.status, { type: "expense_needs_review" | "expense_approved" | "expense_rejected"; title: string }>
+    > = {
+      needs_information: { type: "expense_needs_review", title: "Informations demandées sur une dépense" },
+      approved: { type: "expense_approved", title: "Dépense approuvée" },
+      rejected: { type: "expense_rejected", title: "Dépense rejetée" },
+    };
+    const notification = notificationByStatus[parsed.data.status];
+    // Only the creator needs to know their own submission moved — and not
+    // when they're the one who moved it themselves.
+    if (notification && user && expense.created_by !== user.id) {
+      await notifyUsers({
+        userIds: [expense.created_by],
+        projectId: expense.project_id,
+        type: notification.type,
+        title: notification.title,
+        body: expense.category,
+      });
+    }
+    revalidatePath(`/dashboard/projects/${expense.project_id}`);
+  }
   return {};
 }
 
@@ -223,7 +293,7 @@ export async function updateMilestoneStatus(
 
   const { data: milestone } = await supabase
     .from("milestones")
-    .select("project_id")
+    .select("project_id, name")
     .eq("id", parsed.data.milestoneId)
     .single();
 
@@ -244,6 +314,25 @@ export async function updateMilestoneStatus(
   if (error) {
     console.error("[updateMilestoneStatus] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
+  }
+
+  if (milestone && (parsed.data.status === "completed" || parsed.data.status === "delayed")) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user) {
+      const audience = await getProjectAudience(supabase, milestone.project_id, user.id);
+      await notifyUsers({
+        userIds: audience,
+        projectId: milestone.project_id,
+        type: parsed.data.status === "completed" ? "milestone_completed" : "milestone_delayed",
+        title:
+          parsed.data.status === "completed"
+            ? "Étape terminée"
+            : "Étape en retard",
+        body: milestone.name,
+      });
+    }
   }
 
   if (milestone) revalidatePath(`/dashboard/projects/${milestone.project_id}`);
@@ -383,6 +472,126 @@ export async function inviteProjectMember(input: InviteProjectMemberInput): Prom
       memberError.message,
     );
     return { error: GENERIC_ERROR };
+  }
+
+  const audience = await getProjectAudience(supabase, parsed.data.projectId, user.id);
+  await notifyUsers({
+    userIds: audience,
+    projectId: parsed.data.projectId,
+    type: "member_invited",
+    title: "Nouveau membre invité",
+    body: parsed.data.email,
+  });
+
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function createReport(input: CreateReportInput): Promise<ActionResult> {
+  const parsed = createReportSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name, budget_minor, currency_code")
+    .eq("id", parsed.data.projectId)
+    .maybeSingle();
+  if (!project) return { error: GENERIC_ERROR };
+
+  const [{ data: fundings }, { data: expenses }, { data: milestones }, { data: documents }] =
+    await Promise.all([
+      supabase
+        .from("fundings")
+        .select("amount_minor")
+        .eq("project_id", parsed.data.projectId)
+        .gte("funding_date", parsed.data.periodStart)
+        .lte("funding_date", parsed.data.periodEnd),
+      supabase
+        .from("expenses")
+        .select("id, amount_minor, status, expense_date")
+        .eq("project_id", parsed.data.projectId),
+      supabase.from("milestones").select("status").eq("project_id", parsed.data.projectId),
+      supabase
+        .from("documents")
+        .select("expense_id")
+        .eq("project_id", parsed.data.projectId)
+        .not("expense_id", "is", null),
+    ]);
+
+  // Funding/spend totals are period-bound ("what happened this month");
+  // documents-manquants and à-vérifier are current-state concerns, not
+  // reset each period, so they're computed over every expense regardless
+  // of date.
+  const expensesInPeriod = (expenses ?? []).filter(
+    (e) => e.expense_date >= parsed.data.periodStart && e.expense_date <= parsed.data.periodEnd,
+  );
+  const approvedInPeriod = getApprovedExpensesTotal(
+    expensesInPeriod.map((e) => ({
+      amountMinor: e.amount_minor,
+      status: e.status as "pending" | "needs_information" | "approved" | "rejected",
+    })),
+  );
+
+  const docCountByExpense = new Map<string, number>();
+  for (const doc of documents ?? []) {
+    if (!doc.expense_id) continue;
+    docCountByExpense.set(doc.expense_id, (docCountByExpense.get(doc.expense_id) ?? 0) + 1);
+  }
+  const documentsMissingCount = (expenses ?? []).filter(
+    (e) => deriveDocumentationStatus(docCountByExpense.get(e.id) ?? 0) === "missing",
+  ).length;
+  const toReviewCount = (expenses ?? []).filter(
+    (e) => e.status === "pending" || e.status === "needs_information",
+  ).length;
+
+  const milestoneList = (milestones ?? []).map((m) => ({
+    status: m.status as "pending" | "in_progress" | "completed" | "delayed",
+  }));
+
+  const summary = generateProjectReportSummary({
+    projectName: project.name,
+    periodStart: parsed.data.periodStart,
+    periodEnd: parsed.data.periodEnd,
+    budgetMinor: project.budget_minor,
+    currencyCode: project.currency_code,
+    minorUnit: minorUnitFor(project.currency_code),
+    fundedInPeriodMinor: getTotalFunded(
+      (fundings ?? []).map((f) => ({ amountMinor: f.amount_minor })),
+    ),
+    approvedInPeriodMinor: approvedInPeriod,
+    progressPercent: getMilestoneProgressPercent(milestoneList),
+    milestonesCompleted: milestoneList.filter((m) => m.status === "completed").length,
+    milestonesTotal: milestoneList.length,
+    documentsMissingCount,
+    toReviewCount,
+  });
+
+  const { error } = await supabase.from("reports").insert({
+    project_id: parsed.data.projectId,
+    period_start: parsed.data.periodStart,
+    period_end: parsed.data.periodEnd,
+    summary,
+  });
+
+  if (error) {
+    console.error("[createReport] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  const {
+    data: { user: reportUser },
+  } = await supabase.auth.getUser();
+  if (reportUser) {
+    const audience = await getProjectAudience(supabase, parsed.data.projectId, reportUser.id);
+    await notifyUsers({
+      userIds: audience,
+      projectId: parsed.data.projectId,
+      type: "report_created",
+      title: "Nouveau rapport disponible",
+      body: `${parsed.data.periodStart} → ${parsed.data.periodEnd}`,
+    });
   }
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);

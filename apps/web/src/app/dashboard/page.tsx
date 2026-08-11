@@ -39,6 +39,12 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
+  const { count: unreadNotificationCount } = await supabase
+    .from("notifications")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
   // RLS (organization_members_select_same_org / organizations_select_members)
   // only ever returns rows for organizations this user actually belongs to —
   // no cross-tenant leakage possible here even if these queries were
@@ -126,6 +132,17 @@ export default async function DashboardPage() {
           Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
         </h1>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{user.email}</p>
+        <Link
+          href="/dashboard/notifications"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+        >
+          Notifications
+          {!!unreadNotificationCount && (
+            <span className="rounded-full bg-black px-2 py-0.5 text-xs font-medium text-white dark:bg-white dark:text-black">
+              {unreadNotificationCount}
+            </span>
+          )}
+        </Link>
       </div>
 
       {organization ? (
