@@ -14,6 +14,7 @@ L'app tourne en production sur **https://web-keurflow.vercel.app** (Vercel, proj
 - [x] En-têtes de sécurité (CSP, HSTS, X-Frame-Options...) vérifiés actifs en prod.
 - [x] `robots.txt` / `sitemap.xml`, pages légales (`/mentions-legales`, `/cgu`, `/confidentialite` — **modèles à compléter**, voir §4).
 - [x] CI GitHub Actions active sur chaque PR.
+- [x] SMTP personnalisé configuré dans Supabase (Authentication → SMTP Settings) — **obligatoire**, pas optionnel : le service email intégré de Supabase est fait pour les tests, il n'est pas fiable pour de vrais envois de confirmation/réinitialisation en production. Sans ça, les emails n'arrivent jamais et les utilisateurs retentent leur inscription en boucle, créant des comptes fantômes non confirmés à chaque tentative (vu en pratique pendant ce déploiement).
 
 ## Reste à faire avant un vrai lancement public
 
