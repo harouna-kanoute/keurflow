@@ -1,19 +1,11 @@
 import { z } from "zod";
-import { COUNTRIES } from "@keurflow/config";
+import { countryCodeSchema } from "./common";
 
 const emailSchema = z.string().trim().toLowerCase().email("Email invalide");
 
 // Matches Supabase Auth's own minimum — enforced again here so the form gives
 // immediate feedback instead of waiting on a round-trip to reject a weak password.
 const passwordSchema = z.string().min(8, "8 caractères minimum");
-
-// Re-validated server-side against the same list a country <select> is built
-// from — never trust that the submitted code matches an option the UI offered.
-const activeCountryCodes = new Set(COUNTRIES.filter((c) => c.active).map((c) => c.code));
-const countryCodeSchema = z
-  .string()
-  .length(2, "Pays invalide")
-  .refine((code) => activeCountryCodes.has(code), "Pays invalide");
 
 export const signUpSchema = z
   .object({

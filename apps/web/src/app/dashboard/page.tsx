@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
+import { CreateOrganizationForm } from "./create-organization-form";
 
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   individual: "Particulier",
@@ -81,9 +82,12 @@ export default async function DashboardPage() {
           </dl>
         </div>
       ) : (
-        <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
-          Aucune organisation associée à votre compte pour l&apos;instant.
-        </p>
+        <div className="flex w-full max-w-sm flex-col items-center">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Aucune organisation associée à votre compte pour l&apos;instant.
+          </p>
+          <CreateOrganizationForm />
+        </div>
       )}
 
       <p className="max-w-sm text-sm text-zinc-500 dark:text-zinc-400">

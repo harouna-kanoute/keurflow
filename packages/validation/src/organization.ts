@@ -1,11 +1,11 @@
 import { z } from "zod";
 import { ORGANIZATION_ROLES, ORGANIZATION_TYPES } from "@keurflow/types";
-import { uuidSchema } from "./common";
+import { countryCodeSchema, uuidSchema } from "./common";
 
 export const createOrganizationSchema = z.object({
-  name: z.string().trim().min(2).max(120),
+  name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
   type: z.enum(ORGANIZATION_TYPES),
-  countryId: uuidSchema,
+  countryCode: countryCodeSchema,
 });
 export type CreateOrganizationInput = z.infer<typeof createOrganizationSchema>;
 
