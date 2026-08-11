@@ -5,12 +5,18 @@ import { calculateExpenseTotal } from "@keurflow/business";
 import {
   createExpenseSchema,
   createFundingSchema,
+  createMilestoneSchema,
   updateExpenseStatusSchema,
+  updateMilestoneStatusSchema,
   uploadDocumentSchema,
+  uploadPhotoSchema,
   type CreateExpenseInput,
   type CreateFundingInput,
+  type CreateMilestoneInput,
   type UpdateExpenseStatusInput,
+  type UpdateMilestoneStatusInput,
   type UploadDocumentInput,
+  type UploadPhotoInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -177,5 +183,98 @@ export async function updateExpenseStatus(input: UpdateExpenseStatusInput): Prom
   }
 
   if (expense) revalidatePath(`/dashboard/projects/${expense.project_id}`);
+  return {};
+}
+
+export async function createMilestone(input: CreateMilestoneInput): Promise<ActionResult> {
+  const parsed = createMilestoneSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("milestones").insert({
+    project_id: parsed.data.projectId,
+    name: parsed.data.name,
+    description: parsed.data.description ?? null,
+    order_index: parsed.data.orderIndex,
+    planned_date: parsed.data.plannedDate ?? null,
+    budget_minor: parsed.data.budgetMinor ?? null,
+  });
+
+  if (error) {
+    console.error("[createMilestone] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function updateMilestoneStatus(
+  input: UpdateMilestoneStatusInput,
+): Promise<ActionResult> {
+  const parsed = updateMilestoneStatusSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+
+  const { data: milestone } = await supabase
+    .from("milestones")
+    .select("project_id")
+    .eq("id", parsed.data.milestoneId)
+    .single();
+
+  // RLS (milestones_write_non_viewers) is the authoritative check — updating
+  // a milestone's status is meant to be a quick action from the field (§43),
+  // open to any real collaborator, not just managers.
+  const { error } = await supabase
+    .from("milestones")
+    .update({
+      status: parsed.data.status,
+      completed_date:
+        parsed.data.status === "completed"
+          ? (parsed.data.completedDate ?? new Date().toISOString().slice(0, 10))
+          : null,
+    })
+    .eq("id", parsed.data.milestoneId);
+
+  if (error) {
+    console.error("[updateMilestoneStatus] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  if (milestone) revalidatePath(`/dashboard/projects/${milestone.project_id}`);
+  return {};
+}
+
+// Records a photo row for a file the client already uploaded directly to
+// Storage (protected by that bucket's own RLS) — this action never handles
+// file bytes, only the resulting metadata.
+export async function attachPhoto(
+  input: UploadPhotoInput & { storagePath: string },
+): Promise<ActionResult> {
+  const { storagePath, ...rest } = input;
+  const parsed = uploadPhotoSchema.safeParse(rest);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  if (!storagePath.startsWith(`${parsed.data.projectId}/`)) {
+    return { error: GENERIC_ERROR };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("photos").insert({
+    project_id: parsed.data.projectId,
+    milestone_id: parsed.data.milestoneId ?? null,
+    expense_id: parsed.data.expenseId ?? null,
+    storage_path: storagePath,
+    caption: parsed.data.caption ?? null,
+    taken_at: parsed.data.takenAt ?? null,
+  });
+
+  if (error) {
+    console.error("[attachPhoto] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
   return {};
 }
