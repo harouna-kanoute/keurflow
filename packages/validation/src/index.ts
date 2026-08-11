@@ -6,3 +6,4 @@ export * from "./funding";
 export * from "./expense";
 export * from "./milestone";
 export * from "./document";
+export * from "./report";
