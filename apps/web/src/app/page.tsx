@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   formatMoney,
@@ -16,6 +17,7 @@ import {
   ReceiptIcon,
   UsersIcon,
 } from "@/components/icons";
+import { ScrollReveal } from "@/components/scroll-reveal";
 
 // Demo data only (§93) — a fictional diaspora project, not a real user's data.
 const eur = CURRENCIES.find((c) => c.code === "EUR")!;
@@ -77,6 +79,41 @@ const STEPS = [
   {
     title: "Suivez et validez à distance",
     description: "Dépenses, financements et photos de chantier, en temps réel, depuis n'importe où.",
+  },
+] as const;
+
+// Free-license photos (Unsplash) — real construction-site imagery, per user
+// request, layered onto a grid so no single shot has to "represent Africa".
+const GALLERY_PHOTOS = [
+  {
+    id: "wdFwHVkEwy8",
+    url: "https://images.unsplash.com/photo-1668609268461-4f6a15269ff1?q=80&w=800&auto=format&fit=crop",
+    alt: "Ouvrier portant des briques sur un chantier",
+  },
+  {
+    id: "04rZ7R1fKhY",
+    url: "https://images.unsplash.com/photo-1563166423-482a8c14b2d6?q=80&w=800&auto=format&fit=crop",
+    alt: "Bâtiment en cours de construction, gros œuvre",
+  },
+  {
+    id: "Dl8rvbAcALM",
+    url: "https://images.unsplash.com/photo-1621355254227-14b1001a91c9?q=80&w=800&auto=format&fit=crop",
+    alt: "Engin de chantier sur un terrain en construction",
+  },
+  {
+    id: "d4j5hns6sj8",
+    url: "https://images.unsplash.com/photo-1740825961434-e9287638592b?q=80&w=800&auto=format&fit=crop",
+    alt: "Deux ouvriers du bâtiment faisant une pause sur le chantier",
+  },
+  {
+    id: "Z0DNWoUP65k",
+    url: "https://images.unsplash.com/photo-1635249578213-68b0aa67fdf7?q=80&w=800&auto=format&fit=crop",
+    alt: "Ouvrier avec un casque de chantier au travail",
+  },
+  {
+    id: "fIw91B4ZkcE",
+    url: "https://images.unsplash.com/photo-1630254428244-ac29b798067f?q=80&w=800&auto=format&fit=crop",
+    alt: "Vue aérienne d'un bâtiment en construction",
   },
 ] as const;
 
@@ -206,7 +243,7 @@ export default function Home() {
         </section>
 
         <section id="fonctionnalites" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
-          <div className="mx-auto w-full max-w-6xl">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
               <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
                 Fonctionnalités
@@ -228,14 +265,14 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
+          </ScrollReveal>
         </section>
 
         <section
           id="comment-ca-marche"
           className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900"
         >
-          <div className="mx-auto w-full max-w-6xl">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
               <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
                 Comment ça marche
@@ -259,11 +296,46 @@ export default function Home() {
                 </li>
               ))}
             </ol>
-          </div>
+          </ScrollReveal>
+        </section>
+
+        <section
+          id="galerie"
+          className="border-t border-slate-200 px-6 py-24 dark:border-slate-800"
+        >
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
+            <div className="max-w-xl">
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Sur le terrain
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                Le chantier, vu depuis chez vous
+              </h2>
+            </div>
+            <div className="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3">
+              {GALLERY_PHOTOS.map((photo, index) => (
+                <ScrollReveal
+                  key={photo.id}
+                  delayMs={index * 80}
+                  className={index % 3 === 1 ? "sm:mt-8" : ""}
+                >
+                  <div className="relative aspect-4/5 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                    <Image
+                      src={photo.url}
+                      alt={photo.alt}
+                      fill
+                      sizes="(min-width: 640px) 33vw, 50vw"
+                      className="object-cover"
+                    />
+                  </div>
+                </ScrollReveal>
+              ))}
+            </div>
+          </ScrollReveal>
         </section>
 
         <section id="tarifs" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
-          <div className="mx-auto w-full max-w-6xl">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
               <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
                 Tarifs
@@ -321,11 +393,11 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-          </div>
+          </ScrollReveal>
         </section>
 
         <section className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
-          <div className="mx-auto w-full max-w-3xl">
+          <ScrollReveal className="mx-auto w-full max-w-3xl">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
               Questions fréquentes
             </h2>
@@ -342,11 +414,11 @@ export default function Home() {
                 </details>
               ))}
             </div>
-          </div>
+          </ScrollReveal>
         </section>
 
         <section className="border-t border-slate-200 bg-brand-600 px-6 py-20 dark:border-slate-800 dark:bg-brand-700">
-          <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 text-center">
+          <ScrollReveal className="mx-auto flex w-full max-w-6xl flex-col items-center gap-6 text-center">
             <h2 className="max-w-xl text-3xl font-semibold tracking-tight text-white">
               Prêt à suivre votre projet, où que vous soyez ?
             </h2>
@@ -364,7 +436,7 @@ export default function Home() {
                 Se connecter
               </Link>
             </div>
-          </div>
+          </ScrollReveal>
         </section>
       </main>
 
