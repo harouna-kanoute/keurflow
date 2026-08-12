@@ -13,7 +13,9 @@ import { logAudit } from "@/lib/audit";
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
 
-export type ActionResult = { error: string } | { error?: undefined };
+export type ActionResult =
+  | { error: string; requiresUpgrade?: boolean }
+  | { error?: undefined };
 
 export async function createOrganization(input: CreateOrganizationInput): Promise<ActionResult> {
   const parsed = createOrganizationSchema.safeParse(input);
@@ -128,10 +130,16 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
     // expired / no active subscription, or the plan's project limit is
     // reached. Everything else stays generic per §68.
     if (error.code === "KF001") {
-      return { error: "Votre essai est terminé. Passez à l'abonnement payant pour continuer." };
+      return {
+        error: "Votre essai est terminé. Passez à l'abonnement payant pour continuer.",
+        requiresUpgrade: true,
+      };
     }
     if (error.code === "KF002") {
-      return { error: "Limite de chantiers atteinte pour votre plan actuel." };
+      return {
+        error: "Limite de chantiers atteinte pour votre plan actuel.",
+        requiresUpgrade: true,
+      };
     }
     console.error("[createProject] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
