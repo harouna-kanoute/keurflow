@@ -11,7 +11,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
 ) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-stone-700 dark:text-stone-300">
+      <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
         {label}
       </label>
       <input
@@ -19,7 +19,7 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function F
         ref={ref}
         aria-invalid={error ? true : undefined}
         aria-describedby={error && id ? `${id}-error` : undefined}
-        className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-clay-500 focus-visible:ring-2 focus-visible:ring-clay-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-50"
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
         {...props}
       />
       {error && (

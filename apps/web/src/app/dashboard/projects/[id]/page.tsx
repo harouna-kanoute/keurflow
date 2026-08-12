@@ -51,7 +51,7 @@ const PROJECT_ROLE_LABELS: Record<string, string> = {
 function SectionHeader({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between">
-      <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
         {title}
       </p>
       {children}
@@ -248,37 +248,37 @@ export default async function ProjectDetailPage({
     .order("created_at", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col bg-cream px-6 py-10 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <div>
           <Link
             href="/dashboard"
-            className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+            className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           >
             ← Retour
           </Link>
 
           <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
                 {project.name}
               </h1>
-              <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {project.city ? `${project.city} — ` : ""}
                 {STATUS_LABELS[project.status] ?? project.status}
               </p>
             </div>
             <Link
               href={`/dashboard/projects/${project.id}/a-verifier`}
-              className="shrink-0 rounded-full border border-stone-300 px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-500 dark:border-stone-700 dark:text-stone-300"
+              className="shrink-0 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-500 dark:border-slate-700 dark:text-slate-300"
             >
               À vérifier
             </Link>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
-          <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
             Budget
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-8">
@@ -287,35 +287,35 @@ export default async function ProjectDetailPage({
               strokeWidth={12}
               total={Math.max(project.budget_minor, spentApproved)}
               segments={[
-                { value: spentApproved, colorClassName: "text-clay-600 dark:text-clay-500" },
+                { value: spentApproved, colorClassName: "text-brand-600 dark:text-brand-500" },
               ]}
               centerLabel={`${approvedTotal}%`}
               centerSublabel="dépensé"
             />
             <dl className="grid flex-1 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
                 </dd>
               </div>
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">Financé ({coveragePercent}%)</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                <dt className="text-slate-500 dark:text-slate-400">Financé ({coveragePercent}%)</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {formatMoney(totalFunded, project.currency_code, minorUnit)}
                 </dd>
               </div>
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">
+                <dt className="text-slate-500 dark:text-slate-400">
                   {fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
                 </dt>
-                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
                 </dd>
               </div>
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">Dépensé (approuvé)</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-stone-900 dark:text-stone-50">
+                <dt className="text-slate-500 dark:text-slate-400">Dépensé (approuvé)</dt>
+                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
                   {formatMoney(spentApproved, project.currency_code, minorUnit)}
                 </dd>
               </div>
@@ -340,20 +340,20 @@ export default async function ProjectDetailPage({
                   {fundings.map((funding) => (
                     <li
                       key={funding.id}
-                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
                     >
-                      <span className="text-stone-900 dark:text-stone-100">
+                      <span className="text-slate-900 dark:text-slate-100">
                         {paymentMethodLabels.get(funding.payment_method_id) ?? "—"}
                         {funding.reference ? ` · ${funding.reference}` : ""}
                       </span>
-                      <span className="text-stone-500 dark:text-stone-400">
+                      <span className="text-slate-500 dark:text-slate-400">
                         {formatMoney(funding.amount_minor, funding.currency_code, minorUnit)}
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   Aucun financement enregistré.
                 </p>
               )}
@@ -378,20 +378,20 @@ export default async function ProjectDetailPage({
                     return (
                       <li
                         key={expense.id}
-                        className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-stone-900 dark:text-stone-100">
+                          <span className="text-slate-900 dark:text-slate-100">
                             {CATEGORY_LABELS.get(expense.category) ?? expense.category}
                             {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
                           </span>
-                          <span className="text-stone-500 dark:text-stone-400">
+                          <span className="text-slate-500 dark:text-slate-400">
                             {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
                           </span>
                         </div>
                         <div className="mt-2 flex items-center gap-2">
                           <ExpenseStatusBadge status={expense.status} />
-                          <span className="text-xs text-stone-500 dark:text-stone-400">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
                             {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
                           </span>
                         </div>
@@ -405,7 +405,7 @@ export default async function ProjectDetailPage({
                   })}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   Aucune dépense enregistrée.
                 </p>
               )}
@@ -424,15 +424,15 @@ export default async function ProjectDetailPage({
                   {milestones.map((milestone) => (
                     <li
                       key={milestone.id}
-                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
                     >
-                      <span className="text-stone-900 dark:text-stone-100">{milestone.name}</span>
+                      <span className="text-slate-900 dark:text-slate-100">{milestone.name}</span>
                       <MilestoneStatusSelect milestone={milestone} />
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Aucune étape.</p>
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aucune étape.</p>
               )}
             </div>
 
@@ -460,24 +460,24 @@ export default async function ProjectDetailPage({
                   {members.map((member) => (
                     <li
                       key={member.id}
-                      className="flex items-center justify-between rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
                     >
-                      <span className="text-stone-900 dark:text-stone-100">
+                      <span className="text-slate-900 dark:text-slate-100">
                         {memberNames.get(member.user_id) ?? "Membre"}
                         {member.status === "invited" && (
-                          <span className="ml-2 text-xs text-stone-500 dark:text-stone-400">
+                          <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
                             (invité·e)
                           </span>
                         )}
                       </span>
-                      <span className="text-stone-500 dark:text-stone-400">
+                      <span className="text-slate-500 dark:text-slate-400">
                         {PROJECT_ROLE_LABELS[member.role] ?? member.role}
                       </span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">Aucun membre.</p>
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aucun membre.</p>
               )}
             </div>
 
@@ -492,13 +492,13 @@ export default async function ProjectDetailPage({
                   {reports.map((report) => (
                     <li
                       key={report.id}
-                      className="rounded-xl border border-stone-200 bg-white p-4 text-sm dark:border-stone-800 dark:bg-stone-900"
+                      className="rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900"
                     >
                       <details>
-                        <summary className="cursor-pointer text-stone-900 dark:text-stone-100">
+                        <summary className="cursor-pointer text-slate-900 dark:text-slate-100">
                           {report.period_start} → {report.period_end}
                         </summary>
-                        <pre className="mt-3 whitespace-pre-wrap font-sans text-stone-600 dark:text-stone-400">
+                        <pre className="mt-3 whitespace-pre-wrap font-sans text-slate-600 dark:text-slate-400">
                           {report.summary}
                         </pre>
                       </details>
@@ -506,7 +506,7 @@ export default async function ProjectDetailPage({
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-stone-500 dark:text-stone-400">
+                <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
                   Aucun rapport généré.
                 </p>
               )}

@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-50">
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
         Choisir un nouveau mot de passe
       </h1>
       <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">

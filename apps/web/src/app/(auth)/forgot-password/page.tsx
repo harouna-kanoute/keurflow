@@ -31,10 +31,10 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <>
-        <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-50">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
           Vérifiez votre boîte mail
         </h1>
-        <p className="mt-3 text-sm text-stone-600 dark:text-stone-400">
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
           Si un compte existe avec cet email, un lien de réinitialisation vient de vous être
           envoyé.
         </p>
@@ -44,8 +44,8 @@ export default function ForgotPasswordPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Mot de passe oublié</h1>
-      <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Mot de passe oublié</h1>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
         Recevez un lien pour réinitialiser votre mot de passe.
       </p>
       <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
       </form>
       <Link
         href="/login"
-        className="mt-6 inline-block text-sm font-medium text-stone-900 underline dark:text-stone-100"
+        className="mt-6 inline-block text-sm font-medium text-slate-900 underline dark:text-slate-100"
       >
         Retour à la connexion
       </Link>

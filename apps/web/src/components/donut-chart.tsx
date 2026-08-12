@@ -34,7 +34,7 @@ export function DonutChart({
           fill="none"
           stroke="currentColor"
           strokeWidth={strokeWidth}
-          className="text-stone-100 dark:text-stone-800"
+          className="text-slate-100 dark:text-slate-800"
         />
         {total > 0 &&
           segments.map((segment, index) => {
@@ -62,12 +62,12 @@ export function DonutChart({
       {(centerLabel || centerSublabel) && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {centerLabel && (
-            <span className="text-sm font-semibold text-stone-900 dark:text-stone-50">
+            <span className="text-sm font-semibold text-slate-900 dark:text-slate-50">
               {centerLabel}
             </span>
           )}
           {centerSublabel && (
-            <span className="text-[10px] text-stone-500 dark:text-stone-400">{centerSublabel}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">{centerSublabel}</span>
           )}
         </div>
       )}

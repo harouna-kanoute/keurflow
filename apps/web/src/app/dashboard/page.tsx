@@ -13,7 +13,7 @@ import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
-import { signOut } from "../(auth)/actions";
+import { BellIcon } from "@/components/icons";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { CreateProjectForm } from "./create-project-form";
 import { AgencyDashboard } from "./agency-dashboard";
@@ -45,12 +45,6 @@ export default async function DashboardPage() {
     .select("full_name")
     .eq("id", user.id)
     .single();
-
-  const { count: unreadNotificationCount } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .is("read_at", null);
 
   // RLS (organization_members_select_same_org / organizations_select_members)
   // only ever returns rows for organizations this user actually belongs to —
@@ -144,54 +138,82 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col bg-cream px-6 py-10 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-              KeurFlow
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-              Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
-            </h1>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{user.email}</p>
+        <div>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-6 pt-8 pb-14 sm:px-8">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 1px, transparent 14px)",
+              }}
+            />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-semibold text-white">
+                  Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
+                </h1>
+                <p className="mt-1 text-sm text-white/80">
+                  Voici un aperçu de vos chantiers aujourd&apos;hui.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/dashboard/notifications"
+                  aria-label="Notifications"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+                >
+                  <BellIcon className="h-5 w-5" />
+                </Link>
+                {organization && (
+                  <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier" variant="banner">
+                    <CreateProjectForm organizationId={organization.id} />
+                  </Modal>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-5">
-            <Link
-              href="/dashboard/notifications"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-            >
-              Notifications
-              {!!unreadNotificationCount && (
-                <span className="rounded-full bg-clay-600 px-2 py-0.5 text-xs font-medium text-white dark:bg-clay-500">
-                  {unreadNotificationCount}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/dashboard/billing"
-              className="text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-            >
-              Abonnement
-            </Link>
-            {organization && (
-              <Link
-                href="/dashboard/audit-log"
-                className="text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-              >
-                Journal d&apos;activité
-              </Link>
+
+          <div className="relative z-10 -mt-8 px-1">
+            {organization ? (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div>
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                    {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                    {organization.name}
+                  </p>
+                </div>
+                <dl className="flex gap-8 text-sm">
+                  <div>
+                    <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                      {membership?.role}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                      {memberCount ?? 1}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Aucune organisation associée à votre compte pour l&apos;instant.
+                </p>
+                <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
+                  <CreateOrganizationForm />
+                </Modal>
+              </div>
             )}
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="flex h-9 items-center justify-center rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 dark:border-stone-700 dark:text-stone-100"
-              >
-                Se déconnecter
-              </button>
-            </form>
           </div>
-        </header>
+        </div>
 
         {showTrialBanner && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
@@ -209,63 +231,13 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {organization ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-                {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
-              </p>
-              <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-50">
-                {organization.name}
-              </p>
-            </div>
-            <dl className="flex gap-8 text-sm">
-              <div>
-                <dt className="text-stone-500 dark:text-stone-400">Votre rôle</dt>
-                <dd className="mt-0.5 font-medium text-stone-900 dark:text-stone-100">
-                  {membership?.role}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-stone-500 dark:text-stone-400">Membres</dt>
-                <dd className="mt-0.5 font-medium text-stone-900 dark:text-stone-100">
-                  {memberCount ?? 1}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        ) : (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
-            <p className="text-sm text-stone-500 dark:text-stone-400">
-              Aucune organisation associée à votre compte pour l&apos;instant.
-            </p>
-            <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
-              <CreateOrganizationForm />
-            </Modal>
-          </div>
-        )}
-
-        {organization && isAgencyView && (
-          <>
-            <AgencyDashboard organizationId={organization.id} />
-            <div>
-              <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier">
-                <CreateProjectForm organizationId={organization.id} />
-              </Modal>
-            </div>
-          </>
-        )}
+        {organization && isAgencyView && <AgencyDashboard organizationId={organization.id} />}
 
         {organization && !isAgencyView && (
           <div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-                Mes projets
-              </p>
-              <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier">
-                <CreateProjectForm organizationId={organization.id} />
-              </Modal>
-            </div>
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+              Mes projets
+            </p>
 
             {projectSummaries.length > 0 ? (
               <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -279,10 +251,10 @@ export default async function DashboardPage() {
                     <li key={project.id}>
                       <Link
                         href={`/dashboard/projects/${project.id}`}
-                        className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
+                        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {project.name}
                           </span>
                           {project.toReviewCount > 0 && (
@@ -300,27 +272,27 @@ export default async function DashboardPage() {
                             segments={[
                               {
                                 value: Math.min(spentPercent, 100),
-                                colorClassName: "text-clay-600 dark:text-clay-500",
+                                colorClassName: "text-brand-600 dark:text-brand-500",
                               },
                             ]}
                             centerLabel={`${spentPercent}%`}
                           />
                           <dl className="grid flex-1 grid-cols-1 gap-y-1.5 text-xs">
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Financé</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.funded, project.currency_code, minorUnit)}
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Dépensé</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Dépensé</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.spent, project.currency_code, minorUnit)}
                               </dd>
                             </div>
@@ -328,13 +300,13 @@ export default async function DashboardPage() {
                         </div>
 
                         <div className="mt-4">
-                          <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+                          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Avancement chantier</span>
                             <span>{project.progressPercent}%</span>
                           </div>
-                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                              className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
+                              className="h-full rounded-full bg-brand-600 dark:bg-brand-500"
                               style={{ width: `${project.progressPercent}%` }}
                             />
                           </div>
@@ -345,7 +317,7 @@ export default async function DashboardPage() {
                 })}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Aucun chantier créé.</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Aucun chantier créé.</p>
             )}
           </div>
         )}

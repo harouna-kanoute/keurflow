@@ -54,7 +54,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
         <select
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
+          className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         >
           <option value="">Tous les pays</option>
           {countries.map((c) => (
@@ -66,7 +66,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="rounded-lg border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
+          className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
         >
           <option value="">Tous les statuts</option>
           {Object.entries(STATUS_LABELS).map(([value, label]) => (
@@ -75,7 +75,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
             </option>
           ))}
         </select>
-        <label className="flex items-center gap-1.5 text-sm text-stone-700 dark:text-stone-300">
+        <label className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
           <input
             type="checkbox"
             checked={delayedOnly}
@@ -86,7 +86,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Aucun chantier.</p>
+        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Aucun chantier.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-2">
           {filtered.map((project) => {
@@ -99,7 +99,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
               <li key={project.id}>
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
                 >
                   <div className="flex items-center gap-3">
                     <DonutChart
@@ -109,15 +109,15 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
                       segments={[
                         {
                           value: Math.min(spentPercent, 100),
-                          colorClassName: "text-clay-600 dark:text-clay-500",
+                          colorClassName: "text-brand-600 dark:text-brand-500",
                         },
                       ]}
                     />
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-stone-900 dark:text-stone-100">
+                      <span className="font-medium text-slate-900 dark:text-slate-100">
                         {project.name}
                       </span>
-                      <span className="text-xs text-stone-500 dark:text-stone-400">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         {project.countryName} · {STATUS_LABELS[project.status] ?? project.status}
                       </span>
                       {project.delayed && (
@@ -132,7 +132,7 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
                       )}
                     </div>
                   </div>
-                  <span className="text-stone-500 dark:text-stone-400">
+                  <span className="text-slate-500 dark:text-slate-400">
                     {formatMoney(project.spentMinor, project.currencyCode, minorUnit)} /{" "}
                     {formatMoney(project.budgetMinor, project.currencyCode, minorUnit)}
                   </span>

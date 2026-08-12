@@ -58,7 +58,7 @@ export function ExpenseStatusActions({
         type="button"
         disabled={isPending}
         onClick={() => setStatus("needs_information")}
-        className="rounded-full border border-stone-300 px-3 py-1 text-xs font-medium text-stone-700 disabled:opacity-50 dark:border-stone-700 dark:text-stone-300"
+        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
       >
         Demander des infos
       </button>
