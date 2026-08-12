@@ -13,7 +13,6 @@ import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
-import { signOut } from "../(auth)/actions";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { CreateProjectForm } from "./create-project-form";
 import { AgencyDashboard } from "./agency-dashboard";
@@ -45,12 +44,6 @@ export default async function DashboardPage() {
     .select("full_name")
     .eq("id", user.id)
     .single();
-
-  const { count: unreadNotificationCount } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-    .is("read_at", null);
 
   // RLS (organization_members_select_same_org / organizations_select_members)
   // only ever returns rows for organizations this user actually belongs to —
@@ -146,51 +139,11 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col bg-cream px-6 py-10 dark:bg-stone-950">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
-              KeurFlow
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-              Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
-            </h1>
-            <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{user.email}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-5">
-            <Link
-              href="/dashboard/notifications"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-            >
-              Notifications
-              {!!unreadNotificationCount && (
-                <span className="rounded-full bg-clay-600 px-2 py-0.5 text-xs font-medium text-white dark:bg-clay-500">
-                  {unreadNotificationCount}
-                </span>
-              )}
-            </Link>
-            <Link
-              href="/dashboard/billing"
-              className="text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-            >
-              Abonnement
-            </Link>
-            {organization && (
-              <Link
-                href="/dashboard/audit-log"
-                className="text-sm font-medium text-stone-700 hover:text-stone-900 dark:text-stone-300 dark:hover:text-stone-100"
-              >
-                Journal d&apos;activité
-              </Link>
-            )}
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="flex h-9 items-center justify-center rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 dark:border-stone-700 dark:text-stone-100"
-              >
-                Se déconnecter
-              </button>
-            </form>
-          </div>
+        <header>
+          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+            Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
+          </h1>
+          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{user.email}</p>
         </header>
 
         {showTrialBanner && (
