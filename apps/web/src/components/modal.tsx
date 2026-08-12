@@ -13,7 +13,9 @@ export function useModalClose(): () => void {
   return close ?? (() => {});
 }
 
-const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner" | "danger", string> = {
+type ModalVariant = "primary" | "secondary" | "ghost" | "banner" | "danger" | "icon" | "icon-danger";
+
+const TRIGGER_CLASSES: Record<ModalVariant, string> = {
   primary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
   secondary:
@@ -27,6 +29,11 @@ const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner" | "da
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-brand-700 transition-colors hover:bg-white/90",
   danger:
     "flex h-9 items-center justify-center gap-1.5 rounded-full border border-red-300 px-4 text-sm font-medium text-red-700 transition-colors hover:border-red-400 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20",
+  // Compact, icon-only triggers for inline row actions (e.g. edit/delete on
+  // a dashboard list item) — no label text is rendered, see `iconOnly`.
+  icon: "flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+  "icon-danger":
+    "flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300",
 };
 
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
@@ -36,13 +43,16 @@ export function Modal({
   triggerIcon,
   title,
   variant = "primary",
+  iconOnly = false,
   children,
 }: {
   triggerLabel: string;
   /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
   triggerIcon?: React.ReactNode;
   title: string;
-  variant?: "primary" | "secondary" | "ghost" | "banner" | "danger";
+  variant?: ModalVariant;
+  /** Hides triggerLabel visually (kept for a11y via aria-label) — pairs with variant="icon"/"icon-danger". */
+  iconOnly?: boolean;
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -52,13 +62,18 @@ export function Modal({
 
   return (
     <>
-      <button type="button" onClick={open} className={TRIGGER_CLASSES[variant]}>
+      <button
+        type="button"
+        onClick={open}
+        className={TRIGGER_CLASSES[variant]}
+        aria-label={iconOnly ? triggerLabel : undefined}
+      >
         {triggerIcon ?? (
           <span aria-hidden className="text-base leading-none">
             +
           </span>
         )}
-        {triggerLabel}
+        {iconOnly ? <span className="sr-only">{triggerLabel}</span> : triggerLabel}
       </button>
       <dialog
         ref={dialogRef}

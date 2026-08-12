@@ -60,12 +60,22 @@ function StatCard({
   );
 }
 
-export async function AgencyDashboard({ organizationId }: { organizationId: string }) {
+export async function AgencyDashboard({
+  organizationId,
+  canEditProjects,
+  canDeleteProjects,
+}: {
+  organizationId: string;
+  canEditProjects: boolean;
+  canDeleteProjects: boolean;
+}) {
   const supabase = await createClient();
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, name, status, budget_minor, currency_code, country_id, expected_end_date")
+    .select(
+      "id, name, project_type, status, budget_minor, currency_code, country_id, expected_end_date, address, surface_area",
+    )
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false });
 
@@ -121,10 +131,13 @@ export async function AgencyDashboard({ organizationId }: { organizationId: stri
       return {
         id: project.id,
         name: project.name,
+        projectType: project.project_type,
         status: project.status,
         countryName: countryNames.get(project.country_id) ?? "—",
         budgetMinor: project.budget_minor,
         currencyCode: project.currency_code,
+        address: project.address,
+        surfaceArea: project.surface_area,
         spentMinor: getApprovedExpensesTotal(expenseList),
         toReviewCount,
         missingDocsCount,
@@ -173,7 +186,11 @@ export async function AgencyDashboard({ organizationId }: { organizationId: stri
         <StatCard label="Projets en retard" value={delayedCount} icon={AlertIcon} tone="danger" />
       </div>
 
-      <AgencyProjectsTable rows={rows} />
+      <AgencyProjectsTable
+        rows={rows}
+        canEditProjects={canEditProjects}
+        canDeleteProjects={canDeleteProjects}
+      />
     </div>
   );
 }
