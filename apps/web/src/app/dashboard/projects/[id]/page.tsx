@@ -281,7 +281,7 @@ export default async function ProjectDetailPage({
           <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
             Budget
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-8">
+          <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
             <DonutChart
               size={112}
               strokeWidth={12}
@@ -292,7 +292,7 @@ export default async function ProjectDetailPage({
               centerLabel={`${approvedTotal}%`}
               centerSublabel="dépensé"
             />
-            <dl className="grid flex-1 grid-cols-2 gap-x-8 gap-y-3 text-sm sm:grid-cols-4">
+            <dl className="grid w-full grid-cols-2 gap-x-6 gap-y-4 text-sm lg:grid-cols-4 lg:gap-x-8">
               <div>
                 <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
                 <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
