@@ -4,9 +4,10 @@ import { getTrialDaysRemaining, isBillablePlan, isSubscriptionBlocked, isTrialEx
 const now = new Date("2026-08-11T00:00:00Z");
 
 describe("isBillablePlan", () => {
-  it("is true for the individual plan family (trial and paid)", () => {
+  it("is true for the individual plan family (trial, paid, and the unlimited add-on)", () => {
     expect(isBillablePlan("individual_trial")).toBe(true);
     expect(isBillablePlan("individual")).toBe(true);
+    expect(isBillablePlan("individual_unlimited")).toBe(true);
   });
 
   it("is false for agency plans — B2B pricing isn't decided yet", () => {

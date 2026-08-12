@@ -38,11 +38,17 @@ async function syncSubscription(
   }
 
   const periodEnd = subscription.items.data[0]?.current_period_end;
+  // Set on the subscription (or its metadata, on creation and on any later
+  // plan-code-changing update — see createCheckoutSession) by us, never
+  // inferred from the price: Stripe has no concept of our plan codes.
+  // "individual" is the fallback for subscriptions created before this
+  // field existed.
+  const planCode = subscription.metadata?.plan_code || "individual";
 
   await admin
     .from("subscriptions")
     .update({
-      plan_code: "individual",
+      plan_code: planCode,
       status: mapStripeStatus(subscription.status),
       stripe_subscription_id: subscription.id,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,

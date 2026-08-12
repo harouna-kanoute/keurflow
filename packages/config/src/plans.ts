@@ -24,6 +24,15 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     features: { web: true, mobile: true, collaborators: true, reports: true },
   },
   {
+    code: "individual_unlimited",
+    label: "Particulier — Illimité",
+    maxActiveProjects: null,
+    priceCentsMinor: 1990, // "individual" (9,90€) + 10€ for unlimited chantiers
+    currencyCode: "EUR",
+    trialDays: 0,
+    features: { web: true, mobile: true, collaborators: true, reports: true },
+  },
+  {
     code: "agency_starter",
     label: "Agence — Starter",
     maxActiveProjects: 5,

@@ -36,28 +36,36 @@ async function requireOrgAdmin(organizationId: string) {
   return { supabase, user };
 }
 
-export async function createCheckoutSession(organizationId: string): Promise<ActionResult> {
+// The only two plans checkout can ever target — never trust a plan code
+// from the client beyond this allowlist (it ends up in a Stripe price).
+const CHECKOUT_PLAN_CODES = new Set(["individual", "individual_unlimited"]);
+
+export async function createCheckoutSession(
+  organizationId: string,
+  planCode: string = "individual",
+): Promise<ActionResult> {
   const auth = await requireOrgAdmin(organizationId);
   if (!auth) return { error: GENERIC_ERROR };
   const { supabase, user } = auth;
+
+  if (!CHECKOUT_PLAN_CODES.has(planCode)) return { error: GENERIC_ERROR };
 
   const productId = process.env.STRIPE_PRODUCT_ID_INDIVIDUAL;
   if (!productId) return { error: GENERIC_ERROR };
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("plan_code, stripe_customer_id")
+    .select("plan_code, stripe_customer_id, stripe_subscription_id")
     .eq("organization_id", organizationId)
     .single();
   // isBillablePlan, not a plain "does a row exist" check: individual_trial
-  // is itself priced at 0 (it's the trial row) — checkout always targets
-  // the "individual" plan specifically, the only paid plan right now.
+  // is itself priced at 0 (it's the trial row).
   if (!subscription || !isBillablePlan(subscription.plan_code)) return { error: GENERIC_ERROR };
 
   const { data: plan } = await supabase
     .from("plans")
     .select("price_minor, currency_code")
-    .eq("code", "individual")
+    .eq("code", planCode)
     .single();
   if (!plan || plan.price_minor <= 0) return { error: GENERIC_ERROR };
 
@@ -80,6 +88,49 @@ export async function createCheckoutSession(organizationId: string): Promise<Act
       .eq("organization_id", organizationId);
   }
 
+  // Already has a live Stripe subscription — e.g. switching from
+  // "individual" to the "individual_unlimited" add-on. Update that
+  // subscription's price in place (Stripe prorates automatically) instead
+  // of starting a second `mode: "subscription"` checkout, which would leave
+  // the customer with two active subscriptions and double-billed.
+  if (subscription.stripe_subscription_id) {
+    let existing;
+    try {
+      existing = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
+    } catch (error) {
+      console.error("[createCheckoutSession] Stripe retrieve error:", error);
+      return { error: GENERIC_ERROR };
+    }
+    const itemId = existing.items.data[0]?.id;
+    if (!itemId) return { error: GENERIC_ERROR };
+
+    try {
+      await stripe.subscriptions.update(subscription.stripe_subscription_id, {
+        items: [
+          {
+            id: itemId,
+            price_data: {
+              product: productId,
+              currency: plan.currency_code.toLowerCase(),
+              unit_amount: plan.price_minor,
+              recurring: { interval: "month" },
+            },
+          },
+        ],
+        proration_behavior: "create_prorations",
+        // customer.subscription.updated re-fires the webhook, which trusts
+        // this metadata as the new plan_code — must be set explicitly, since
+        // Stripe doesn't infer it from the price change.
+        metadata: { organization_id: organizationId, plan_code: planCode },
+      });
+    } catch (error) {
+      console.error("[createCheckoutSession] Stripe update error:", error);
+      return { error: GENERIC_ERROR };
+    }
+
+    redirect(`${APP_URL}/dashboard/billing?checkout=success`);
+  }
+
   let session;
   try {
     session = await stripe.checkout.sessions.create({
@@ -98,8 +149,8 @@ export async function createCheckoutSession(organizationId: string): Promise<Act
       ],
       success_url: `${APP_URL}/dashboard/billing?checkout=success`,
       cancel_url: `${APP_URL}/dashboard/billing?checkout=cancelled`,
-      metadata: { organization_id: organizationId },
-      subscription_data: { metadata: { organization_id: organizationId } },
+      metadata: { organization_id: organizationId, plan_code: planCode },
+      subscription_data: { metadata: { organization_id: organizationId, plan_code: planCode } },
     });
   } catch (error) {
     console.error("[createCheckoutSession] Stripe error:", error);
