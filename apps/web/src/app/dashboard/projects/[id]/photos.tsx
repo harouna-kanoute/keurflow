@@ -66,14 +66,14 @@ export function UploadPhotoForm({ projectId }: { projectId: string }) {
         ref={fileInputRef}
         type="file"
         accept={ALLOWED_TYPES.join(",")}
-        className="text-sm text-stone-700 dark:text-stone-300"
+        className="text-sm text-slate-700 dark:text-slate-300"
       />
       <input
         type="text"
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
         placeholder="Légende (optionnel)"
-        className="rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 outline-none focus:border-clay-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-50"
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <SubmitButton pending={isPending}>
@@ -89,7 +89,7 @@ export function PhotoGallery({
   photos: { id: string; url: string | null; caption: string | null }[];
 }) {
   if (photos.length === 0) {
-    return <p className="mt-2 text-sm text-stone-500 dark:text-stone-400">Aucune photo.</p>;
+    return <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Aucune photo.</p>;
   }
 
   return (

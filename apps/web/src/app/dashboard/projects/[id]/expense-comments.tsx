@@ -43,7 +43,7 @@ export function ExpenseComments({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-xs font-medium text-stone-500 underline hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+        className="text-xs font-medium text-slate-500 underline hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
       >
         {comments.length > 0
           ? `${comments.length} commentaire${comments.length > 1 ? "s" : ""}`
@@ -53,9 +53,9 @@ export function ExpenseComments({
       {open && (
         <div className="mt-2 flex flex-col gap-2">
           {comments.map((c) => (
-            <div key={c.id} className="rounded-lg bg-stone-50 px-3 py-2 text-xs dark:bg-stone-800">
-              <p className="font-medium text-stone-700 dark:text-stone-300">{c.authorName}</p>
-              <p className="mt-0.5 text-stone-600 dark:text-stone-400">{c.content}</p>
+            <div key={c.id} className="rounded-lg bg-slate-50 px-3 py-2 text-xs dark:bg-slate-800">
+              <p className="font-medium text-slate-700 dark:text-slate-300">{c.authorName}</p>
+              <p className="mt-0.5 text-slate-600 dark:text-slate-400">{c.content}</p>
             </div>
           ))}
 
@@ -65,12 +65,12 @@ export function ExpenseComments({
               type="text"
               placeholder="Écrire un commentaire…"
               maxLength={2000}
-              className="flex-1 rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-900 outline-none focus:border-clay-500 focus-visible:ring-2 focus-visible:ring-clay-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-50"
+              className="flex-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs text-slate-900 outline-none focus:border-brand-500 focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-50"
             />
             <button
               type="submit"
               disabled={isPending}
-              className="shrink-0 rounded-full bg-clay-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-clay-700 disabled:opacity-50 dark:bg-clay-500 dark:hover:bg-clay-600"
+              className="shrink-0 rounded-full bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
             >
               {isPending ? "…" : "Envoyer"}
             </button>

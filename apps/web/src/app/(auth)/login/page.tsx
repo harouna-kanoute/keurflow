@@ -27,7 +27,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-stone-900 dark:text-stone-50">Se connecter</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Se connecter</h1>
       <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
         <FormField
           id="email"
@@ -50,13 +50,13 @@ export default function LoginPage() {
           {isPending ? "Connexion…" : "Se connecter"}
         </SubmitButton>
       </form>
-      <div className="mt-6 flex flex-col gap-2 text-sm text-stone-500 dark:text-stone-400">
-        <Link href="/forgot-password" className="hover:text-stone-900 dark:hover:text-stone-100">
+      <div className="mt-6 flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
+        <Link href="/forgot-password" className="hover:text-slate-900 dark:hover:text-slate-100">
           Mot de passe oublié ?
         </Link>
         <p>
           Pas encore de compte ?{" "}
-          <Link href="/signup" className="font-medium text-stone-900 underline dark:text-stone-100">
+          <Link href="/signup" className="font-medium text-slate-900 underline dark:text-slate-100">
             Créer un compte
           </Link>
         </p>

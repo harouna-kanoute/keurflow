@@ -18,7 +18,7 @@ export function SubscribeButton({ organizationId }: { organizationId: string }) 
             if (result?.error) setError(result.error);
           })
         }
-        className="flex h-10 items-center justify-center rounded-full bg-clay-600 px-5 text-sm font-medium text-white hover:bg-clay-700 disabled:opacity-50 dark:bg-clay-500 dark:hover:bg-clay-600"
+        className="flex h-10 items-center justify-center rounded-full bg-brand-600 px-5 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50 dark:bg-brand-500 dark:hover:bg-brand-600"
       >
         {isPending ? "Redirection…" : "S'abonner"}
       </button>
@@ -42,7 +42,7 @@ export function ManageBillingButton({ organizationId }: { organizationId: string
             if (result?.error) setError(result.error);
           })
         }
-        className="flex h-10 items-center justify-center rounded-full border border-stone-300 px-5 text-sm font-medium text-stone-900 disabled:opacity-50 dark:border-stone-700 dark:text-stone-100"
+        className="flex h-10 items-center justify-center rounded-full border border-slate-300 px-5 text-sm font-medium text-slate-900 disabled:opacity-50 dark:border-slate-700 dark:text-slate-100"
       >
         {isPending ? "Redirection…" : "Gérer mon abonnement"}
       </button>

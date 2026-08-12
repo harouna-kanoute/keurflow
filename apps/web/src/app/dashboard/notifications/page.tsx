@@ -40,17 +40,17 @@ export default async function NotificationsPage() {
   const unreadCount = (notifications ?? []).filter((n) => !n.read_at).length;
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col items-center bg-canvas px-6 py-16">
       <div className="w-full max-w-lg">
         <Link
           href="/dashboard"
-          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+          className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         >
           ← Retour
         </Link>
 
         <div className="mt-4 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">Notifications</h1>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">Notifications</h1>
           {unreadCount > 0 && <MarkAllReadButton />}
         </div>
 
@@ -61,21 +61,21 @@ export default async function NotificationsPage() {
                 key={notification.id}
                 className={`rounded-xl border px-4 py-3 text-sm ${
                   notification.read_at
-                    ? "border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900"
-                    : "border-stone-300 bg-stone-100 dark:border-stone-700 dark:bg-stone-800"
+                    ? "border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                    : "border-slate-300 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-medium text-stone-900 dark:text-stone-100">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
                       {notification.title}
                     </p>
                     {notification.body && (
-                      <p className="mt-0.5 text-stone-600 dark:text-stone-400">
+                      <p className="mt-0.5 text-slate-600 dark:text-slate-400">
                         {notification.body}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-stone-500 dark:text-stone-500">
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
                       {TYPE_LABELS[notification.type] ?? notification.type}
                       {notification.project_id && (
                         <>
@@ -96,7 +96,7 @@ export default async function NotificationsPage() {
             ))}
           </ul>
         ) : (
-          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
             Aucune notification pour l&apos;instant.
           </p>
         )}

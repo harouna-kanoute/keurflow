@@ -39,8 +39,8 @@ export default async function AuditLogPage() {
 
   if (!membership || !hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin")) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-cream px-6 py-24 text-center dark:bg-stone-950">
-        <p className="text-sm text-stone-500 dark:text-stone-400">
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-canvas px-6 py-24 text-center">
+        <p className="text-sm text-slate-500 dark:text-slate-400">
           Seuls les propriétaires et administrateurs peuvent consulter le journal d&apos;activité.
         </p>
         <Link href="/dashboard" className="text-sm underline">
@@ -67,19 +67,19 @@ export default async function AuditLogPage() {
   const userNames = new Map((profiles ?? []).map((p) => [p.id, p.full_name ?? "Utilisateur"]));
 
   return (
-    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col items-center bg-canvas px-6 py-16">
       <div className="w-full max-w-lg">
         <Link
           href="/dashboard"
-          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+          className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         >
           ← Retour
         </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        <h1 className="mt-4 text-2xl font-semibold text-slate-900 dark:text-slate-50">
           Journal d&apos;activité
         </h1>
-        <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
           Les 100 dernières actions de votre organisation.
         </p>
 
@@ -88,24 +88,24 @@ export default async function AuditLogPage() {
             {entries.map((entry) => (
               <li
                 key={entry.id}
-                className="rounded-xl border border-stone-200 bg-white px-4 py-3 text-sm dark:border-stone-800 dark:bg-stone-900"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-medium text-stone-900 dark:text-stone-100">
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
                     {ACTION_LABELS[entry.action] ?? entry.action}
                   </span>
-                  <span className="text-xs text-stone-500 dark:text-stone-400">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {new Date(entry.created_at).toLocaleString("fr-FR")}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-stone-500 dark:text-stone-400">
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                   {entry.user_id ? (userNames.get(entry.user_id) ?? "Utilisateur") : "Système"}
                 </p>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="mt-6 text-sm text-stone-500 dark:text-stone-400">Aucune activité pour le moment.</p>
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">Aucune activité pour le moment.</p>
         )}
       </div>
     </div>

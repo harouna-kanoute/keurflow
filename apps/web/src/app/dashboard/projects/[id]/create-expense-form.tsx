@@ -129,7 +129,7 @@ export function CreateExpenseForm({
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="expenseReceipt"
-          className="text-sm font-medium text-stone-700 dark:text-stone-300"
+          className="text-sm font-medium text-slate-700 dark:text-slate-300"
         >
           Justificatif (optionnel)
         </label>
@@ -138,7 +138,7 @@ export function CreateExpenseForm({
           type="file"
           accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
           onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
-          className="text-sm text-stone-700 dark:text-stone-300"
+          className="text-sm text-slate-700 dark:text-slate-300"
         />
       </div>
       {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}

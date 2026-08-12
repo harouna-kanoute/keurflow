@@ -37,7 +37,7 @@ export function MilestoneStatusSelect({ milestone }: { milestone: MilestoneRow }
           await updateMilestoneStatus({ milestoneId: milestone.id, status });
         });
       }}
-      className="rounded-lg border border-stone-300 bg-white px-2 py-1 text-xs text-stone-900 disabled:opacity-50 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
+      className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
     >
       {STATUSES.map((status) => (
         <option key={status} value={status}>

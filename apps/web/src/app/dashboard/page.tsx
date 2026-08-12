@@ -137,13 +137,13 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="flex flex-1 flex-col bg-cream px-6 py-10 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <header>
-          <h1 className="text-2xl font-semibold text-stone-900 dark:text-stone-50">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
             Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
           </h1>
-          <p className="mt-1 text-sm text-stone-500 dark:text-stone-400">{user.email}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
         </header>
 
         {showTrialBanner && (
@@ -163,33 +163,33 @@ export default async function DashboardPage() {
         )}
 
         {organization ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm dark:border-stone-800 dark:bg-stone-900">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div>
-              <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
                 {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
               </p>
-              <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-50">
+              <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
                 {organization.name}
               </p>
             </div>
             <dl className="flex gap-8 text-sm">
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">Votre rôle</dt>
-                <dd className="mt-0.5 font-medium text-stone-900 dark:text-stone-100">
+                <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
+                <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
                   {membership?.role}
                 </dd>
               </div>
               <div>
-                <dt className="text-stone-500 dark:text-stone-400">Membres</dt>
-                <dd className="mt-0.5 font-medium text-stone-900 dark:text-stone-100">
+                <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
+                <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
                   {memberCount ?? 1}
                 </dd>
               </div>
             </dl>
           </div>
         ) : (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm dark:border-stone-800 dark:bg-stone-900">
-            <p className="text-sm text-stone-500 dark:text-stone-400">
+          <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Aucune organisation associée à votre compte pour l&apos;instant.
             </p>
             <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
@@ -212,7 +212,7 @@ export default async function DashboardPage() {
         {organization && !isAgencyView && (
           <div>
             <div className="flex items-center justify-between">
-              <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
                 Mes projets
               </p>
               <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier">
@@ -232,10 +232,10 @@ export default async function DashboardPage() {
                     <li key={project.id}>
                       <Link
                         href={`/dashboard/projects/${project.id}`}
-                        className="flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition-colors hover:border-stone-400 dark:border-stone-800 dark:bg-stone-900 dark:hover:border-stone-600"
+                        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
                       >
                         <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-medium text-stone-900 dark:text-stone-100">
+                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {project.name}
                           </span>
                           {project.toReviewCount > 0 && (
@@ -253,27 +253,27 @@ export default async function DashboardPage() {
                             segments={[
                               {
                                 value: Math.min(spentPercent, 100),
-                                colorClassName: "text-clay-600 dark:text-clay-500",
+                                colorClassName: "text-brand-600 dark:text-brand-500",
                               },
                             ]}
                             centerLabel={`${spentPercent}%`}
                           />
                           <dl className="grid flex-1 grid-cols-1 gap-y-1.5 text-xs">
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Financé</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.funded, project.currency_code, minorUnit)}
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
-                              <dt className="text-stone-500 dark:text-stone-400">Dépensé</dt>
-                              <dd className="text-stone-900 dark:text-stone-100">
+                              <dt className="text-slate-500 dark:text-slate-400">Dépensé</dt>
+                              <dd className="text-slate-900 dark:text-slate-100">
                                 {formatMoney(project.spent, project.currency_code, minorUnit)}
                               </dd>
                             </div>
@@ -281,13 +281,13 @@ export default async function DashboardPage() {
                         </div>
 
                         <div className="mt-4">
-                          <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+                          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                             <span>Avancement chantier</span>
                             <span>{project.progressPercent}%</span>
                           </div>
-                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+                          <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                             <div
-                              className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
+                              className="h-full rounded-full bg-brand-600 dark:bg-brand-500"
                               style={{ width: `${project.progressPercent}%` }}
                             />
                           </div>
@@ -298,7 +298,7 @@ export default async function DashboardPage() {
                 })}
               </ul>
             ) : (
-              <p className="mt-4 text-sm text-stone-500 dark:text-stone-400">Aucun chantier créé.</p>
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Aucun chantier créé.</p>
             )}
           </div>
         )}

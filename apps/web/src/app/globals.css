@@ -7,83 +7,85 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #faf6f0;
-  --foreground: #1c1917;
+  --background: #f8fafc;
+  --foreground: #0f172a;
 }
 
 .dark {
-  --background: #1c1917;
-  --foreground: #f5f0ea;
+  --background: #08090d;
+  --foreground: #f1f5f9;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Friendlier alias for the page canvas — same variable as background, so
+     `bg-canvas` always tracks light/dark automatically without a paired
+     `dark:bg-*` class at every call site. */
+  --color-canvas: var(--background);
   --font-sans: var(--font-sans-active);
   --font-mono: var(--font-geist-mono);
 }
 
 /* Deliberately a plain (non-`inline`) @theme block: `inline` bakes the
-   literal resolved color into every generated utility at build time (fine
-   for --background/--foreground above, which alias an already-dynamic
-   variable), which would defeat the whole point here — these need to stay
-   `var(--color-clay-*)` in the compiled CSS so [data-accent] below can
-   repaint every `clay-*` utility in the app at runtime without touching a
-   single component. Brand accent is terracotta/clay by default (spec §92:
-   "africain contemporain, premium, éviter les clichés visuels"); body text
-   and neutral surfaces stay on Tailwind's stone ramp. */
+   literal resolved color into every generated utility at build time, which
+   would defeat the whole point here — these need to stay
+   `var(--color-brand-*)` in the compiled CSS so [data-accent] below can
+   repaint every `brand-*` utility in the app at runtime without touching a
+   single component. Indigo/violet by default — a distinct, premium "modern
+   SaaS" accent (Nexus/Linear-style) rather than a generic blue; neutral
+   surfaces stay on Tailwind's slate ramp, a cool gray that reads as
+   product/dashboard rather than editorial. */
 @theme {
-  --color-clay-50: #fcf4ef;
-  --color-clay-100: #f8e4d7;
-  --color-clay-200: #f0c7ac;
-  --color-clay-300: #e4a47d;
-  --color-clay-400: #d57d52;
-  --color-clay-500: #c2542d;
-  --color-clay-600: #a8431f;
-  --color-clay-700: #8a3419;
-  --color-clay-800: #6e2a16;
-  --color-clay-900: #542213;
+  --color-brand-50: #f2f1fd;
+  --color-brand-100: #e5e3fb;
+  --color-brand-200: #ccc7f7;
+  --color-brand-300: #aaa1f0;
+  --color-brand-400: #8879e6;
+  --color-brand-500: #6c5cd9;
+  --color-brand-600: #5443c4;
+  --color-brand-700: #43359c;
+  --color-brand-800: #362b7a;
+  --color-brand-900: #2a2260;
+}
 
-  --color-cream: #faf6f0;
+[data-accent="violet"] {
+  --color-brand-50: #f6f1fc;
+  --color-brand-100: #ece3f9;
+  --color-brand-200: #d8c8f3;
+  --color-brand-300: #bd9fe9;
+  --color-brand-400: #a177dd;
+  --color-brand-500: #8a57ce;
+  --color-brand-600: #7141b8;
+  --color-brand-700: #593293;
+  --color-brand-800: #452871;
+  --color-brand-900: #341e56;
 }
 
 [data-accent="teal"] {
-  --color-clay-50: #eff9f7;
-  --color-clay-100: #d9f0ec;
-  --color-clay-200: #b0e0d7;
-  --color-clay-300: #7dc9bb;
-  --color-clay-400: #4fac9c;
-  --color-clay-500: #2f8d7d;
-  --color-clay-600: #1f6f62;
-  --color-clay-700: #17564c;
-  --color-clay-800: #123f38;
-  --color-clay-900: #0d2c27;
+  --color-brand-50: #eff9f7;
+  --color-brand-100: #d9f0ec;
+  --color-brand-200: #b0e0d7;
+  --color-brand-300: #7dc9bb;
+  --color-brand-400: #4fac9c;
+  --color-brand-500: #2f8d7d;
+  --color-brand-600: #1f6f62;
+  --color-brand-700: #17564c;
+  --color-brand-800: #123f38;
+  --color-brand-900: #0d2c27;
 }
 
 [data-accent="blue"] {
-  --color-clay-50: #eff4fb;
-  --color-clay-100: #d9e6f6;
-  --color-clay-200: #b3cced;
-  --color-clay-300: #82abdf;
-  --color-clay-400: #5688cc;
-  --color-clay-500: #3968ad;
-  --color-clay-600: #2a508a;
-  --color-clay-700: #213e6c;
-  --color-clay-800: #182c4d;
-  --color-clay-900: #101e35;
-}
-
-[data-accent="forest"] {
-  --color-clay-50: #f0f5ee;
-  --color-clay-100: #dde9d7;
-  --color-clay-200: #b9d3ae;
-  --color-clay-300: #8fb87e;
-  --color-clay-400: #679a55;
-  --color-clay-500: #4a7d3a;
-  --color-clay-600: #3a622e;
-  --color-clay-700: #2d4b24;
-  --color-clay-800: #21381b;
-  --color-clay-900: #172712;
+  --color-brand-50: #eff4fb;
+  --color-brand-100: #d9e6f6;
+  --color-brand-200: #b3cced;
+  --color-brand-300: #82abdf;
+  --color-brand-400: #5688cc;
+  --color-brand-500: #3968ad;
+  --color-brand-600: #2a508a;
+  --color-brand-700: #213e6c;
+  --color-brand-800: #182c4d;
+  --color-brand-900: #101e35;
 }
 
 :root,

@@ -5,16 +5,16 @@ export const metadata: Metadata = { title: "Conditions générales d'utilisation
 
 export default function CGUPage() {
   return (
-    <div className="flex flex-1 flex-col items-center bg-cream px-6 py-16 dark:bg-stone-950">
+    <div className="flex flex-1 flex-col items-center bg-canvas px-6 py-16">
       <div className="w-full max-w-2xl">
         <Link
           href="/"
-          className="text-sm text-stone-500 hover:text-stone-900 dark:text-stone-400 dark:hover:text-stone-100"
+          className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
         >
           ← Retour
         </Link>
 
-        <h1 className="mt-4 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+        <h1 className="mt-4 text-2xl font-semibold text-slate-900 dark:text-slate-50">
           Conditions générales d&apos;utilisation
         </h1>
 
@@ -25,9 +25,9 @@ export default function CGUPage() {
           limitation de responsabilité.
         </p>
 
-        <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-stone-700 dark:text-stone-300">
+        <div className="mt-8 flex flex-col gap-6 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">1. Objet</h2>
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">1. Objet</h2>
             <p>
               KeurFlow est un service permettant de suivre à distance un projet immobilier
               ou de construction : financements reçus, dépenses engagées, justificatifs,
@@ -37,7 +37,7 @@ export default function CGUPage() {
           </section>
 
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">2. Compte et abonnement</h2>
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">2. Compte et abonnement</h2>
             <p>
               La création d&apos;un compte particulier ouvre un essai gratuit de 7 jours
               limité à un chantier actif. Passé ce délai, la poursuite du service nécessite
@@ -50,7 +50,7 @@ export default function CGUPage() {
           </section>
 
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">
               3. Responsabilités de l&apos;utilisateur
             </h2>
             <p>
@@ -64,7 +64,7 @@ export default function CGUPage() {
           </section>
 
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">
               4. Disponibilité et évolution du service
             </h2>
             <p>
@@ -76,7 +76,7 @@ export default function CGUPage() {
           </section>
 
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">5. Résiliation</h2>
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">5. Résiliation</h2>
             <p>
               L&apos;utilisateur peut supprimer son compte à tout moment en en faisant la
               demande. L&apos;éditeur peut suspendre un compte en cas d&apos;usage
@@ -85,13 +85,13 @@ export default function CGUPage() {
           </section>
 
           <section>
-            <h2 className="mb-1 font-semibold text-stone-900 dark:text-stone-50">
+            <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">
               6. Droit applicable
             </h2>
             <p>[À COMPLÉTER — droit applicable et juridiction compétente].</p>
           </section>
 
-          <p className="text-xs text-stone-500 dark:text-stone-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Voir aussi la{" "}
             <Link href="/confidentialite" className="underline">
               politique de confidentialité

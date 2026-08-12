@@ -15,11 +15,11 @@ export function useModalClose(): () => void {
 
 const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost", string> = {
   primary:
-    "flex h-9 items-center justify-center gap-1.5 rounded-full bg-clay-600 px-4 text-sm font-medium text-white transition-colors hover:bg-clay-700 dark:bg-clay-500 dark:hover:bg-clay-600",
+    "flex h-9 items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
   secondary:
-    "flex h-9 items-center justify-center gap-1.5 rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 transition-colors hover:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:hover:border-stone-600",
+    "flex h-9 items-center justify-center gap-1.5 rounded-full border border-slate-300 px-4 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600",
   ghost:
-    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100",
+    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
 };
 
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
@@ -58,15 +58,15 @@ export function Modal({
         onClick={(e) => {
           if (e.target === dialogRef.current) close();
         }}
-        className="fixed inset-0 m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-lg backdrop:bg-stone-900/50 dark:border-stone-800 dark:bg-stone-900 dark:backdrop:bg-black/70"
+        className="fixed inset-0 m-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-lg backdrop:bg-slate-900/50 dark:border-slate-800 dark:bg-slate-900 dark:backdrop:bg-black/70"
       >
         <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-stone-900 dark:text-stone-50">{title}</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{title}</h2>
           <button
             type="button"
             onClick={close}
             aria-label="Fermer"
-            className="shrink-0 text-xl leading-none text-stone-400 hover:text-stone-900 dark:hover:text-stone-100"
+            className="shrink-0 text-xl leading-none text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
           >
             ×
           </button>

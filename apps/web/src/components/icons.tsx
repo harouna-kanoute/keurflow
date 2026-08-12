@@ -197,9 +197,9 @@ export function CloseIcon({ className }: IconProps) {
 export function HeroIllustration({ className }: IconProps) {
   return (
     <svg viewBox="0 0 480 360" fill="none" className={className} aria-hidden>
-      <line x1="40" y1="288" x2="440" y2="288" stroke="currentColor" strokeWidth={1.5} className="text-stone-300 dark:text-stone-700" />
+      <line x1="40" y1="288" x2="440" y2="288" stroke="currentColor" strokeWidth={1.5} className="text-slate-300 dark:text-slate-700" />
 
-      <g className="text-clay-600 dark:text-clay-500">
+      <g className="text-brand-600 dark:text-brand-500">
         <path
           d="M70 288V190L145 130L220 190V288"
           stroke="currentColor"
@@ -212,7 +212,7 @@ export function HeroIllustration({ className }: IconProps) {
         <rect x="176" y="205" width="26" height="26" rx="2" stroke="currentColor" strokeWidth={3} />
       </g>
 
-      <g className="text-stone-400 dark:text-stone-600">
+      <g className="text-slate-400 dark:text-slate-600">
         <path d="M250 288V150M250 150l24-14M250 150l-16-20" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
         <path d="M250 190h34M250 230h34" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
         <path d="M284 190v40" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" />
@@ -224,7 +224,7 @@ export function HeroIllustration({ className }: IconProps) {
         strokeWidth={2}
         strokeDasharray="2 8"
         strokeLinecap="round"
-        className="text-stone-400 dark:text-stone-600"
+        className="text-slate-400 dark:text-slate-600"
       />
 
       <g>
@@ -236,21 +236,21 @@ export function HeroIllustration({ className }: IconProps) {
           rx="14"
           stroke="currentColor"
           strokeWidth={3}
-          className="text-stone-700 dark:text-stone-300"
+          className="text-slate-700 dark:text-slate-300"
         />
-        <rect x="372" y="80" width="52" height="8" rx="4" className="fill-stone-200 dark:fill-stone-700" />
-        <rect x="372" y="96" width="34" height="8" rx="4" className="fill-stone-200 dark:fill-stone-700" />
-        <rect x="372" y="118" width="52" height="30" rx="4" className="fill-clay-50 dark:fill-clay-900" />
+        <rect x="372" y="80" width="52" height="8" rx="4" className="fill-slate-200 dark:fill-slate-700" />
+        <rect x="372" y="96" width="34" height="8" rx="4" className="fill-slate-200 dark:fill-slate-700" />
+        <rect x="372" y="118" width="52" height="30" rx="4" className="fill-brand-50 dark:fill-brand-900" />
         <path
           d="M380 133l7 7 14-15"
           stroke="currentColor"
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-clay-600 dark:text-clay-400"
+          className="text-brand-600 dark:text-brand-400"
         />
-        <rect x="372" y="160" width="52" height="6" rx="3" className="fill-stone-100 dark:fill-stone-800" />
-        <rect x="372" y="160" width="30" height="6" rx="3" className="fill-clay-600 dark:fill-clay-500" />
+        <rect x="372" y="160" width="52" height="6" rx="3" className="fill-slate-100 dark:fill-slate-800" />
+        <rect x="372" y="160" width="30" height="6" rx="3" className="fill-brand-600 dark:fill-brand-500" />
       </g>
     </svg>
   );

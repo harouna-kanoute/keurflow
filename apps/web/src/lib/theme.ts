@@ -7,7 +7,7 @@ export const ACCENT_KEY = "keurflow-accent";
 export const FONT_KEY = "keurflow-font";
 
 export type ThemeMode = "light" | "dark" | "auto";
-export type Accent = "clay" | "teal" | "blue" | "forest";
+export type Accent = "brand" | "violet" | "teal" | "blue";
 export type FontChoice = "modern" | "classic" | "system";
 
 export const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
@@ -17,10 +17,10 @@ export const MODE_OPTIONS: { value: ThemeMode; label: string }[] = [
 ];
 
 export const ACCENT_OPTIONS: { value: Accent; label: string; swatch: string }[] = [
-  { value: "clay", label: "Terracotta", swatch: "#a8431f" },
+  { value: "brand", label: "Indigo", swatch: "#5443c4" },
+  { value: "violet", label: "Violet", swatch: "#7141b8" },
   { value: "teal", label: "Sarcelle", swatch: "#1f6f62" },
   { value: "blue", label: "Bleu", swatch: "#2a508a" },
-  { value: "forest", label: "Forêt", swatch: "#3a622e" },
 ];
 
 export const FONT_OPTIONS: { value: FontChoice; label: string }[] = [
@@ -62,7 +62,7 @@ export const THEME_INIT_SCRIPT = `
 (function () {
   try {
     var mode = localStorage.getItem(${JSON.stringify(THEME_MODE_KEY)}) || "auto";
-    var accent = localStorage.getItem(${JSON.stringify(ACCENT_KEY)}) || "clay";
+    var accent = localStorage.getItem(${JSON.stringify(ACCENT_KEY)}) || "brand";
     var font = localStorage.getItem(${JSON.stringify(FONT_KEY)}) || "modern";
     var isDark = mode === "dark" || (mode === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     var root = document.documentElement;

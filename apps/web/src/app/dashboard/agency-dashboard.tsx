@@ -31,11 +31,11 @@ function MultiCurrencyAmount({ totals }: { totals: Record<string, number> }) {
 
 function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900">
-      <p className="text-xs font-medium tracking-wide text-stone-500 uppercase dark:text-stone-400">
+    <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-stone-900 dark:text-stone-50">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">{value}</p>
     </div>
   );
 }
