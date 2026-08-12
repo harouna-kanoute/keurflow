@@ -7,6 +7,15 @@ import {
   toMinorUnits,
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
+import {
+  BudgetIcon,
+  ClockIcon,
+  FlagIcon,
+  GlobeIcon,
+  HeroIllustration,
+  ReceiptIcon,
+  UsersIcon,
+} from "@/components/icons";
 
 // Demo data only (§93) — a fictional diaspora project, not a real user's data.
 const eur = CURRENCIES.find((c) => c.code === "EUR")!;
@@ -27,26 +36,32 @@ const FEATURES = [
   {
     title: "Suivi budgétaire en temps réel",
     description: "Financements, dépenses et solde restant, toujours à jour, où que vous soyez.",
+    icon: BudgetIcon,
   },
   {
     title: "Une preuve pour chaque dépense",
     description: "Reçus, photos et documents joints à chaque ligne, consultables et vérifiables à distance.",
+    icon: ReceiptIcon,
   },
   {
     title: "Étapes de chantier suivies",
     description: "L'avancement des travaux jalon par jalon, du terrassement à la livraison.",
+    icon: FlagIcon,
   },
   {
     title: "Multi-pays, multi-devise",
     description: "Chaque projet garde son pays et sa devise locale — pas de conversion approximative.",
+    icon: GlobeIcon,
   },
   {
     title: "Rôles et permissions",
     description: "Famille, gérant sur place, agence : chacun voit et fait exactement ce qu'il doit.",
+    icon: UsersIcon,
   },
   {
     title: "Journal d'activité",
     description: "Chaque action est horodatée et tracée, pour une confiance totale entre financeur et exécutant.",
+    icon: ClockIcon,
   },
 ] as const;
 
@@ -153,36 +168,40 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="w-full max-w-sm justify-self-center rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900 lg:justify-self-end">
-            <p className="text-xs font-medium tracking-wide text-clay-600 uppercase dark:text-clay-400">
-              Construction maison familiale — Sénégal
-            </p>
-            <p className="mt-2 text-2xl font-semibold text-stone-900 dark:text-stone-50">
-              {formatMoney(remaining, eur.code, eur.minorUnit)}{" "}
-              <span className="text-base font-normal text-stone-500 dark:text-stone-400">
-                restants
-              </span>
-            </p>
-            <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
-              <div
-                className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
-                style={{ width: `${consumedPercent}%` }}
-              />
+          <div className="flex w-full max-w-sm flex-col gap-6 justify-self-center lg:justify-self-end">
+            <HeroIllustration className="hidden h-auto w-full sm:block" />
+
+            <div className="rounded-2xl border border-stone-200 bg-white p-6 text-left shadow-sm dark:border-stone-800 dark:bg-stone-900">
+              <p className="text-xs font-medium tracking-wide text-clay-600 uppercase dark:text-clay-400">
+                Construction maison familiale — Sénégal
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-stone-900 dark:text-stone-50">
+                {formatMoney(remaining, eur.code, eur.minorUnit)}{" "}
+                <span className="text-base font-normal text-stone-500 dark:text-stone-400">
+                  restants
+                </span>
+              </p>
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-stone-100 dark:bg-stone-800">
+                <div
+                  className="h-full rounded-full bg-clay-600 dark:bg-clay-500"
+                  style={{ width: `${consumedPercent}%` }}
+                />
+              </div>
+              <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
+                <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
+                <dd className="text-right text-stone-900 dark:text-stone-100">
+                  {formatMoney(budgetMinor, eur.code, eur.minorUnit)}
+                </dd>
+                <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
+                <dd className="text-right text-stone-900 dark:text-stone-100">
+                  {formatMoney(funded, eur.code, eur.minorUnit)}
+                </dd>
+                <dt className="text-stone-500 dark:text-stone-400">Consommé</dt>
+                <dd className="text-right text-stone-900 dark:text-stone-100">
+                  {consumedPercent}%
+                </dd>
+              </dl>
             </div>
-            <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-stone-500 dark:text-stone-400">Budget</dt>
-              <dd className="text-right text-stone-900 dark:text-stone-100">
-                {formatMoney(budgetMinor, eur.code, eur.minorUnit)}
-              </dd>
-              <dt className="text-stone-500 dark:text-stone-400">Financé</dt>
-              <dd className="text-right text-stone-900 dark:text-stone-100">
-                {formatMoney(funded, eur.code, eur.minorUnit)}
-              </dd>
-              <dt className="text-stone-500 dark:text-stone-400">Consommé</dt>
-              <dd className="text-right text-stone-900 dark:text-stone-100">
-                {consumedPercent}%
-              </dd>
-            </dl>
           </div>
         </section>
 
@@ -199,7 +218,7 @@ export default function Home() {
             <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map((feature) => (
                 <div key={feature.title}>
-                  <div className="h-1 w-8 rounded-full bg-clay-600 dark:bg-clay-500" />
+                  <feature.icon className="h-7 w-7 text-clay-600 dark:text-clay-500" />
                   <h3 className="mt-4 text-base font-semibold text-stone-900 dark:text-stone-50">
                     {feature.title}
                   </h3>
