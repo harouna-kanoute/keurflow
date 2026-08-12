@@ -13,6 +13,7 @@ import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
+import { BellIcon } from "@/components/icons";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { CreateProjectForm } from "./create-project-form";
 import { AgencyDashboard } from "./agency-dashboard";
@@ -139,12 +140,80 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
-          </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
-        </header>
+        <div>
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-6 pt-8 pb-14 sm:px-8">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-[0.07]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #fff 0, #fff 1px, transparent 1px, transparent 14px)",
+              }}
+            />
+            <div className="relative flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-semibold text-white">
+                  Bienvenue{profile?.full_name ? `, ${profile.full_name}` : ""}
+                </h1>
+                <p className="mt-1 text-sm text-white/80">
+                  Voici un aperçu de vos chantiers aujourd&apos;hui.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/dashboard/notifications"
+                  aria-label="Notifications"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25"
+                >
+                  <BellIcon className="h-5 w-5" />
+                </Link>
+                {organization && (
+                  <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier" variant="banner">
+                    <CreateProjectForm organizationId={organization.id} />
+                  </Modal>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="relative z-10 -mt-8 px-1">
+            {organization ? (
+              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div>
+                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                    {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                    {organization.name}
+                  </p>
+                </div>
+                <dl className="flex gap-8 text-sm">
+                  <div>
+                    <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                      {membership?.role}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
+                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                      {memberCount ?? 1}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Aucune organisation associée à votre compte pour l&apos;instant.
+                </p>
+                <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
+                  <CreateOrganizationForm />
+                </Modal>
+              </div>
+            )}
+          </div>
+        </div>
 
         {showTrialBanner && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
@@ -162,63 +231,13 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {organization ? (
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div>
-              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
-              </p>
-              <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                {organization.name}
-              </p>
-            </div>
-            <dl className="flex gap-8 text-sm">
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
-                <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
-                  {membership?.role}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
-                <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
-                  {memberCount ?? 1}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        ) : (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Aucune organisation associée à votre compte pour l&apos;instant.
-            </p>
-            <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
-              <CreateOrganizationForm />
-            </Modal>
-          </div>
-        )}
-
-        {organization && isAgencyView && (
-          <>
-            <AgencyDashboard organizationId={organization.id} />
-            <div>
-              <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier">
-                <CreateProjectForm organizationId={organization.id} />
-              </Modal>
-            </div>
-          </>
-        )}
+        {organization && isAgencyView && <AgencyDashboard organizationId={organization.id} />}
 
         {organization && !isAgencyView && (
           <div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                Mes projets
-              </p>
-              <Modal triggerLabel="Nouveau chantier" title="Nouveau chantier">
-                <CreateProjectForm organizationId={organization.id} />
-              </Modal>
-            </div>
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+              Mes projets
+            </p>
 
             {projectSummaries.length > 0 ? (
               <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -13,13 +13,18 @@ export function useModalClose(): () => void {
   return close ?? (() => {});
 }
 
-const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost", string> = {
+const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner", string> = {
   primary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
   secondary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full border border-slate-300 px-4 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600",
   ghost:
     "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100",
+  // For placement on a colored surface (e.g. the dashboard header banner) —
+  // inverted from `primary` so it stays legible against a brand-colored
+  // background instead of disappearing into it.
+  banner:
+    "flex h-9 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-brand-700 transition-colors hover:bg-white/90",
 };
 
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
@@ -35,7 +40,7 @@ export function Modal({
   /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
   triggerIcon?: React.ReactNode;
   title: string;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "banner";
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
