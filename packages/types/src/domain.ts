@@ -78,6 +78,8 @@ export interface Project {
   projectType: string;
   countryId: string;
   city: string | null;
+  address: string | null;
+  surfaceArea: number | null;
   budgetMinor: number;
   currencyCode: string;
   startDate: string | null;

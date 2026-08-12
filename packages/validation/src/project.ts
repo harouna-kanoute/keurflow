@@ -15,6 +15,8 @@ export const createProjectSchema = z.object({
   projectType: z.string().trim().min(1).max(60),
   countryCode: countryCodeSchema,
   city: z.string().trim().max(120, "120 caractères maximum").optional(),
+  address: z.string().trim().max(240, "240 caractères maximum").optional(),
+  surfaceArea: z.number().positive().max(1_000_000).optional(),
   budgetMinor: amountMinorSchema,
   currencyCode: currencyCodeSchema,
   startDate: isoDateSchema.optional(),

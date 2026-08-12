@@ -113,6 +113,24 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
             v === "" || v == null ? 0 : Math.round(Number(v) * 10 ** minorUnitFor(currencyCode)),
         })}
       />
+      <FormField
+        id="projectAddress"
+        label="Adresse du chantier"
+        placeholder="Ex : 12 rue des Manguiers, Dakar"
+        error={errors.address?.message}
+        {...register("address")}
+      />
+      <FormField
+        id="projectSurfaceArea"
+        label="Superficie (m²)"
+        type="number"
+        min="0"
+        step="0.01"
+        error={errors.surfaceArea?.message}
+        {...register("surfaceArea", {
+          setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
+        })}
+      />
       {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
       <SubmitButton pending={isPending}>
         {isPending ? "Création…" : "Créer le chantier"}

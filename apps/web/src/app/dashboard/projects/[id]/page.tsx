@@ -92,7 +92,9 @@ export default async function ProjectDetailPage({
   // guessed from another tenant's data (spec §64/§82).
   const { data: project } = await supabase
     .from("projects")
-    .select("id, organization_id, name, project_type, city, status, budget_minor, currency_code")
+    .select(
+      "id, organization_id, name, project_type, city, address, surface_area, status, budget_minor, currency_code",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -264,7 +266,8 @@ export default async function ProjectDetailPage({
                 {project.name}
               </h1>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {project.city ? `${project.city} — ` : ""}
+                {[project.address, project.city].filter(Boolean).join(", ")}
+                {project.address || project.city ? " — " : ""}
                 {STATUS_LABELS[project.status] ?? project.status}
               </p>
             </div>
@@ -319,6 +322,14 @@ export default async function ProjectDetailPage({
                   {formatMoney(spentApproved, project.currency_code, minorUnit)}
                 </dd>
               </div>
+              {project.surface_area != null && (
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Superficie</dt>
+                  <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                    {project.surface_area} m²
+                  </dd>
+                </div>
+              )}
             </dl>
           </div>
         </div>

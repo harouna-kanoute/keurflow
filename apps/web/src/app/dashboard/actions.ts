@@ -118,6 +118,8 @@ export async function createProject(input: CreateProjectInput): Promise<ActionRe
     p_city: parsed.data.city ?? null,
     p_budget_minor: parsed.data.budgetMinor,
     p_currency_code: parsed.data.currencyCode,
+    p_address: parsed.data.address ?? null,
+    p_surface_area: parsed.data.surfaceArea ?? null,
   });
 
   if (error) {
