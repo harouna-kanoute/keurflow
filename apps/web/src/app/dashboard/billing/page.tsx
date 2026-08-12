@@ -69,16 +69,22 @@ export default async function BillingPage({
     : { data: null };
 
   const isBillableTrack = !!subscription && isBillablePlan(subscription.plan_code);
+  const isUnlimited = subscription?.plan_code === "individual_unlimited";
 
   // individual_trial is itself priced at 0 (it's the trial row) — the price
   // actually shown/charged is the "individual" plan's, fetched separately
-  // so the trial view can say what it converts to.
-  const { data: paidIndividualPlan } =
-    isBillableTrack && plan?.price_minor === 0
+  // so the trial view can say what it converts to. Also doubles as the
+  // baseline for the unlimited add-on's "+X€" delta below.
+  const { data: paidIndividualPlan } = isBillableTrack
+    ? await supabase.from("plans").select("price_minor, currency_code").eq("code", "individual").single()
+    : { data: null };
+
+  const { data: unlimitedPlan } =
+    isBillableTrack && !isUnlimited
       ? await supabase
           .from("plans")
           .select("price_minor, currency_code")
-          .eq("code", "individual")
+          .eq("code", "individual_unlimited")
           .single()
       : { data: null };
 
@@ -86,7 +92,11 @@ export default async function BillingPage({
   const trialDaysRemaining = subscription
     ? getTrialDaysRemaining(subscription.trial_ends_at)
     : 0;
-  const displayPrice = paidIndividualPlan ?? plan;
+  const displayPrice = (plan?.price_minor === 0 ? paidIndividualPlan : null) ?? plan;
+  const unlimitedDelta =
+    unlimitedPlan && paidIndividualPlan
+      ? unlimitedPlan.price_minor - paidIndividualPlan.price_minor
+      : null;
 
   return (
     <div className="flex flex-1 flex-col items-center bg-canvas px-6 py-16">
@@ -159,7 +169,12 @@ export default async function BillingPage({
 
             {canManageBilling && isBillableTrack && (
               <div className="mt-6 flex flex-col gap-3">
-                {subscription.status !== "active" && <SubscribeButton organizationId={membership.organization_id} />}
+                {subscription.status !== "active" && (
+                  <SubscribeButton
+                    organizationId={membership.organization_id}
+                    planCode={isUnlimited ? "individual_unlimited" : "individual"}
+                  />
+                )}
                 {subscription.stripe_customer_id && (
                   <ManageBillingButton organizationId={membership.organization_id} />
                 )}
@@ -176,6 +191,32 @@ export default async function BillingPage({
           <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
             Aucun abonnement trouvé pour cette organisation.
           </p>
+        )}
+
+        {canManageBilling && unlimitedPlan && unlimitedDelta !== null && (
+          <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-left dark:border-brand-900 dark:bg-brand-900/20">
+            <p className="text-xs font-medium tracking-wide text-brand-700 uppercase dark:text-brand-300">
+              Option
+            </p>
+            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+              Chantiers illimités
+            </p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Passez à l&apos;offre illimitée pour créer autant de chantiers que nécessaire.
+            </p>
+            <p className="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+              +{formatMoney(unlimitedDelta, unlimitedPlan.currency_code, 2)}
+              <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
+            </p>
+            <div className="mt-4">
+              <SubscribeButton
+                organizationId={membership.organization_id}
+                planCode="individual_unlimited"
+                label="Passer à l'illimité"
+                variant="secondary"
+              />
+            </div>
+          </div>
         )}
       </div>
     </div>

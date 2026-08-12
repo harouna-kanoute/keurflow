@@ -3,7 +3,7 @@ export interface SubscriptionLike {
   trialEndsAt: string | null;
 }
 
-const BILLABLE_PLAN_CODES = new Set(["individual_trial", "individual"]);
+const BILLABLE_PLAN_CODES = new Set(["individual_trial", "individual", "individual_unlimited"]);
 
 // Only the individual plan family is billable right now — agency plans stay
 // free pending a B2B pricing decision (spec §100 TODO). This is driven by
