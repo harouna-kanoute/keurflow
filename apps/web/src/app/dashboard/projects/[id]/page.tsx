@@ -9,6 +9,7 @@ import {
   getBudgetConsumptionPercent,
   getFundingCoveragePercent,
   getFundingGap,
+  getMilestoneProgressPercent,
   getRemainingBudget,
   getTotalFunded,
   hasOrgRoleAtLeast,
@@ -19,6 +20,7 @@ import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
+import { BarChart } from "@/components/bar-chart";
 import { TrashIcon } from "@/components/icons";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
@@ -51,6 +53,53 @@ const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };
+
+const MILESTONE_STATUS_LABELS: Record<string, string> = {
+  pending: "À faire",
+  in_progress: "En cours",
+  completed: "Terminée",
+  delayed: "En retard",
+};
+
+const MILESTONE_STATUS_COLORS: Record<string, string> = {
+  pending: "text-slate-400 dark:text-slate-600",
+  in_progress: "text-amber-500 dark:text-amber-400",
+  completed: "text-green-500 dark:text-green-400",
+  delayed: "text-red-500 dark:text-red-400",
+};
+
+const CATEGORY_CHART_COLORS = [
+  "text-brand-600 dark:text-brand-500",
+  "text-teal-500 dark:text-teal-400",
+  "text-amber-500 dark:text-amber-400",
+  "text-purple-500 dark:text-purple-400",
+  "text-pink-500 dark:text-pink-400",
+  "text-blue-500 dark:text-blue-400",
+  "text-lime-500 dark:text-lime-400",
+  "text-orange-500 dark:text-orange-400",
+];
+
+const MONTH_LABELS = [
+  "Jan",
+  "Fév",
+  "Mars",
+  "Avr",
+  "Mai",
+  "Juin",
+  "Juil",
+  "Août",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Déc",
+];
+
+function formatCompact(amountMinor: number, minorUnit: number): string {
+  const major = amountMinor / 10 ** minorUnit;
+  return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(
+    major,
+  );
+}
 
 export async function generateMetadata({
   params,
@@ -250,6 +299,57 @@ export default async function ProjectDetailPage({
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
 
+  // Aperçu charts — derived from data already fetched above (budget,
+  // expenses, milestones), no extra queries. Category/monthly totals only
+  // count approved expenses, matching "Dépensé (approuvé)" elsewhere on
+  // this page — pending/rejected amounts aren't real spend yet.
+  const approvedExpenses = (expenses ?? []).filter((e) => e.status === "approved");
+
+  const categoryTotalsMap = new Map<string, number>();
+  for (const e of approvedExpenses) {
+    categoryTotalsMap.set(e.category, (categoryTotalsMap.get(e.category) ?? 0) + e.amount_minor);
+  }
+  const categoryBreakdown = Array.from(categoryTotalsMap.entries())
+    .map(([code, amountMinor], index) => ({
+      code,
+      label: CATEGORY_LABELS.get(code) ?? code,
+      amountMinor,
+      colorClassName: CATEGORY_CHART_COLORS[index % CATEGORY_CHART_COLORS.length],
+    }))
+    .sort((a, b) => b.amountMinor - a.amountMinor);
+
+  const monthlyTotalsMap = new Map<string, number>();
+  for (const e of approvedExpenses) {
+    const d = new Date(e.expense_date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthlyTotalsMap.set(key, (monthlyTotalsMap.get(key) ?? 0) + e.amount_minor);
+  }
+  const monthlyTotals = Array.from(monthlyTotalsMap.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .slice(-6)
+    .map(([key, amountMinor]) => {
+      const [year, month] = key.split("-").map(Number);
+      return { label: `${MONTH_LABELS[month - 1]} ${String(year).slice(2)}`, amountMinor };
+    });
+
+  const milestoneStatusCountsMap = new Map<string, number>();
+  for (const m of milestones ?? []) {
+    milestoneStatusCountsMap.set(m.status, (milestoneStatusCountsMap.get(m.status) ?? 0) + 1);
+  }
+  const milestoneStatusBreakdown = ["pending", "in_progress", "completed", "delayed"]
+    .map((status) => ({
+      status,
+      label: MILESTONE_STATUS_LABELS[status],
+      count: milestoneStatusCountsMap.get(status) ?? 0,
+      colorClassName: MILESTONE_STATUS_COLORS[status],
+    }))
+    .filter((s) => s.count > 0);
+  const milestoneProgressPercent = getMilestoneProgressPercent(
+    (milestones ?? []).map((m) => ({
+      status: m.status as "pending" | "in_progress" | "completed" | "delayed",
+    })),
+  );
+
   return (
     <div className="flex min-w-0 flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-8">
@@ -350,6 +450,7 @@ export default async function ProjectDetailPage({
 
         <ProjectTabs
           counts={{
+            apercu: 0,
             financements: fundings?.length ?? 0,
             depenses: expenses?.length ?? 0,
             etapes: milestones?.length ?? 0,
@@ -358,6 +459,101 @@ export default async function ProjectDetailPage({
             rapports: reports?.length ?? 0,
           }}
           panels={{
+            apercu: (
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    Dépenses par catégorie
+                  </p>
+                  {categoryBreakdown.length > 0 ? (
+                    <div className="mt-4 flex items-center gap-6">
+                      <DonutChart
+                        size={96}
+                        strokeWidth={12}
+                        segments={categoryBreakdown.map((c) => ({
+                          value: c.amountMinor,
+                          colorClassName: c.colorClassName,
+                        }))}
+                      />
+                      <ul className="flex flex-1 flex-col gap-1.5 text-xs">
+                        {categoryBreakdown.map((c) => (
+                          <li key={c.code} className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                              <span
+                                className={`h-2 w-2 shrink-0 rounded-full bg-current ${c.colorClassName}`}
+                              />
+                              {c.label}
+                            </span>
+                            <span className="shrink-0 text-slate-900 dark:text-slate-100">
+                              {formatMoney(c.amountMinor, project.currency_code, minorUnit)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                      Aucune dépense approuvée.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    Avancement des étapes
+                  </p>
+                  {milestones && milestones.length > 0 ? (
+                    <div className="mt-4 flex items-center gap-6">
+                      <DonutChart
+                        size={96}
+                        strokeWidth={12}
+                        segments={milestoneStatusBreakdown.map((s) => ({
+                          value: s.count,
+                          colorClassName: s.colorClassName,
+                        }))}
+                        centerLabel={`${milestoneProgressPercent}%`}
+                        centerSublabel="fait"
+                      />
+                      <ul className="flex flex-1 flex-col gap-1.5 text-xs">
+                        {milestoneStatusBreakdown.map((s) => (
+                          <li key={s.status} className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+                              <span
+                                className={`h-2 w-2 shrink-0 rounded-full bg-current ${s.colorClassName}`}
+                              />
+                              {s.label}
+                            </span>
+                            <span className="shrink-0 text-slate-900 dark:text-slate-100">
+                              {s.count}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aucune étape.</p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:col-span-2">
+                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    Dépenses approuvées par mois ({project.currency_code})
+                  </p>
+                  {monthlyTotals.length > 0 ? (
+                    <div className="mt-4">
+                      <BarChart
+                        data={monthlyTotals.map((m) => ({ label: m.label, value: m.amountMinor }))}
+                        formatValue={(v) => formatCompact(v, minorUnit)}
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                      Aucune dépense approuvée.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ),
             financements: (
               <div>
                 <div className="flex justify-end">

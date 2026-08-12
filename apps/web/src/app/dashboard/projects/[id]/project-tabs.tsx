@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 export type ProjectTabId =
+  | "apercu"
   | "financements"
   | "depenses"
   | "etapes"
@@ -11,6 +12,7 @@ export type ProjectTabId =
   | "rapports";
 
 const TABS: { id: ProjectTabId; label: string }[] = [
+  { id: "apercu", label: "Aperçu" },
   { id: "financements", label: "Financements" },
   { id: "depenses", label: "Dépenses" },
   { id: "etapes", label: "Étapes" },
@@ -30,7 +32,7 @@ export function ProjectTabs({
   counts: Record<ProjectTabId, number>;
   panels: Record<ProjectTabId, React.ReactNode>;
 }) {
-  const [active, setActive] = useState<ProjectTabId>("depenses");
+  const [active, setActive] = useState<ProjectTabId>("apercu");
 
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
