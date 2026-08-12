@@ -13,7 +13,7 @@ export function useModalClose(): () => void {
   return close ?? (() => {});
 }
 
-const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner", string> = {
+const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner" | "danger", string> = {
   primary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600",
   secondary:
@@ -25,6 +25,8 @@ const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost" | "banner", stri
   // background instead of disappearing into it.
   banner:
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-sm font-medium text-brand-700 transition-colors hover:bg-white/90",
+  danger:
+    "flex h-9 items-center justify-center gap-1.5 rounded-full border border-red-300 px-4 text-sm font-medium text-red-700 transition-colors hover:border-red-400 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20",
 };
 
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
@@ -40,7 +42,7 @@ export function Modal({
   /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
   triggerIcon?: React.ReactNode;
   title: string;
-  variant?: "primary" | "secondary" | "ghost" | "banner";
+  variant?: "primary" | "secondary" | "ghost" | "banner" | "danger";
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
