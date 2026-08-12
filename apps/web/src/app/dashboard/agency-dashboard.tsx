@@ -7,6 +7,7 @@ import {
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
+import { AlertIcon, BudgetIcon, ClockIcon, FlagIcon, ReceiptIcon, UsersIcon } from "@/components/icons";
 import { AgencyProjectsTable, type AgencyProjectRow } from "./agency-projects-table";
 
 function minorUnitFor(currencyCode: string): number {
@@ -29,10 +30,29 @@ function MultiCurrencyAmount({ totals }: { totals: Record<string, number> }) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: React.ReactNode }) {
+const TONE_CLASSES = {
+  brand: "bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-300",
+  warning: "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+  danger: "bg-red-50 text-red-600 dark:bg-red-900/40 dark:text-red-400",
+} as const;
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  tone = "brand",
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon: (props: { className?: string }) => React.ReactNode;
+  tone?: keyof typeof TONE_CLASSES;
+}) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+      <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${TONE_CLASSES[tone]}`}>
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+      <p className="mt-3 text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
         {label}
       </p>
       <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">{value}</p>
@@ -131,13 +151,26 @@ export async function AgencyDashboard({ organizationId }: { organizationId: stri
   return (
     <div className="w-full max-w-3xl">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Projets actifs" value={activeCount} />
-        <StatCard label="Clients" value={clientIds.size} />
-        <StatCard label="Budget total" value={<MultiCurrencyAmount totals={budgetTotals} />} />
-        <StatCard label="Dépenses" value={<MultiCurrencyAmount totals={spentTotals} />} />
-        <StatCard label="À vérifier" value={toReviewTotal} />
-        <StatCard label="Documents manquants" value={missingDocsTotal} />
-        <StatCard label="Projets en retard" value={delayedCount} />
+        <StatCard label="Projets actifs" value={activeCount} icon={FlagIcon} />
+        <StatCard label="Clients" value={clientIds.size} icon={UsersIcon} />
+        <StatCard
+          label="Budget total"
+          value={<MultiCurrencyAmount totals={budgetTotals} />}
+          icon={BudgetIcon}
+        />
+        <StatCard
+          label="Dépenses"
+          value={<MultiCurrencyAmount totals={spentTotals} />}
+          icon={ReceiptIcon}
+        />
+        <StatCard label="À vérifier" value={toReviewTotal} icon={ClockIcon} tone="warning" />
+        <StatCard
+          label="Documents manquants"
+          value={missingDocsTotal}
+          icon={AlertIcon}
+          tone="danger"
+        />
+        <StatCard label="Projets en retard" value={delayedCount} icon={AlertIcon} tone="danger" />
       </div>
 
       <AgencyProjectsTable rows={rows} />
