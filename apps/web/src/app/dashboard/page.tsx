@@ -7,9 +7,11 @@ import {
   getMilestoneProgressPercent,
   getTotalFunded,
   getTrialDaysRemaining,
+  hasOrgRoleAtLeast,
   isBillablePlan,
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
+import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
@@ -17,6 +19,7 @@ import { BellIcon } from "@/components/icons";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { CreateProjectForm } from "./create-project-form";
 import { AgencyDashboard } from "./agency-dashboard";
+import { ProjectActionsMenu } from "./project-actions-menu";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -94,13 +97,19 @@ export default async function DashboardPage() {
   // "Mes projets" queries below are skipped entirely for those org types.
   const isAgencyView = organization?.type === "agency" || organization?.type === "company";
 
+  // UI convenience only (§69/§83) — the RLS update/delete policies on
+  // `projects` are the actual authority, re-checked server-side by
+  // updateProject/deleteProject regardless of what's shown here.
+  const canEditProjects = !!membership && hasOrgRoleAtLeast(membership.role as OrganizationRole, "manager");
+  const canDeleteProjects = !!membership && hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin");
+
   // RLS (projects_select_org_or_project_members) filters this to projects
   // this user can actually see — filtering by organization_id here is just
   // for clarity, not the security boundary itself.
   const { data: projects } = organization && !isAgencyView
     ? await supabase
         .from("projects")
-        .select("id, name, status, budget_minor, currency_code")
+        .select("id, name, project_type, status, budget_minor, currency_code, address, surface_area")
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false })
     : { data: null };
@@ -231,7 +240,13 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {organization && isAgencyView && <AgencyDashboard organizationId={organization.id} />}
+        {organization && isAgencyView && (
+          <AgencyDashboard
+            organizationId={organization.id}
+            canEditProjects={canEditProjects}
+            canDeleteProjects={canDeleteProjects}
+          />
+        )}
 
         {organization && !isAgencyView && (
           <div>
@@ -248,22 +263,41 @@ export default async function DashboardPage() {
                       ? Math.round((project.spent / project.budget_minor) * 100)
                       : 0;
                   return (
-                    <li key={project.id}>
-                      <Link
-                        href={`/dashboard/projects/${project.id}`}
-                        className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                            {project.name}
-                          </span>
+                    <li
+                      key={project.id}
+                      className="flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                          {project.name}
+                        </span>
+                        <div className="flex shrink-0 items-center gap-1">
                           {project.toReviewCount > 0 && (
-                            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
                               {project.toReviewCount} à vérifier
                             </span>
                           )}
+                          <ProjectActionsMenu
+                            projectId={project.id}
+                            projectName={project.name}
+                            currencyCode={project.currency_code}
+                            editDefaults={{
+                              name: project.name,
+                              projectType: project.project_type,
+                              budgetMinor: project.budget_minor,
+                              address: project.address,
+                              surfaceArea: project.surface_area,
+                            }}
+                            canEdit={canEditProjects}
+                            canDelete={canDeleteProjects}
+                          />
                         </div>
+                      </div>
 
+                      <Link
+                        href={`/dashboard/projects/${project.id}`}
+                        className="flex flex-1 flex-col"
+                      >
                         <div className="mt-4 flex items-center gap-4">
                           <DonutChart
                             size={64}
