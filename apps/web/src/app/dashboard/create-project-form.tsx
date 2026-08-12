@@ -1,6 +1,7 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { createProjectSchema, type CreateProjectInput } from "@keurflow/validation";
@@ -27,6 +28,7 @@ function minorUnitFor(currencyCode: string | undefined): number {
 export function CreateProjectForm({ organizationId }: { organizationId: string }) {
   const close = useModalClose();
   const [isPending, startTransition] = useTransition();
+  const [requiresUpgrade, setRequiresUpgrade] = useState(false);
   const {
     register,
     handleSubmit,
@@ -46,6 +48,7 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
       const result = await createProject(data);
       if (result?.error) {
         setError("root", { message: result.error });
+        setRequiresUpgrade(!!result.requiresUpgrade);
         return;
       }
       close();
@@ -131,7 +134,19 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
           setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
         })}
       />
-      {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
+      {errors.root && (
+        <p className="text-sm text-red-600">
+          {errors.root.message}
+          {requiresUpgrade && (
+            <>
+              {" "}
+              <Link href="/dashboard/billing" className="font-medium underline" onClick={close}>
+                Passer à l&apos;abonnement supérieur →
+              </Link>
+            </>
+          )}
+        </p>
+      )}
       <SubmitButton pending={isPending}>
         {isPending ? "Création…" : "Créer le chantier"}
       </SubmitButton>
