@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ORGANIZATION_TYPES } from "@keurflow/types";
 import { countryCodeSchema } from "./common";
 
 const emailSchema = z.string().trim().toLowerCase().email("Email invalide");
@@ -15,6 +16,7 @@ export const signUpSchema = z
       .min(2, "2 caractères minimum")
       .max(120, "120 caractères maximum"),
     email: emailSchema,
+    organizationType: z.enum(ORGANIZATION_TYPES),
     countryCode: countryCodeSchema,
     password: passwordSchema,
     confirmPassword: z.string(),
