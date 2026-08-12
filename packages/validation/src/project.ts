@@ -29,6 +29,19 @@ export const deleteProjectSchema = z.object({
 });
 export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
 
+// Deliberately narrower than createProjectSchema: country/currency aren't
+// editable after creation (changing them would desync every existing
+// budget_minor/amount figure recorded in that currency).
+export const updateProjectSchema = z.object({
+  projectId: uuidSchema,
+  name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
+  projectType: z.string().trim().min(1).max(60),
+  address: z.string().trim().max(240, "240 caractères maximum").optional(),
+  surfaceArea: z.number().positive().max(1_000_000).optional(),
+  budgetMinor: amountMinorSchema,
+});
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+
 export const updateProjectStatusSchema = z.object({
   projectId: uuidSchema,
   status: z.enum(PROJECT_STATUSES),

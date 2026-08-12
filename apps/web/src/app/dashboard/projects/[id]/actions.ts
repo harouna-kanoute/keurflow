@@ -25,6 +25,7 @@ import {
   inviteProjectMemberSchema,
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
+  updateProjectSchema,
   uploadDocumentSchema,
   uploadPhotoSchema,
   type CreateExpenseCommentInput,
@@ -36,6 +37,7 @@ import {
   type InviteProjectMemberInput,
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
+  type UpdateProjectInput,
   type UploadDocumentInput,
   type UploadPhotoInput,
 } from "@keurflow/validation";
@@ -749,6 +751,51 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
     });
   }
 
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function updateProject(input: UpdateProjectInput): Promise<ActionResult> {
+  const parsed = updateProjectSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  // RLS (projects_update_org_managers_or_project_owners) is the actual
+  // authority here — org managers+ or the project's own manager/owner.
+  const { data: updated, error } = await supabase
+    .from("projects")
+    .update({
+      name: parsed.data.name,
+      project_type: parsed.data.projectType,
+      address: parsed.data.address ?? null,
+      surface_area: parsed.data.surfaceArea ?? null,
+      budget_minor: parsed.data.budgetMinor,
+    })
+    .eq("id", parsed.data.projectId)
+    .select("id, organization_id")
+    .single();
+
+  if (error || !updated) {
+    console.error("[updateProject] Supabase error:", error?.code, error?.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  await logAudit({
+    organizationId: updated.organization_id,
+    projectId: updated.id,
+    userId: user.id,
+    action: "project_updated",
+    entityType: "project",
+    entityId: updated.id,
+    metadata: { name: parsed.data.name },
+  });
+
+  revalidatePath("/dashboard");
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
   return {};
 }

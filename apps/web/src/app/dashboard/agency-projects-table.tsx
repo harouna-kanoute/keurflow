@@ -5,14 +5,18 @@ import { useMemo, useState } from "react";
 import { formatMoney } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { DonutChart } from "@/components/donut-chart";
+import { ProjectActionsMenu } from "./project-actions-menu";
 
 export interface AgencyProjectRow {
   id: string;
   name: string;
+  projectType: string;
   status: string;
   countryName: string;
   budgetMinor: number;
   currencyCode: string;
+  address: string | null;
+  surfaceArea: number | null;
   spentMinor: number;
   toReviewCount: number;
   missingDocsCount: number;
@@ -31,7 +35,15 @@ function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
 }
 
-export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
+export function AgencyProjectsTable({
+  rows,
+  canEditProjects,
+  canDeleteProjects,
+}: {
+  rows: AgencyProjectRow[];
+  canEditProjects: boolean;
+  canDeleteProjects: boolean;
+}) {
   const [countryFilter, setCountryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [delayedOnly, setDelayedOnly] = useState(false);
@@ -96,10 +108,13 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
                 ? Math.round((project.spentMinor / project.budgetMinor) * 100)
                 : 0;
             return (
-              <li key={project.id}>
+              <li
+                key={project.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
+              >
                 <Link
                   href={`/dashboard/projects/${project.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
+                  className="flex flex-1 flex-wrap items-center justify-between gap-3"
                 >
                   <div className="flex items-center gap-3">
                     <DonutChart
@@ -137,6 +152,20 @@ export function AgencyProjectsTable({ rows }: { rows: AgencyProjectRow[] }) {
                     {formatMoney(project.budgetMinor, project.currencyCode, minorUnit)}
                   </span>
                 </Link>
+                <ProjectActionsMenu
+                  projectId={project.id}
+                  projectName={project.name}
+                  currencyCode={project.currencyCode}
+                  editDefaults={{
+                    name: project.name,
+                    projectType: project.projectType,
+                    budgetMinor: project.budgetMinor,
+                    address: project.address,
+                    surfaceArea: project.surfaceArea,
+                  }}
+                  canEdit={canEditProjects}
+                  canDelete={canDeleteProjects}
+                />
               </li>
             );
           })}
