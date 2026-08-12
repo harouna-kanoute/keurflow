@@ -13,24 +13,29 @@ export function useModalClose(): () => void {
   return close ?? (() => {});
 }
 
-const TRIGGER_CLASSES: Record<"primary" | "secondary", string> = {
+const TRIGGER_CLASSES: Record<"primary" | "secondary" | "ghost", string> = {
   primary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full bg-clay-600 px-4 text-sm font-medium text-white transition-colors hover:bg-clay-700 dark:bg-clay-500 dark:hover:bg-clay-600",
   secondary:
     "flex h-9 items-center justify-center gap-1.5 rounded-full border border-stone-300 px-4 text-sm font-medium text-stone-900 transition-colors hover:border-stone-400 dark:border-stone-700 dark:text-stone-100 dark:hover:border-stone-600",
+  ghost:
+    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-stone-600 transition-colors hover:bg-stone-50 hover:text-stone-900 dark:text-stone-400 dark:hover:bg-stone-800 dark:hover:text-stone-100",
 };
 
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
 // for free — no client-side modal library needed for something this simple.
 export function Modal({
   triggerLabel,
+  triggerIcon,
   title,
   variant = "primary",
   children,
 }: {
   triggerLabel: string;
+  /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
+  triggerIcon?: React.ReactNode;
   title: string;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "ghost";
   children: React.ReactNode;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -41,9 +46,11 @@ export function Modal({
   return (
     <>
       <button type="button" onClick={open} className={TRIGGER_CLASSES[variant]}>
-        <span aria-hidden className="text-base leading-none">
-          +
-        </span>
+        {triggerIcon ?? (
+          <span aria-hidden className="text-base leading-none">
+            +
+          </span>
+        )}
         {triggerLabel}
       </button>
       <dialog

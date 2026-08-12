@@ -4,7 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut } from "@/app/(auth)/actions";
-import { BellIcon, ClockIcon, CloseIcon, CreditCardIcon, HomeIcon, LogoutIcon, MenuIcon } from "@/components/icons";
+import {
+  BellIcon,
+  ClockIcon,
+  CloseIcon,
+  CreditCardIcon,
+  HomeIcon,
+  LogoutIcon,
+  MenuIcon,
+  SettingsIcon,
+} from "@/components/icons";
+import { Modal } from "@/components/modal";
+import { AppearanceSettings } from "@/components/appearance-settings";
 
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -113,7 +124,16 @@ export function DashboardChrome({
         </nav>
 
         <div className="border-t border-stone-200 p-3 dark:border-stone-800">
-          <details className="group relative">
+          <Modal
+            triggerLabel="Paramètres"
+            triggerIcon={<SettingsIcon className="h-5 w-5 shrink-0" />}
+            title="Paramètres d'apparence"
+            variant="ghost"
+          >
+            <AppearanceSettings />
+          </Modal>
+
+          <details className="group relative mt-1">
             <summary className="flex cursor-pointer list-none items-center gap-3 rounded-lg px-2 py-2 hover:bg-stone-50 dark:hover:bg-stone-800">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-clay-100 text-sm font-semibold text-clay-700 dark:bg-clay-900 dark:text-clay-300">
                 {getInitials(displayName)}

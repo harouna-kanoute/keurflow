@@ -1,21 +1,38 @@
 @import "tailwindcss";
 
+/* Dark mode is toggled by a `.dark` class on <html> (apps/web/src/lib/theme.ts
+   resolves the user's light/dark/auto choice into that class before paint),
+   not by prefers-color-scheme directly — that lets "Clair"/"Sombre" override
+   the OS setting while "Auto" still tracks it via a small script. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #faf6f0;
   --foreground: #1c1917;
 }
 
+.dark {
+  --background: #1c1917;
+  --foreground: #f5f0ea;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans-active);
   --font-mono: var(--font-geist-mono);
+}
 
-  /* Brand accent — terracotta/clay (spec §92: "africain contemporain, premium,
-     éviter les clichés visuels"). Used for CTAs, active states and progress
-     indicators; body text and neutral surfaces stay on Tailwind's stone
-     ramp, a warm gray that reads better than zinc against the cream
-     background below. */
+/* Deliberately a plain (non-`inline`) @theme block: `inline` bakes the
+   literal resolved color into every generated utility at build time (fine
+   for --background/--foreground above, which alias an already-dynamic
+   variable), which would defeat the whole point here — these need to stay
+   `var(--color-clay-*)` in the compiled CSS so [data-accent] below can
+   repaint every `clay-*` utility in the app at runtime without touching a
+   single component. Brand accent is terracotta/clay by default (spec §92:
+   "africain contemporain, premium, éviter les clichés visuels"); body text
+   and neutral surfaces stay on Tailwind's stone ramp. */
+@theme {
   --color-clay-50: #fcf4ef;
   --color-clay-100: #f8e4d7;
   --color-clay-200: #f0c7ac;
@@ -30,11 +47,56 @@
   --color-cream: #faf6f0;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #1c1917;
-    --foreground: #f5f0ea;
-  }
+[data-accent="teal"] {
+  --color-clay-50: #eff9f7;
+  --color-clay-100: #d9f0ec;
+  --color-clay-200: #b0e0d7;
+  --color-clay-300: #7dc9bb;
+  --color-clay-400: #4fac9c;
+  --color-clay-500: #2f8d7d;
+  --color-clay-600: #1f6f62;
+  --color-clay-700: #17564c;
+  --color-clay-800: #123f38;
+  --color-clay-900: #0d2c27;
+}
+
+[data-accent="blue"] {
+  --color-clay-50: #eff4fb;
+  --color-clay-100: #d9e6f6;
+  --color-clay-200: #b3cced;
+  --color-clay-300: #82abdf;
+  --color-clay-400: #5688cc;
+  --color-clay-500: #3968ad;
+  --color-clay-600: #2a508a;
+  --color-clay-700: #213e6c;
+  --color-clay-800: #182c4d;
+  --color-clay-900: #101e35;
+}
+
+[data-accent="forest"] {
+  --color-clay-50: #f0f5ee;
+  --color-clay-100: #dde9d7;
+  --color-clay-200: #b9d3ae;
+  --color-clay-300: #8fb87e;
+  --color-clay-400: #679a55;
+  --color-clay-500: #4a7d3a;
+  --color-clay-600: #3a622e;
+  --color-clay-700: #2d4b24;
+  --color-clay-800: #21381b;
+  --color-clay-900: #172712;
+}
+
+:root,
+[data-font="modern"] {
+  --font-sans-active: var(--font-geist-sans);
+}
+
+[data-font="classic"] {
+  --font-sans-active: var(--font-serif);
+}
+
+[data-font="system"] {
+  --font-sans-active: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
