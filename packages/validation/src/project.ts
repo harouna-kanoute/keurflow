@@ -24,6 +24,11 @@ export const createProjectSchema = z.object({
 });
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
+export const deleteProjectSchema = z.object({
+  projectId: uuidSchema,
+});
+export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
+
 export const updateProjectStatusSchema = z.object({
   projectId: uuidSchema,
   status: z.enum(PROJECT_STATUSES),

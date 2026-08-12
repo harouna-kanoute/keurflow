@@ -12,6 +12,7 @@ import {
   getRemainingBudget,
   getTotalFunded,
   hasOrgRoleAtLeast,
+  hasProjectRoleAtLeast,
 } from "@keurflow/business";
 import { CURRENCIES, EXPENSE_CATEGORIES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
@@ -26,6 +27,7 @@ import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
 import { CreateReportForm } from "./create-report-form";
+import { DeleteProjectForm } from "./delete-project-form";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -186,6 +188,14 @@ export default async function ProjectDetailPage({
   const canApprove =
     (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
     (!!projectMembership && canApproveExpense(projectMembership.role as ProjectRole));
+
+  // Deletion is a higher bar than canApprove — org owners/admins or the
+  // project's own owner, not managers (see deleteProject's own check,
+  // which RLS re-validates authoritatively either way).
+  const canDelete =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "admin")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
 
   const expenseList = (expenses ?? []).map((e) => ({
     amountMinor: e.amount_minor,
@@ -524,6 +534,25 @@ export default async function ProjectDetailPage({
             </div>
           </div>
         </div>
+
+        {canDelete && (
+          <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 dark:border-red-900 dark:bg-red-900/10">
+            <SectionHeader title="Zone de danger" />
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+              La suppression du chantier est définitive et irréversible.
+            </p>
+            <div className="mt-4">
+              <Modal
+                triggerLabel="Supprimer le chantier"
+                triggerIcon={<span aria-hidden />}
+                title="Supprimer le chantier"
+                variant="danger"
+              >
+                <DeleteProjectForm projectId={project.id} projectName={project.name} />
+              </Modal>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

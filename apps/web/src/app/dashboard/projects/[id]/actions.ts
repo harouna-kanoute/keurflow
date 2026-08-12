@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   calculateExpenseTotal,
   deriveDocumentationStatus,
@@ -20,6 +21,7 @@ import {
   createFundingSchema,
   createMilestoneSchema,
   createReportSchema,
+  deleteProjectSchema,
   inviteProjectMemberSchema,
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
@@ -30,6 +32,7 @@ import {
   type CreateFundingInput,
   type CreateMilestoneInput,
   type CreateReportInput,
+  type DeleteProjectInput,
   type InviteProjectMemberInput,
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
@@ -748,4 +751,74 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
   return {};
+}
+
+export async function deleteProject(input: DeleteProjectInput): Promise<ActionResult> {
+  const parsed = deleteProjectSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("name, organization_id")
+    .eq("id", parsed.data.projectId)
+    .maybeSingle();
+  if (!project) return { error: GENERIC_ERROR };
+
+  // Manual pre-check for a clear error message — the RLS delete policy
+  // (projects_delete_org_admins_or_project_owners) is the actual authority,
+  // deliberately a higher bar than the update policy: deletion destroys
+  // every expense, funding, document and photo under the project (all FK'd
+  // with "on delete cascade"), so it's restricted to org owners/admins or
+  // the project's own owner, not managers.
+  const [{ data: orgMembership }, { data: projectMembership }] = await Promise.all([
+    supabase
+      .from("organization_members")
+      .select("role")
+      .eq("organization_id", project.organization_id)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+    supabase
+      .from("project_members")
+      .select("role")
+      .eq("project_id", parsed.data.projectId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle(),
+  ]);
+
+  const authorized =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "admin")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
+  if (!authorized) return { error: GENERIC_ERROR };
+
+  // Logged before the delete: audit_logs.project_id is "on delete set
+  // null", so this entry survives with organizationId already resolved
+  // (passed directly, since the project row it'd otherwise be looked up
+  // from is about to disappear).
+  await logAudit({
+    organizationId: project.organization_id,
+    projectId: parsed.data.projectId,
+    userId: user.id,
+    action: "project_deleted",
+    entityType: "project",
+    entityId: parsed.data.projectId,
+    metadata: { name: project.name },
+  });
+
+  const { error } = await supabase.from("projects").delete().eq("id", parsed.data.projectId);
+  if (error) {
+    console.error("[deleteProject] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }

@@ -49,6 +49,7 @@ export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
 
 export const AUDIT_ACTIONS = [
   "project_created",
+  "project_deleted",
   "member_invited",
   "expense_created",
   "expense_updated",
