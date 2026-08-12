@@ -42,7 +42,11 @@ export async function signUp(input: SignUpInput): Promise<ActionResult> {
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.fullName, country_code: parsed.data.countryCode },
+      data: {
+        full_name: parsed.data.fullName,
+        country_code: parsed.data.countryCode,
+        organization_type: parsed.data.organizationType,
+      },
       emailRedirectTo: `${APP_URL}/auth/callback`,
     },
   });

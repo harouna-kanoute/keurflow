@@ -18,9 +18,16 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
+    watch,
     setError,
     formState: { errors },
-  } = useForm<SignUpInput>({ resolver: zodResolver(signUpSchema) });
+  } = useForm<SignUpInput>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { organizationType: "individual" },
+  });
+
+  const organizationType = watch("organizationType");
+  const trialDays = organizationType === "individual" ? 7 : 14;
 
   const onSubmit = handleSubmit((data) => {
     startTransition(async () => {
@@ -32,7 +39,9 @@ export default function SignUpPage() {
   return (
     <>
       <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Créer un compte</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">7 jours gratuits, sans carte bancaire.</p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        {trialDays} jours gratuits, sans carte bancaire.
+      </p>
       <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
         <FormField
           id="fullName"
@@ -49,6 +58,17 @@ export default function SignUpPage() {
           error={errors.email?.message}
           {...register("email")}
         />
+        <FormSelect
+          id="organizationType"
+          label="Vous êtes"
+          defaultValue="individual"
+          error={errors.organizationType?.message}
+          {...register("organizationType")}
+        >
+          <option value="individual">Particulier</option>
+          <option value="agency">Agence immobilière</option>
+          <option value="company">Entreprise</option>
+        </FormSelect>
         <FormSelect
           id="countryCode"
           label="Pays du projet"

@@ -5,6 +5,7 @@ describe("signUpSchema", () => {
   const base = {
     fullName: "Harouna Test",
     email: "harouna@example.com",
+    organizationType: "individual",
     countryCode: "SN",
     password: "TestPass1234!",
     confirmPassword: "TestPass1234!",
@@ -31,6 +32,16 @@ describe("signUpSchema", () => {
 
   it("rejects an inactive/unknown country code — never trusts the client's <select> alone", () => {
     expect(signUpSchema.safeParse({ ...base, countryCode: "ZZ" }).success).toBe(false);
+  });
+
+  it("accepts each valid organization type", () => {
+    for (const organizationType of ["individual", "agency", "company"]) {
+      expect(signUpSchema.safeParse({ ...base, organizationType }).success).toBe(true);
+    }
+  });
+
+  it("rejects an organization type outside the allow-list", () => {
+    expect(signUpSchema.safeParse({ ...base, organizationType: "nonprofit" }).success).toBe(false);
   });
 
   it("normalizes email casing", () => {
