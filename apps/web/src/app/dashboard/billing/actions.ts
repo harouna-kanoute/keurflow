@@ -118,15 +118,22 @@ export async function createCheckoutSession(
           },
         ],
         proration_behavior: "create_prorations",
-        // customer.subscription.updated re-fires the webhook, which trusts
-        // this metadata as the new plan_code — must be set explicitly, since
-        // Stripe doesn't infer it from the price change.
+        // Also set on the Stripe side so a later customer.subscription.updated
+        // webhook (e.g. from a Stripe-dashboard change) still resolves the
+        // right plan_code — but the write below is what the user actually
+        // sees change, since webhook delivery is: (a) not guaranteed to be
+        // configured on every environment (e.g. no `stripe listen` running
+        // locally), and (b) inherently async even when it is, which would
+        // make an "upgrade" that redirects straight back to this page with
+        // no Stripe-hosted step in between look like it silently did nothing.
         metadata: { organization_id: organizationId, plan_code: planCode },
       });
     } catch (error) {
       console.error("[createCheckoutSession] Stripe update error:", error);
       return { error: GENERIC_ERROR };
     }
+
+    await admin.from("subscriptions").update({ plan_code: planCode }).eq("organization_id", organizationId);
 
     redirect(`${APP_URL}/dashboard/billing?checkout=success`);
   }
