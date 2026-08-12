@@ -163,7 +163,7 @@ export function DashboardChrome({
         </nav>
       </aside>
 
-      <div className="flex flex-1 flex-col lg:min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
           <button
             type="button"
