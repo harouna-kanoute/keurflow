@@ -54,3 +54,16 @@ export const inviteProjectMemberSchema = z.object({
   role: z.enum(PROJECT_ROLES).exclude(["project_owner"]),
 });
 export type InviteProjectMemberInput = z.infer<typeof inviteProjectMemberSchema>;
+
+// project_owner is excluded here too: it's assigned once at project
+// creation (create_project()) and never reassigned through this form.
+export const updateProjectMemberRoleSchema = z.object({
+  memberId: uuidSchema,
+  role: z.enum(PROJECT_ROLES).exclude(["project_owner"]),
+});
+export type UpdateProjectMemberRoleInput = z.infer<typeof updateProjectMemberRoleSchema>;
+
+export const removeProjectMemberSchema = z.object({
+  memberId: uuidSchema,
+});
+export type RemoveProjectMemberInput = z.infer<typeof removeProjectMemberSchema>;

@@ -29,6 +29,7 @@ import { ExpenseComments, type ExpenseCommentView } from "./expense-comments";
 import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
+import { MemberRowActions } from "./member-actions";
 import { CreateReportForm } from "./create-report-form";
 import { DeleteProjectForm } from "./delete-project-form";
 import { ProjectStatusSelect } from "./project-status";
@@ -709,9 +710,17 @@ export default async function ProjectDetailPage({
                             </span>
                           )}
                         </span>
-                        <span className="text-slate-500 dark:text-slate-400">
-                          {PROJECT_ROLE_LABELS[member.role] ?? member.role}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 dark:text-slate-400">
+                            {PROJECT_ROLE_LABELS[member.role] ?? member.role}
+                          </span>
+                          <MemberRowActions
+                            memberId={member.id}
+                            memberName={memberNames.get(member.user_id) ?? "ce membre"}
+                            role={member.role}
+                            canManage={canApprove}
+                          />
+                        </div>
                       </li>
                     ))}
                   </ul>

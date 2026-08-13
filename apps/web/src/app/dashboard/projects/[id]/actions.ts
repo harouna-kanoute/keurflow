@@ -23,8 +23,10 @@ import {
   createReportSchema,
   deleteProjectSchema,
   inviteProjectMemberSchema,
+  removeProjectMemberSchema,
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
+  updateProjectMemberRoleSchema,
   updateProjectSchema,
   updateProjectStatusSchema,
   uploadDocumentSchema,
@@ -36,9 +38,11 @@ import {
   type CreateReportInput,
   type DeleteProjectInput,
   type InviteProjectMemberInput,
+  type RemoveProjectMemberInput,
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
   type UpdateProjectInput,
+  type UpdateProjectMemberRoleInput,
   type UpdateProjectStatusInput,
   type UploadDocumentInput,
   type UploadPhotoInput,
@@ -631,6 +635,94 @@ export async function inviteProjectMember(input: InviteProjectMemberInput): Prom
   });
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function updateProjectMemberRole(
+  input: UpdateProjectMemberRoleInput,
+): Promise<ActionResult> {
+  const parsed = updateProjectMemberRoleSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: member } = await supabase
+    .from("project_members")
+    .select("id, project_id, role")
+    .eq("id", parsed.data.memberId)
+    .maybeSingle();
+  // The owner's role is set once at creation (create_project()) and never
+  // reassigned here — the schema already excludes "project_owner" as a
+  // target, this blocks changing the *current* owner's row entirely.
+  if (!member || member.role === "project_owner") return { error: GENERIC_ERROR };
+
+  // RLS (project_members_manage) re-validates authorization on this update.
+  const { error } = await supabase
+    .from("project_members")
+    .update({ role: parsed.data.role })
+    .eq("id", parsed.data.memberId);
+
+  if (error) {
+    console.error("[updateProjectMemberRole] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  await logAudit({
+    projectId: member.project_id,
+    userId: user.id,
+    action: "member_updated",
+    entityType: "project_member",
+    entityId: member.id,
+    metadata: { role: parsed.data.role },
+  });
+
+  revalidatePath(`/dashboard/projects/${member.project_id}`);
+  return {};
+}
+
+export async function removeProjectMember(input: RemoveProjectMemberInput): Promise<ActionResult> {
+  const parsed = removeProjectMemberSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: member } = await supabase
+    .from("project_members")
+    .select("id, project_id, role")
+    .eq("id", parsed.data.memberId)
+    .maybeSingle();
+  // The owner can't be removed from here — deleting a project's last owner
+  // would leave it with no one authorized to manage it.
+  if (!member || member.role === "project_owner") return { error: GENERIC_ERROR };
+
+  // RLS (project_members_manage) re-validates authorization on this delete.
+  const { error } = await supabase
+    .from("project_members")
+    .delete()
+    .eq("id", parsed.data.memberId);
+
+  if (error) {
+    console.error("[removeProjectMember] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  await logAudit({
+    projectId: member.project_id,
+    userId: user.id,
+    action: "member_removed",
+    entityType: "project_member",
+    entityId: member.id,
+  });
+
+  revalidatePath(`/dashboard/projects/${member.project_id}`);
   return {};
 }
 

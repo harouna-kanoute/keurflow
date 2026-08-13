@@ -52,6 +52,8 @@ export const AUDIT_ACTIONS = [
   "project_updated",
   "project_deleted",
   "member_invited",
+  "member_updated",
+  "member_removed",
   "expense_created",
   "expense_updated",
   "expense_approved",
