@@ -28,10 +28,10 @@ export default function ResetPasswordPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
         Choisir un nouveau mot de passe
       </h1>
-      <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
+      <form onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-5">
         <FormField
           id="password"
           label="Nouveau mot de passe"

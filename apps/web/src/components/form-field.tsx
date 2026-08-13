@@ -3,17 +3,22 @@ import { forwardRef, type InputHTMLAttributes } from "react";
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
+  /** Rendered at the end of the label row — e.g. a "Forgot password?" link. */
+  labelAddon?: React.ReactNode;
 }
 
 export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormField(
-  { label, error, id, ...props },
+  { label, error, labelAddon, id, ...props },
   ref,
 ) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label htmlFor={id} className="text-sm font-medium text-slate-700 dark:text-slate-300">
+          {label}
+        </label>
+        {labelAddon}
+      </div>
       <input
         id={id}
         ref={ref}
