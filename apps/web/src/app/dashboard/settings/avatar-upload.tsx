@@ -25,12 +25,14 @@ export function AvatarUpload({
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  // Optimistic preview only — the server-rendered signed URL is the source
-  // of truth after the next revalidation, this just avoids a blank flash.
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const currentUrl = previewUrl ?? avatarSignedUrl;
+  // No client-side blob preview: the avatars bucket is private, so the only
+  // valid src is a server-signed URL — a blob: object URL would need the
+  // CSP's img-src to allow blob:, which it deliberately doesn't (§69). The
+  // Server Action's revalidatePath already refreshes this prop with the new
+  // signed URL once the upload completes.
+  const currentUrl = avatarSignedUrl;
 
   const onFileChange = () => {
     const file = fileInputRef.current?.files?.[0];
@@ -59,7 +61,6 @@ export function AvatarUpload({
         return;
       }
 
-      setPreviewUrl(URL.createObjectURL(file));
       if (fileInputRef.current) fileInputRef.current.value = "";
     });
   };
@@ -68,18 +69,14 @@ export function AvatarUpload({
     setError(null);
     startTransition(async () => {
       const result = await removeAvatar();
-      if (result?.error) {
-        setError(result.error);
-        return;
-      }
-      setPreviewUrl(null);
+      if (result?.error) setError(result.error);
     });
   };
 
   return (
     <div className="flex items-center gap-4">
       {currentUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- signed/blob URLs expire; not worth Next/Image's optimization pipeline for a private, ephemeral avatar.
+        // eslint-disable-next-line @next/next/no-img-element -- signed URLs expire; not worth Next/Image's optimization pipeline for a private, ephemeral avatar.
         <img
           src={currentUrl}
           alt=""
