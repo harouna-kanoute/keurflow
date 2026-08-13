@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createProjectSchema, inviteProjectMemberSchema } from "./project";
+import {
+  createProjectSchema,
+  inviteProjectMemberSchema,
+  removeProjectMemberSchema,
+  updateProjectMemberRoleSchema,
+} from "./project";
 
 describe("createProjectSchema", () => {
   const base = {
@@ -47,6 +52,39 @@ describe("inviteProjectMemberSchema", () => {
         email: "a@b.com",
         role: "project_viewer",
       }).success,
+    ).toBe(true);
+  });
+});
+
+describe("updateProjectMemberRoleSchema", () => {
+  it("excludes 'project_owner' as an assignable role", () => {
+    expect(
+      updateProjectMemberRoleSchema.safeParse({
+        memberId: "50450d0e-1ae3-46cc-a46e-b29ea758757d",
+        role: "project_owner",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts a valid role change", () => {
+    expect(
+      updateProjectMemberRoleSchema.safeParse({
+        memberId: "50450d0e-1ae3-46cc-a46e-b29ea758757d",
+        role: "project_manager",
+      }).success,
+    ).toBe(true);
+  });
+});
+
+describe("removeProjectMemberSchema", () => {
+  it("requires a valid memberId", () => {
+    expect(removeProjectMemberSchema.safeParse({ memberId: "not-a-uuid" }).success).toBe(false);
+  });
+
+  it("accepts a valid memberId", () => {
+    expect(
+      removeProjectMemberSchema.safeParse({ memberId: "50450d0e-1ae3-46cc-a46e-b29ea758757d" })
+        .success,
     ).toBe(true);
   });
 });
