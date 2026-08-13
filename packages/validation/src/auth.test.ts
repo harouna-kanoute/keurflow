@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { signInSchema, signUpSchema, updatePasswordSchema } from "./auth";
+import { signInSchema, signUpSchema, updatePasswordSchema, verifyEmailOtpSchema } from "./auth";
 
 describe("signUpSchema", () => {
   const base = {
@@ -66,5 +66,23 @@ describe("updatePasswordSchema", () => {
       updatePasswordSchema.safeParse({ password: "TestPass1234!", confirmPassword: "Nope1234!" })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("verifyEmailOtpSchema", () => {
+  it("accepts each supabase-js EmailOtpType", () => {
+    for (const type of ["signup", "invite", "magiclink", "recovery", "email", "email_change"]) {
+      expect(verifyEmailOtpSchema.safeParse({ tokenHash: "abc123", type }).success).toBe(true);
+    }
+  });
+
+  it("rejects an empty token hash", () => {
+    expect(verifyEmailOtpSchema.safeParse({ tokenHash: "", type: "invite" }).success).toBe(false);
+  });
+
+  it("rejects an unknown type", () => {
+    expect(verifyEmailOtpSchema.safeParse({ tokenHash: "abc123", type: "oauth" }).success).toBe(
+      false,
+    );
   });
 });

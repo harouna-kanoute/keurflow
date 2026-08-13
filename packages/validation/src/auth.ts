@@ -48,3 +48,14 @@ export const updatePasswordSchema = z
     path: ["confirmPassword"],
   });
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+
+// Matches supabase-js's EmailOtpType — verified via a Server Action (never a
+// bare GET) so that email-link prescanning (Gmail, corporate mail filters,
+// etc.) visiting the link can't burn the one-time token before the real
+// user clicks "Confirmer" (spec: invite links expiring before use).
+export const verifyEmailOtpSchema = z.object({
+  tokenHash: z.string().min(1),
+  type: z.enum(["signup", "invite", "magiclink", "recovery", "email", "email_change"]),
+  next: z.string().optional(),
+});
+export type VerifyEmailOtpInput = z.infer<typeof verifyEmailOtpSchema>;
