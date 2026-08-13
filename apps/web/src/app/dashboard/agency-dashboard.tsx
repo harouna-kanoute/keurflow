@@ -74,7 +74,7 @@ export async function AgencyDashboard({
   const { data: projects } = await supabase
     .from("projects")
     .select(
-      "id, name, project_type, status, budget_minor, currency_code, country_id, expected_end_date, address, surface_area",
+      "id, name, description, project_type, status, budget_minor, currency_code, country_id, city, start_date, expected_end_date, address, surface_area",
     )
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false });
@@ -131,13 +131,17 @@ export async function AgencyDashboard({
       return {
         id: project.id,
         name: project.name,
+        description: project.description,
         projectType: project.project_type,
         status: project.status,
         countryName: countryNames.get(project.country_id) ?? "—",
         budgetMinor: project.budget_minor,
         currencyCode: project.currency_code,
+        city: project.city,
         address: project.address,
         surfaceArea: project.surface_area,
+        startDate: project.start_date,
+        expectedEndDate: project.expected_end_date,
         spentMinor: getApprovedExpensesTotal(expenseList),
         toReviewCount,
         missingDocsCount,

@@ -4,19 +4,13 @@ import { useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { updateProjectSchema, type UpdateProjectInput } from "@keurflow/validation";
-import { CURRENCIES } from "@keurflow/config";
+import { CURRENCIES, PROJECT_TYPES } from "@keurflow/config";
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
+import { FormTextarea } from "@/components/form-textarea";
 import { SubmitButton } from "@/components/submit-button";
 import { useModalClose } from "@/components/modal";
 import { updateProject } from "./projects/[id]/actions";
-
-const PROJECT_TYPES = [
-  { value: "construction", label: "Construction" },
-  { value: "renovation", label: "Rénovation" },
-  { value: "extension", label: "Extension" },
-  { value: "other", label: "Autre" },
-];
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -31,10 +25,14 @@ export function EditProjectForm({
   currencyCode: string;
   defaultValues: {
     name: string;
+    description: string | null;
     projectType: string;
+    city: string | null;
     budgetMinor: number;
     address: string | null;
     surfaceArea: number | null;
+    startDate: string | null;
+    expectedEndDate: string | null;
   };
 }) {
   const close = useModalClose();
@@ -50,13 +48,17 @@ export function EditProjectForm({
     defaultValues: {
       projectId,
       name: defaultValues.name,
+      description: defaultValues.description ?? undefined,
       projectType: defaultValues.projectType,
+      city: defaultValues.city ?? undefined,
       // The input displays major units (e.g. "10000.00"); setValueAs below
       // converts back to minor units at submit — same contract as
       // CreateProjectForm's budget field.
       budgetMinor: defaultValues.budgetMinor / 10 ** minorUnit,
       address: defaultValues.address ?? undefined,
       surfaceArea: defaultValues.surfaceArea ?? undefined,
+      startDate: defaultValues.startDate ?? undefined,
+      expectedEndDate: defaultValues.expectedEndDate ?? undefined,
     },
   });
 
@@ -84,6 +86,12 @@ export function EditProjectForm({
         error={errors.name?.message}
         {...register("name")}
       />
+      <FormTextarea
+        id="editProjectDescription"
+        label="Description (optionnel)"
+        error={errors.description?.message}
+        {...register("description")}
+      />
       <FormSelect
         id="editProjectType"
         label="Type"
@@ -92,22 +100,16 @@ export function EditProjectForm({
         {...register("projectType")}
       >
         {PROJECT_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
+          <option key={t.code} value={t.code}>
             {t.label}
           </option>
         ))}
       </FormSelect>
       <FormField
-        id="editProjectBudget"
-        label={`Budget (${currencyCode})`}
-        type="number"
-        min="0"
-        step="1"
-        error={errors.budgetMinor?.message}
-        {...register("budgetMinor", {
-          setValueAs: (v) =>
-            v === "" || v == null ? 0 : Math.round(Number(v) * 10 ** minorUnit),
-        })}
+        id="editProjectCity"
+        label="Ville (optionnel)"
+        error={errors.city?.message}
+        {...register("city")}
       />
       <FormField
         id="editProjectAddress"
@@ -126,6 +128,34 @@ export function EditProjectForm({
           setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
         })}
       />
+      <FormField
+        id="editProjectBudget"
+        label={`Budget (${currencyCode})`}
+        type="number"
+        min="0"
+        step="1"
+        error={errors.budgetMinor?.message}
+        {...register("budgetMinor", {
+          setValueAs: (v) =>
+            v === "" || v == null ? 0 : Math.round(Number(v) * 10 ** minorUnit),
+        })}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          id="editProjectStartDate"
+          label="Début (optionnel)"
+          type="date"
+          error={errors.startDate?.message}
+          {...register("startDate", { setValueAs: (v) => (v === "" ? undefined : v) })}
+        />
+        <FormField
+          id="editProjectExpectedEndDate"
+          label="Fin prévue (optionnel)"
+          type="date"
+          error={errors.expectedEndDate?.message}
+          {...register("expectedEndDate", { setValueAs: (v) => (v === "" ? undefined : v) })}
+        />
+      </div>
       {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
       <SubmitButton pending={isPending}>
         {isPending ? "Enregistrement…" : "Enregistrer"}

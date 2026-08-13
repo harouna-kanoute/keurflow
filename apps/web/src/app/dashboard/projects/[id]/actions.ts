@@ -865,10 +865,14 @@ export async function updateProject(input: UpdateProjectInput): Promise<ActionRe
     .from("projects")
     .update({
       name: parsed.data.name,
+      description: parsed.data.description ?? null,
       project_type: parsed.data.projectType,
+      city: parsed.data.city ?? null,
       address: parsed.data.address ?? null,
       surface_area: parsed.data.surfaceArea ?? null,
       budget_minor: parsed.data.budgetMinor,
+      start_date: parsed.data.startDate ?? null,
+      expected_end_date: parsed.data.expectedEndDate ?? null,
     })
     .eq("id", parsed.data.projectId)
     .select("id, organization_id")

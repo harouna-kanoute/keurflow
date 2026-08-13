@@ -8,20 +8,31 @@ import {
   uuidSchema,
 } from "./common";
 
-export const createProjectSchema = z.object({
-  organizationId: uuidSchema,
-  name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
-  description: z.string().trim().max(2000, "2000 caractères maximum").optional(),
-  projectType: z.string().trim().min(1).max(60),
-  countryCode: countryCodeSchema,
-  city: z.string().trim().max(120, "120 caractères maximum").optional(),
-  address: z.string().trim().max(240, "240 caractères maximum").optional(),
-  surfaceArea: z.number().positive().max(1_000_000).optional(),
-  budgetMinor: amountMinorSchema,
-  currencyCode: currencyCodeSchema,
-  startDate: isoDateSchema.optional(),
-  expectedEndDate: isoDateSchema.optional(),
-});
+// ISO date strings ("YYYY-MM-DD") compare correctly with plain string
+// operators, so no Date parsing is needed for the ordering check.
+const expectedEndAfterStart = (data: { startDate?: string; expectedEndDate?: string }) =>
+  !data.startDate || !data.expectedEndDate || data.expectedEndDate >= data.startDate;
+const DATE_ORDER_ISSUE = {
+  message: "La date de fin prévue doit être après la date de début",
+  path: ["expectedEndDate"] as (string | number)[],
+};
+
+export const createProjectSchema = z
+  .object({
+    organizationId: uuidSchema,
+    name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
+    description: z.string().trim().max(2000, "2000 caractères maximum").optional(),
+    projectType: z.string().trim().min(1).max(60),
+    countryCode: countryCodeSchema,
+    city: z.string().trim().max(120, "120 caractères maximum").optional(),
+    address: z.string().trim().max(240, "240 caractères maximum").optional(),
+    surfaceArea: z.number().positive().max(1_000_000).optional(),
+    budgetMinor: amountMinorSchema,
+    currencyCode: currencyCodeSchema,
+    startDate: isoDateSchema.optional(),
+    expectedEndDate: isoDateSchema.optional(),
+  })
+  .refine(expectedEndAfterStart, DATE_ORDER_ISSUE);
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 export const deleteProjectSchema = z.object({
@@ -32,14 +43,20 @@ export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
 // Deliberately narrower than createProjectSchema: country/currency aren't
 // editable after creation (changing them would desync every existing
 // budget_minor/amount figure recorded in that currency).
-export const updateProjectSchema = z.object({
-  projectId: uuidSchema,
-  name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
-  projectType: z.string().trim().min(1).max(60),
-  address: z.string().trim().max(240, "240 caractères maximum").optional(),
-  surfaceArea: z.number().positive().max(1_000_000).optional(),
-  budgetMinor: amountMinorSchema,
-});
+export const updateProjectSchema = z
+  .object({
+    projectId: uuidSchema,
+    name: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
+    description: z.string().trim().max(2000, "2000 caractères maximum").optional(),
+    projectType: z.string().trim().min(1).max(60),
+    city: z.string().trim().max(120, "120 caractères maximum").optional(),
+    address: z.string().trim().max(240, "240 caractères maximum").optional(),
+    surfaceArea: z.number().positive().max(1_000_000).optional(),
+    budgetMinor: amountMinorSchema,
+    startDate: isoDateSchema.optional(),
+    expectedEndDate: isoDateSchema.optional(),
+  })
+  .refine(expectedEndAfterStart, DATE_ORDER_ISSUE);
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 
 export const updateProjectStatusSchema = z.object({

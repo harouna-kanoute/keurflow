@@ -116,7 +116,9 @@ export default async function DashboardPage() {
   const { data: projects } = organization && !isAgencyView
     ? await supabase
         .from("projects")
-        .select("id, name, project_type, status, budget_minor, currency_code, address, surface_area")
+        .select(
+          "id, name, description, project_type, status, budget_minor, currency_code, city, address, surface_area, start_date, expected_end_date",
+        )
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false })
     : { data: null };
@@ -355,10 +357,14 @@ export default async function DashboardPage() {
                             currencyCode={project.currency_code}
                             editDefaults={{
                               name: project.name,
+                              description: project.description,
                               projectType: project.project_type,
+                              city: project.city,
                               budgetMinor: project.budget_minor,
                               address: project.address,
                               surfaceArea: project.surface_area,
+                              startDate: project.start_date,
+                              expectedEndDate: project.expected_end_date,
                             }}
                             canEdit={canEditProjects}
                             canDelete={canDeleteProjects}
