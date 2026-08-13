@@ -14,14 +14,16 @@ import {
   getTotalFunded,
   hasOrgRoleAtLeast,
   hasProjectRoleAtLeast,
+  isProjectDelayed,
 } from "@keurflow/business";
-import { CURRENCIES, EXPENSE_CATEGORIES } from "@keurflow/config";
+import { CURRENCIES, EXPENSE_CATEGORIES, PROJECT_TYPES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
 import { BarChart } from "@/components/bar-chart";
-import { TrashIcon } from "@/components/icons";
+import { EditIcon, TrashIcon } from "@/components/icons";
+import { EditProjectForm } from "../../edit-project-form";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
@@ -48,6 +50,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CATEGORY_LABELS = new Map(EXPENSE_CATEGORIES.map((c) => [c.code, c.label]));
+const PROJECT_TYPE_LABELS = new Map(PROJECT_TYPES.map((t) => [t.code, t.label]));
 
 const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_owner: "Propriétaire",
@@ -137,7 +140,7 @@ export default async function ProjectDetailPage({
   const { data: project } = await supabase
     .from("projects")
     .select(
-      "id, organization_id, name, project_type, city, address, surface_area, status, budget_minor, currency_code",
+      "id, organization_id, name, description, project_type, country_id, city, address, surface_area, status, budget_minor, currency_code, start_date, expected_end_date",
     )
     .eq("id", id)
     .maybeSingle();
@@ -145,6 +148,12 @@ export default async function ProjectDetailPage({
   if (!project) {
     notFound();
   }
+
+  const { data: country } = await supabase
+    .from("countries")
+    .select("name")
+    .eq("id", project.country_id)
+    .maybeSingle();
 
   const { data: fundings } = await supabase
     .from("fundings")
@@ -236,6 +245,14 @@ export default async function ProjectDetailPage({
   // which RLS re-validates authoritatively either way).
   const canDelete =
     (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "admin")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
+
+  // Matches projects_update_org_managers_or_project_owners (RLS) — org
+  // managers+ or the project's own owner, same bar as updateProject's own
+  // check re-validates authoritatively either way.
+  const canEdit =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
     (!!projectMembership &&
       hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
 
@@ -387,6 +404,31 @@ export default async function ProjectDetailPage({
               >
                 À vérifier
               </Link>
+              {canEdit && (
+                <Modal
+                  triggerLabel="Modifier le chantier"
+                  triggerIcon={<EditIcon className="h-4 w-4" />}
+                  title="Modifier le chantier"
+                  variant="icon"
+                  iconOnly
+                >
+                  <EditProjectForm
+                    projectId={project.id}
+                    currencyCode={project.currency_code}
+                    defaultValues={{
+                      name: project.name,
+                      description: project.description,
+                      projectType: project.project_type,
+                      city: project.city,
+                      budgetMinor: project.budget_minor,
+                      address: project.address,
+                      surfaceArea: project.surface_area,
+                      startDate: project.start_date,
+                      expectedEndDate: project.expected_end_date,
+                    }}
+                  />
+                </Modal>
+              )}
               {canDelete && (
                 <Modal
                   triggerLabel="Supprimer le chantier"
@@ -400,6 +442,74 @@ export default async function ProjectDetailPage({
               )}
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+            Informations du chantier
+          </p>
+          <dl className="mt-4 grid w-full min-w-0 grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Type</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {PROJECT_TYPE_LABELS.get(project.project_type) ?? project.project_type}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Pays</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {country?.name ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Ville</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {project.city ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Adresse</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {project.address ?? "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Superficie</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {project.surface_area != null ? `${project.surface_area} m²` : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Date de début</dt>
+              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
+                {project.start_date ? new Date(project.start_date).toLocaleDateString("fr-FR") : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-slate-500 dark:text-slate-400">Fin prévue</dt>
+              <dd className="mt-0.5 flex items-center gap-2 font-medium text-slate-900 dark:text-slate-50">
+                {project.expected_end_date
+                  ? new Date(project.expected_end_date).toLocaleDateString("fr-FR")
+                  : "—"}
+                {isProjectDelayed(
+                  project.expected_end_date,
+                  project.status as "planning" | "active" | "paused" | "completed" | "archived",
+                ) && (
+                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                    En retard
+                  </span>
+                )}
+              </dd>
+            </div>
+          </dl>
+          {project.description && (
+            <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
+              <dt className="text-sm text-slate-500 dark:text-slate-400">Description</dt>
+              <dd className="mt-1 text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300">
+                {project.description}
+              </dd>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -444,14 +554,6 @@ export default async function ProjectDetailPage({
                   {formatMoney(spentApproved, project.currency_code, minorUnit)}
                 </dd>
               </div>
-              {project.surface_area != null && (
-                <div>
-                  <dt className="text-slate-500 dark:text-slate-400">Superficie</dt>
-                  <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                    {project.surface_area} m²
-                  </dd>
-                </div>
-              )}
             </dl>
           </div>
         </div>

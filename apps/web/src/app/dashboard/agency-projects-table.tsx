@@ -10,13 +10,17 @@ import { ProjectActionsMenu } from "./project-actions-menu";
 export interface AgencyProjectRow {
   id: string;
   name: string;
+  description: string | null;
   projectType: string;
   status: string;
   countryName: string;
   budgetMinor: number;
   currencyCode: string;
+  city: string | null;
   address: string | null;
   surfaceArea: number | null;
+  startDate: string | null;
+  expectedEndDate: string | null;
   spentMinor: number;
   toReviewCount: number;
   missingDocsCount: number;
@@ -158,10 +162,14 @@ export function AgencyProjectsTable({
                   currencyCode={project.currencyCode}
                   editDefaults={{
                     name: project.name,
+                    description: project.description,
                     projectType: project.projectType,
+                    city: project.city,
                     budgetMinor: project.budgetMinor,
                     address: project.address,
                     surfaceArea: project.surfaceArea,
+                    startDate: project.startDate,
+                    expectedEndDate: project.expectedEndDate,
                   }}
                   canEdit={canEditProjects}
                   canDelete={canDeleteProjects}

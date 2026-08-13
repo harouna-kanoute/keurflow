@@ -32,6 +32,33 @@ describe("createProjectSchema", () => {
   it("makes description/city/dates optional", () => {
     expect(createProjectSchema.safeParse(base).success).toBe(true);
   });
+
+  it("accepts an expected end date on or after the start date", () => {
+    expect(
+      createProjectSchema.safeParse({
+        ...base,
+        startDate: "2026-01-01",
+        expectedEndDate: "2026-01-01",
+      }).success,
+    ).toBe(true);
+    expect(
+      createProjectSchema.safeParse({
+        ...base,
+        startDate: "2026-01-01",
+        expectedEndDate: "2026-12-31",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an expected end date before the start date", () => {
+    expect(
+      createProjectSchema.safeParse({
+        ...base,
+        startDate: "2026-06-01",
+        expectedEndDate: "2026-01-01",
+      }).success,
+    ).toBe(false);
+  });
 });
 
 describe("inviteProjectMemberSchema", () => {

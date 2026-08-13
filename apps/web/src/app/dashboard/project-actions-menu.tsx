@@ -19,10 +19,14 @@ export function ProjectActionsMenu({
   currencyCode: string;
   editDefaults: {
     name: string;
+    description: string | null;
     projectType: string;
+    city: string | null;
     budgetMinor: number;
     address: string | null;
     surfaceArea: number | null;
+    startDate: string | null;
+    expectedEndDate: string | null;
   };
   canEdit: boolean;
   canDelete: boolean;

@@ -5,21 +5,15 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { createProjectSchema, type CreateProjectInput } from "@keurflow/validation";
-import { COUNTRIES, CURRENCIES } from "@keurflow/config";
+import { COUNTRIES, CURRENCIES, PROJECT_TYPES } from "@keurflow/config";
 import { FormField } from "@/components/form-field";
 import { FormSelect } from "@/components/form-select";
+import { FormTextarea } from "@/components/form-textarea";
 import { SubmitButton } from "@/components/submit-button";
 import { useModalClose } from "@/components/modal";
 import { createProject } from "./actions";
 
 const ACTIVE_COUNTRIES = COUNTRIES.filter((c) => c.active);
-
-const PROJECT_TYPES = [
-  { value: "construction", label: "Construction" },
-  { value: "renovation", label: "Rénovation" },
-  { value: "extension", label: "Extension" },
-  { value: "other", label: "Autre" },
-];
 
 function minorUnitFor(currencyCode: string | undefined): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -70,6 +64,13 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
         error={errors.name?.message}
         {...register("name")}
       />
+      <FormTextarea
+        id="projectDescription"
+        label="Description (optionnel)"
+        placeholder="Quelques détails utiles sur le projet"
+        error={errors.description?.message}
+        {...register("description")}
+      />
       <FormSelect
         id="projectType"
         label="Type"
@@ -78,7 +79,7 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
         {...register("projectType")}
       >
         {PROJECT_TYPES.map((t) => (
-          <option key={t.value} value={t.value}>
+          <option key={t.code} value={t.code}>
             {t.label}
           </option>
         ))}
@@ -105,16 +106,11 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
         ))}
       </FormSelect>
       <FormField
-        id="projectBudget"
-        label={`Budget${currencyCode ? ` (${currencyCode})` : ""}`}
-        type="number"
-        min="0"
-        step="1"
-        error={errors.budgetMinor?.message}
-        {...register("budgetMinor", {
-          setValueAs: (v) =>
-            v === "" || v == null ? 0 : Math.round(Number(v) * 10 ** minorUnitFor(currencyCode)),
-        })}
+        id="projectCity"
+        label="Ville (optionnel)"
+        placeholder="Ex : Dakar"
+        error={errors.city?.message}
+        {...register("city")}
       />
       <FormField
         id="projectAddress"
@@ -134,6 +130,34 @@ export function CreateProjectForm({ organizationId }: { organizationId: string }
           setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)),
         })}
       />
+      <FormField
+        id="projectBudget"
+        label={`Budget${currencyCode ? ` (${currencyCode})` : ""}`}
+        type="number"
+        min="0"
+        step="1"
+        error={errors.budgetMinor?.message}
+        {...register("budgetMinor", {
+          setValueAs: (v) =>
+            v === "" || v == null ? 0 : Math.round(Number(v) * 10 ** minorUnitFor(currencyCode)),
+        })}
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <FormField
+          id="projectStartDate"
+          label="Début (optionnel)"
+          type="date"
+          error={errors.startDate?.message}
+          {...register("startDate", { setValueAs: (v) => (v === "" ? undefined : v) })}
+        />
+        <FormField
+          id="projectExpectedEndDate"
+          label="Fin prévue (optionnel)"
+          type="date"
+          error={errors.expectedEndDate?.message}
+          {...register("expectedEndDate", { setValueAs: (v) => (v === "" ? undefined : v) })}
+        />
+      </div>
       {errors.root && (
         <p className="text-sm text-red-600">
           {errors.root.message}
