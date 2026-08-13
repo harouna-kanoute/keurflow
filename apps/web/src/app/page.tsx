@@ -168,6 +168,7 @@ export default function Home() {
   const remaining = getRemainingBudget(budgetMinor, demoExpenses);
   const consumedPercent = getBudgetConsumptionPercent(budgetMinor, demoExpenses);
   const individualPriceMinor = toMinorUnits(9.9, eur.minorUnit);
+  const agencyPriceMinor = toMinorUnits(19.9, eur.minorUnit);
 
   return (
     <div className="flex flex-1 flex-col bg-canvas">
@@ -514,11 +515,14 @@ export default function Home() {
 
               <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                  Agence
+                  Agence immobilière
                 </p>
-                <p className="mt-3 text-4xl font-semibold text-slate-900 dark:text-slate-50">Sur devis</p>
+                <p className="mt-3 text-4xl font-semibold text-slate-900 dark:text-slate-50">
+                  {formatMoney(agencyPriceMinor, eur.code, eur.minorUnit)}
+                  <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
+                </p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                  14 jours d&apos;essai gratuit. Tarif adapté à votre volume de chantiers.
+                  14 jours d&apos;essai gratuit, sans carte bancaire.
                 </p>
                 <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                   {["Plusieurs chantiers", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
