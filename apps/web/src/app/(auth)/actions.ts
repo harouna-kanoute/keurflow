@@ -23,6 +23,20 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export type ActionResult = { error: string } | { error?: undefined };
 
+// Activates any project_members rows this session's user was invited to but
+// never accepted (status 'invited' -> 'active') — without this, RLS
+// (is_project_member requires status = 'active') leaves an accepted invite
+// permanently invisible. Called after every successful sign-in, since an
+// already-registered user invited to a new chantier never goes through
+// verifyEmailOtp at all — inviteProjectMember doesn't re-send an email to
+// an existing account, they just log in normally.
+async function acceptPendingInvites(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { error } = await supabase.rpc("accept_project_invites");
+  if (error) {
+    console.error("[acceptPendingInvites] Supabase error:", error.code, error.message);
+  }
+}
+
 export async function signIn(input: SignInInput): Promise<ActionResult> {
   const parsed = signInSchema.safeParse(input);
   if (!parsed.success) return { error: GENERIC_ERROR };
@@ -30,6 +44,8 @@ export async function signIn(input: SignInInput): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error) return { error: "Email ou mot de passe incorrect." };
+
+  await acceptPendingInvites(supabase);
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
@@ -113,6 +129,8 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Action
     console.error("[verifyEmailOtp] Supabase error:", error.code, error.message);
     return { error: "Ce lien n'est plus valide ou a expiré. Demandez-en un nouveau." };
   }
+
+  await acceptPendingInvites(supabase);
 
   revalidatePath("/", "layout");
   // invite/recovery land the user with no usable password yet — recovery
