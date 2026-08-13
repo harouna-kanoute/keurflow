@@ -7,12 +7,19 @@ import {
   FONT_KEY,
   FONT_OPTIONS,
   MODE_OPTIONS,
+  prefersReducedMotion,
+  REDUCED_MOTION_KEY,
   setAccentAttr,
   setFontAttr,
   setModeAttr,
+  setReducedMotionAttr,
+  setTextSizeAttr,
+  TEXT_SIZE_KEY,
+  TEXT_SIZE_OPTIONS,
   THEME_MODE_KEY,
   type Accent,
   type FontChoice,
+  type TextSize,
   type ThemeMode,
 } from "@/lib/theme";
 
@@ -31,6 +38,8 @@ export function AppearanceSettings() {
   const [mode, setMode] = useState<ThemeMode>("auto");
   const [accent, setAccent] = useState<Accent>("brand");
   const [font, setFont] = useState<FontChoice>("modern");
+  const [textSize, setTextSize] = useState<TextSize>("medium");
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
     // One-time sync from localStorage (an external store, not React state) on
@@ -41,6 +50,9 @@ export function AppearanceSettings() {
     setMode((localStorage.getItem(THEME_MODE_KEY) as ThemeMode) || "auto");
     setAccent((localStorage.getItem(ACCENT_KEY) as Accent) || "brand");
     setFont((localStorage.getItem(FONT_KEY) as FontChoice) || "modern");
+    setTextSize((localStorage.getItem(TEXT_SIZE_KEY) as TextSize) || "medium");
+    const storedMotion = localStorage.getItem(REDUCED_MOTION_KEY);
+    setReducedMotion(storedMotion === null ? prefersReducedMotion() : storedMotion === "true");
   }, []);
 
   const updateMode = (next: ThemeMode) => {
@@ -59,6 +71,18 @@ export function AppearanceSettings() {
     setFont(next);
     localStorage.setItem(FONT_KEY, next);
     setFontAttr(next);
+  };
+
+  const updateTextSize = (next: TextSize) => {
+    setTextSize(next);
+    localStorage.setItem(TEXT_SIZE_KEY, next);
+    setTextSizeAttr(next);
+  };
+
+  const updateReducedMotion = (next: boolean) => {
+    setReducedMotion(next);
+    localStorage.setItem(REDUCED_MOTION_KEY, String(next));
+    setReducedMotionAttr(next);
   };
 
   return (
@@ -120,6 +144,48 @@ export function AppearanceSettings() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div>
+        <p className="text-sm font-medium text-slate-900 dark:text-slate-50">Taille du texte</p>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {TEXT_SIZE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => updateTextSize(option.value)}
+              className={optionButtonClass(textSize === option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
+            Réduire les animations
+          </p>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Désactive les transitions de l&apos;interface.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={reducedMotion}
+          onClick={() => updateReducedMotion(!reducedMotion)}
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+            reducedMotion ? "bg-brand-600 dark:bg-brand-500" : "bg-slate-300 dark:bg-slate-700"
+          }`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              reducedMotion ? "translate-x-5" : "translate-x-0"
+            }`}
+          />
+        </button>
       </div>
     </div>
   );

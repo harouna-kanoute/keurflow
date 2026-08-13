@@ -101,6 +101,38 @@
   --font-sans-active: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Scales the rem base rather than individual text-* utilities, so every
+   Tailwind size class (already rem-based) grows/shrinks together with zero
+   per-component changes. */
+:root,
+[data-text-size="medium"] {
+  --text-size-root: 100%;
+}
+
+[data-text-size="small"] {
+  --text-size-root: 93.75%;
+}
+
+[data-text-size="large"] {
+  --text-size-root: 112.5%;
+}
+
+html {
+  font-size: var(--text-size-root, 100%);
+}
+
+/* Near-zero instead of 0s: some libraries treat a 0-duration transition as
+   "no transition" and skip firing its end event, which can leave
+   JS-driven state stuck waiting for a transitionend that never comes. */
+[data-reduced-motion="true"] *,
+[data-reduced-motion="true"] *::before,
+[data-reduced-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
