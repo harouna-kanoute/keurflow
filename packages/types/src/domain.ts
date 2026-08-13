@@ -9,6 +9,8 @@ import type {
   ProjectRole,
   ProjectStatus,
   SubscriptionStatus,
+  SupportTicketCategory,
+  SupportTicketStatus,
 } from "./enums";
 
 // Application-level domain types, hand-written for use before Phase 4 generates
@@ -207,6 +209,18 @@ export interface Plan {
   currencyCode: string;
   trialDays: number;
   features: Record<string, boolean>;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  organizationId: string | null;
+  category: SupportTicketCategory;
+  subject: string;
+  description: string;
+  pageUrl: string | null;
+  status: SupportTicketStatus;
+  createdAt: string;
 }
 
 export interface Subscription {

@@ -13,6 +13,7 @@ import {
   LogoutIcon,
   MenuIcon,
   SettingsIcon,
+  SupportIcon,
   UserIcon,
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
@@ -65,6 +66,7 @@ export function DashboardChrome({
         ...(hasOrganization
           ? [{ href: "/dashboard/audit-log", label: "Journal d'activité", icon: ClockIcon }]
           : []),
+        { href: "/dashboard/support", label: "Support", icon: SupportIcon },
       ],
     },
   ];

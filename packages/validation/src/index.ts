@@ -8,3 +8,4 @@ export * from "./milestone";
 export * from "./document";
 export * from "./report";
 export * from "./profile";
+export * from "./support";
