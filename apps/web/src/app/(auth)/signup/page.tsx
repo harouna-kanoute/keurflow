@@ -38,14 +38,17 @@ export default function SignUpPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Créer un compte</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        {trialDays} jours gratuits, sans carte bancaire.
-      </p>
-      <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        Créez votre compte
+      </h1>
+      <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+        {trialDays} jours gratuits · Sans carte bancaire
+      </span>
+      <form onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-5">
         <FormField
           id="fullName"
           label="Nom complet"
+          placeholder="Amadou Diallo"
           autoComplete="name"
           error={errors.fullName?.message}
           {...register("fullName")}
@@ -54,6 +57,7 @@ export default function SignUpPage() {
           id="email"
           label="Email"
           type="email"
+          placeholder="vous@exemple.com"
           autoComplete="email"
           error={errors.email?.message}
           {...register("email")}
@@ -90,6 +94,7 @@ export default function SignUpPage() {
           id="password"
           label="Mot de passe"
           type="password"
+          placeholder="Au moins 8 caractères"
           autoComplete="new-password"
           error={errors.password?.message}
           {...register("password")}
@@ -104,12 +109,21 @@ export default function SignUpPage() {
         />
         {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
         <SubmitButton pending={isPending}>
-          {isPending ? "Création…" : "Créer mon compte"}
+          {isPending ? (
+            "Création…"
+          ) : (
+            <>
+              Créer mon compte
+              <span aria-hidden className="ml-2">
+                →
+              </span>
+            </>
+          )}
         </SubmitButton>
       </form>
-      <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
+      <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
         Déjà un compte ?{" "}
-        <Link href="/login" className="font-medium text-slate-900 underline dark:text-slate-100">
+        <Link href="/login" className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
           Se connecter
         </Link>
       </p>

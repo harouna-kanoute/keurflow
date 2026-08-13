@@ -27,12 +27,18 @@ export default function LoginPage() {
 
   return (
     <>
-      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">Se connecter</h1>
-      <form onSubmit={onSubmit} noValidate className="mt-6 flex flex-col gap-4">
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+        Content de vous revoir 👋
+      </h1>
+      <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+        Connectez-vous pour retrouver vos chantiers.
+      </p>
+      <form onSubmit={onSubmit} noValidate className="mt-8 flex flex-col gap-5">
         <FormField
           id="email"
           label="Email"
           type="email"
+          placeholder="vous@exemple.com"
           autoComplete="email"
           error={errors.email?.message}
           {...register("email")}
@@ -43,24 +49,36 @@ export default function LoginPage() {
           type="password"
           autoComplete="current-password"
           error={errors.password?.message}
+          labelAddon={
+            <Link
+              href="/forgot-password"
+              className="text-xs font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
+            >
+              Mot de passe oublié ?
+            </Link>
+          }
           {...register("password")}
         />
         {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
         <SubmitButton pending={isPending}>
-          {isPending ? "Connexion…" : "Se connecter"}
+          {isPending ? (
+            "Connexion…"
+          ) : (
+            <>
+              Se connecter
+              <span aria-hidden className="ml-2">
+                →
+              </span>
+            </>
+          )}
         </SubmitButton>
       </form>
-      <div className="mt-6 flex flex-col gap-2 text-sm text-slate-500 dark:text-slate-400">
-        <Link href="/forgot-password" className="hover:text-slate-900 dark:hover:text-slate-100">
-          Mot de passe oublié ?
+      <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
+        Pas encore de compte ?{" "}
+        <Link href="/signup" className="font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400">
+          Créer un compte
         </Link>
-        <p>
-          Pas encore de compte ?{" "}
-          <Link href="/signup" className="font-medium text-slate-900 underline dark:text-slate-100">
-            Créer un compte
-          </Link>
-        </p>
-      </div>
+      </p>
     </>
   );
 }
