@@ -26,6 +26,7 @@ import {
   updateExpenseStatusSchema,
   updateMilestoneStatusSchema,
   updateProjectSchema,
+  updateProjectStatusSchema,
   uploadDocumentSchema,
   uploadPhotoSchema,
   type CreateExpenseCommentInput,
@@ -38,6 +39,7 @@ import {
   type UpdateExpenseStatusInput,
   type UpdateMilestoneStatusInput,
   type UpdateProjectInput,
+  type UpdateProjectStatusInput,
   type UploadDocumentInput,
   type UploadPhotoInput,
 } from "@keurflow/validation";
@@ -793,6 +795,45 @@ export async function updateProject(input: UpdateProjectInput): Promise<ActionRe
     entityType: "project",
     entityId: updated.id,
     metadata: { name: parsed.data.name },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function updateProjectStatus(input: UpdateProjectStatusInput): Promise<ActionResult> {
+  const parsed = updateProjectStatusSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  // RLS (projects_update_org_managers_or_project_owners) is the actual
+  // authority here — org managers+ or the project's own manager/owner.
+  const { data: updated, error } = await supabase
+    .from("projects")
+    .update({ status: parsed.data.status })
+    .eq("id", parsed.data.projectId)
+    .select("id, organization_id")
+    .single();
+
+  if (error || !updated) {
+    console.error("[updateProjectStatus] Supabase error:", error?.code, error?.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  await logAudit({
+    organizationId: updated.organization_id,
+    projectId: updated.id,
+    userId: user.id,
+    action: "project_updated",
+    entityType: "project",
+    entityId: updated.id,
+    metadata: { status: parsed.data.status },
   });
 
   revalidatePath("/dashboard");

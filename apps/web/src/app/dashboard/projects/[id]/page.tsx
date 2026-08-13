@@ -31,6 +31,7 @@ import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
 import { CreateReportForm } from "./create-report-form";
 import { DeleteProjectForm } from "./delete-project-form";
+import { ProjectStatusSelect } from "./project-status";
 import { ProjectTabs } from "./project-tabs";
 
 function minorUnitFor(currencyCode: string): number {
@@ -366,11 +367,17 @@ export default async function ProjectDetailPage({
               <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
                 {project.name}
               </h1>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                {[project.address, project.city].filter(Boolean).join(", ")}
-                {project.address || project.city ? " — " : ""}
-                {STATUS_LABELS[project.status] ?? project.status}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+                <span>
+                  {[project.address, project.city].filter(Boolean).join(", ")}
+                  {project.address || project.city ? " — " : ""}
+                </span>
+                {canApprove ? (
+                  <ProjectStatusSelect projectId={project.id} status={project.status} />
+                ) : (
+                  <span>{STATUS_LABELS[project.status] ?? project.status}</span>
+                )}
+              </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Link
