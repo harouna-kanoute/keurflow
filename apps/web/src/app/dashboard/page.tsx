@@ -31,6 +31,13 @@ const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   company: "Entreprise",
 };
 
+const PROJECT_ROLE_LABELS: Record<string, string> = {
+  project_owner: "Propriétaire",
+  project_manager: "Responsable",
+  project_member: "Collaborateur",
+  project_viewer: "Client (lecture seule)",
+};
+
 export const metadata: Metadata = { title: "Tableau de bord — KeurFlow" };
 
 export default async function DashboardPage() {
@@ -146,6 +153,42 @@ export default async function DashboardPage() {
     }),
   );
 
+  // Chantiers where this user is a project_members collaborator but not
+  // (necessarily) an organization_members staff member — e.g. a client or
+  // family member invited directly onto a chantier by an agency they don't
+  // otherwise belong to. RLS (projects_select_org_or_project_members) is
+  // what actually allows these reads; the "Mes projets" query above only
+  // ever covers the user's own organization, so without this section an
+  // invited-only collaborator with no organization sees a dead end.
+  const { data: collaboratorMemberships } = await supabase
+    .from("project_members")
+    .select("project_id, role")
+    .eq("user_id", user.id)
+    .eq("status", "active");
+
+  const collaboratorProjectIds = (collaboratorMemberships ?? []).map((m) => m.project_id);
+  const { data: collaboratorProjectsRaw } = collaboratorProjectIds.length
+    ? await supabase
+        .from("projects")
+        .select("id, name, status, organization_id, budget_minor, currency_code")
+        .in("id", collaboratorProjectIds)
+    : { data: [] };
+
+  // Excludes the user's own organization's projects — those are already
+  // shown above via "Mes projets" / AgencyDashboard, no need to duplicate.
+  const collaboratorProjects = (collaboratorProjectsRaw ?? []).filter(
+    (p) => p.organization_id !== organization?.id,
+  );
+
+  const collaboratorOrgIds = [...new Set(collaboratorProjects.map((p) => p.organization_id))];
+  const { data: collaboratorOrgs } = collaboratorOrgIds.length
+    ? await supabase.from("organizations").select("id, name").in("id", collaboratorOrgIds)
+    : { data: [] };
+  const collaboratorOrgNames = new Map((collaboratorOrgs ?? []).map((o) => [o.id, o.name]));
+  const collaboratorRoleByProjectId = new Map(
+    (collaboratorMemberships ?? []).map((m) => [m.project_id, m.role]),
+  );
+
   return (
     <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -214,7 +257,9 @@ export default async function DashboardPage() {
             ) : (
               <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Aucune organisation associée à votre compte pour l&apos;instant.
+                  {collaboratorProjects.length > 0
+                    ? "Aucune organisation à vous — mais vous collaborez sur des chantiers ci-dessous."
+                    : "Aucune organisation associée à votre compte pour l'instant."}
                 </p>
                 <Modal triggerLabel="Créer mon organisation" title="Créer mon organisation">
                   <CreateOrganizationForm />
@@ -223,6 +268,33 @@ export default async function DashboardPage() {
             )}
           </div>
         </div>
+
+        {collaboratorProjects.length > 0 && (
+          <div>
+            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+              Chantiers où vous collaborez
+            </p>
+            <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {collaboratorProjects.map((project) => (
+                <li
+                  key={project.id}
+                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-slate-400 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-600"
+                >
+                  <Link href={`/dashboard/projects/${project.id}`} className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                      {project.name}
+                    </span>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      {collaboratorOrgNames.get(project.organization_id) ?? "—"} ·{" "}
+                      {PROJECT_ROLE_LABELS[collaboratorRoleByProjectId.get(project.id) ?? ""] ??
+                        "Membre"}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {showTrialBanner && (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-300">
