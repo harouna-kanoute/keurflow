@@ -22,7 +22,19 @@ import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
 import { BarChart } from "@/components/bar-chart";
-import { EditIcon, TrashIcon } from "@/components/icons";
+import {
+  AlertIcon,
+  BudgetIcon,
+  CheckIcon,
+  ClockIcon,
+  EditIcon,
+  ExpandIcon,
+  FlagIcon,
+  GlobeIcon,
+  MapPinIcon,
+  ReceiptIcon,
+  TrashIcon,
+} from "@/components/icons";
 import { EditProjectForm } from "../../edit-project-form";
 import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
@@ -34,7 +46,7 @@ import { InviteMemberForm } from "./invite-member-form";
 import { MemberRowActions } from "./member-actions";
 import { CreateReportForm } from "./create-report-form";
 import { DeleteProjectForm } from "./delete-project-form";
-import { ProjectStatusSelect } from "./project-status";
+import { ProjectStatusSelect, PROJECT_STATUS_COLORS } from "./project-status";
 import { ProjectTabs } from "./project-tabs";
 
 function minorUnitFor(currencyCode: string): number {
@@ -72,6 +84,59 @@ const MILESTONE_STATUS_COLORS: Record<string, string> = {
   completed: "text-green-500 dark:text-green-400",
   delayed: "text-red-500 dark:text-red-400",
 };
+
+type IconComponent = (props: { className?: string }) => React.ReactNode;
+
+function InfoTile({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: IconComponent;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-xl bg-canvas px-3.5 py-3 dark:bg-slate-800/40">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400">
+        <Icon className="h-4.5 w-4.5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+        <p className="mt-0.5 text-sm font-medium text-slate-900 dark:text-slate-50">{children}</p>
+      </div>
+    </div>
+  );
+}
+
+const STAT_TONE_CLASSES = {
+  brand: "bg-brand-50 text-brand-600 dark:bg-brand-900/40 dark:text-brand-400",
+  green: "bg-green-50 text-green-600 dark:bg-green-900/40 dark:text-green-400",
+  amber: "bg-amber-50 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400",
+  slate: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
+} as const;
+
+function BudgetStat({
+  icon: Icon,
+  tone,
+  label,
+  value,
+}: {
+  icon: IconComponent;
+  tone: keyof typeof STAT_TONE_CLASSES;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl bg-canvas p-3.5 dark:bg-slate-800/40">
+      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${STAT_TONE_CLASSES[tone]}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-slate-50">{value}</p>
+    </div>
+  );
+}
 
 const CATEGORY_CHART_COLORS = [
   "text-brand-600 dark:text-brand-500",
@@ -380,21 +445,31 @@ export default async function ProjectDetailPage({
             ← Retour
           </Link>
 
-          <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-                {project.name}
-              </h1>
-              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-                <span>
-                  {[project.address, project.city].filter(Boolean).join(", ")}
-                  {project.address || project.city ? " — " : ""}
-                </span>
-                {canApprove ? (
-                  <ProjectStatusSelect projectId={project.id} status={project.status} />
-                ) : (
-                  <span>{STATUS_LABELS[project.status] ?? project.status}</span>
-                )}
+          <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-100 text-lg font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+                {project.name.trim().slice(0, 2).toUpperCase()}
+              </span>
+              <div>
+                <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                  {project.name}
+                </h1>
+                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                    {PROJECT_TYPE_LABELS.get(project.project_type) ?? project.project_type}
+                  </span>
+                  {canApprove ? (
+                    <ProjectStatusSelect projectId={project.id} status={project.status} />
+                  ) : (
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                        PROJECT_STATUS_COLORS[project.status] ?? PROJECT_STATUS_COLORS.planning
+                      }`}
+                    >
+                      {STATUS_LABELS[project.status] ?? project.status}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -448,66 +523,45 @@ export default async function ProjectDetailPage({
           <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
             Informations du chantier
           </p>
-          <dl className="mt-4 grid w-full min-w-0 grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Type</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {PROJECT_TYPE_LABELS.get(project.project_type) ?? project.project_type}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Pays</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {country?.name ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Ville</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {project.city ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Adresse</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {project.address ?? "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Superficie</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {project.surface_area != null ? `${project.surface_area} m²` : "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Date de début</dt>
-              <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-50">
-                {project.start_date ? new Date(project.start_date).toLocaleDateString("fr-FR") : "—"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-slate-500 dark:text-slate-400">Fin prévue</dt>
-              <dd className="mt-0.5 flex items-center gap-2 font-medium text-slate-900 dark:text-slate-50">
-                {project.expected_end_date
-                  ? new Date(project.expected_end_date).toLocaleDateString("fr-FR")
-                  : "—"}
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <InfoTile icon={FlagIcon} label="Type">
+              {PROJECT_TYPE_LABELS.get(project.project_type) ?? project.project_type}
+            </InfoTile>
+            <InfoTile icon={GlobeIcon} label="Pays">
+              {country?.name ?? "—"}
+            </InfoTile>
+            <InfoTile icon={MapPinIcon} label="Localisation">
+              {[project.city, project.address].filter(Boolean).join(" — ") || "—"}
+            </InfoTile>
+            <InfoTile icon={ExpandIcon} label="Superficie">
+              {project.surface_area != null ? `${project.surface_area} m²` : "—"}
+            </InfoTile>
+            <InfoTile icon={ClockIcon} label="Calendrier">
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span>
+                  {project.start_date ? new Date(project.start_date).toLocaleDateString("fr-FR") : "—"}
+                  {" → "}
+                  {project.expected_end_date
+                    ? new Date(project.expected_end_date).toLocaleDateString("fr-FR")
+                    : "—"}
+                </span>
                 {isProjectDelayed(
                   project.expected_end_date,
                   project.status as "planning" | "active" | "paused" | "completed" | "archived",
                 ) && (
-                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-400">
+                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-400">
                     En retard
                   </span>
                 )}
-              </dd>
-            </div>
-          </dl>
+              </span>
+            </InfoTile>
+          </div>
           {project.description && (
-            <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
-              <dt className="text-sm text-slate-500 dark:text-slate-400">Description</dt>
-              <dd className="mt-1 text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300">
+            <div className="mt-4 rounded-xl border-l-2 border-brand-200 bg-canvas px-4 py-3 dark:border-brand-800 dark:bg-slate-800/40">
+              <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Description</p>
+              <p className="mt-1 text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300">
                 {project.description}
-              </dd>
+              </p>
             </div>
           )}
         </div>
@@ -516,45 +570,45 @@ export default async function ProjectDetailPage({
           <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
             Budget
           </p>
-          <div className="mt-4 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-            <DonutChart
-              size={112}
-              strokeWidth={12}
-              total={Math.max(project.budget_minor, spentApproved)}
-              segments={[
-                { value: spentApproved, colorClassName: "text-brand-600 dark:text-brand-500" },
-              ]}
-              centerLabel={`${approvedTotal}%`}
-              centerSublabel="dépensé"
-            />
-            <dl className="grid w-full min-w-0 grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                  {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Financé ({coveragePercent}%)</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                  {formatMoney(totalFunded, project.currency_code, minorUnit)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">
-                  {fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
-                </dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                  {formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500 dark:text-slate-400">Dépensé (approuvé)</dt>
-                <dd className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                  {formatMoney(spentApproved, project.currency_code, minorUnit)}
-                </dd>
-              </div>
-            </dl>
+          <div className="mt-4 flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-8">
+            <div className="flex justify-center lg:shrink-0">
+              <DonutChart
+                size={112}
+                strokeWidth={12}
+                total={Math.max(project.budget_minor, spentApproved)}
+                segments={[
+                  { value: spentApproved, colorClassName: "text-brand-600 dark:text-brand-500" },
+                ]}
+                centerLabel={`${approvedTotal}%`}
+                centerSublabel="dépensé"
+              />
+            </div>
+            <div className="grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <BudgetStat
+                icon={BudgetIcon}
+                tone="brand"
+                label="Budget"
+                value={formatMoney(project.budget_minor, project.currency_code, minorUnit)}
+              />
+              <BudgetStat
+                icon={ReceiptIcon}
+                tone="green"
+                label={`Financé (${coveragePercent}%)`}
+                value={formatMoney(totalFunded, project.currency_code, minorUnit)}
+              />
+              <BudgetStat
+                icon={AlertIcon}
+                tone={fundingGap >= 0 ? "amber" : "green"}
+                label={fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
+                value={formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
+              />
+              <BudgetStat
+                icon={CheckIcon}
+                tone="slate"
+                label="Dépensé (approuvé)"
+                value={formatMoney(spentApproved, project.currency_code, minorUnit)}
+              />
+            </div>
           </div>
         </div>
 
