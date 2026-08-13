@@ -76,6 +76,12 @@ export const SUBSCRIPTION_STATUSES = [
 ] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
+export const SUPPORT_TICKET_CATEGORIES = ["bug", "security", "other"] as const;
+export type SupportTicketCategory = (typeof SUPPORT_TICKET_CATEGORIES)[number];
+
+export const SUPPORT_TICKET_STATUSES = ["open", "in_progress", "resolved", "closed"] as const;
+export type SupportTicketStatus = (typeof SUPPORT_TICKET_STATUSES)[number];
+
 export const DOCUMENT_TYPES = [
   "invoice",
   "receipt",

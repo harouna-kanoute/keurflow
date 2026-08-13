@@ -284,6 +284,21 @@ export function CheckIcon({ className }: IconProps) {
   );
 }
 
+export function SupportIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={1.5} />
+      <circle cx="12" cy="12" r="3.5" stroke="currentColor" strokeWidth={1.5} />
+      <path
+        d="M5.8 5.8l3.2 3.2M18.2 5.8l-3.2 3.2M5.8 18.2l3.2-3.2M18.2 18.2l-3.2-3.2"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function WarningIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
