@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useRef } from "react";
+import { createContext, forwardRef, useContext, useImperativeHandle, useRef } from "react";
 
 // Forms rendered inside a Modal call useModalClose() to close it on success —
 // a context, not a prop, because the modal's own close() is created
@@ -36,45 +36,52 @@ const TRIGGER_CLASSES: Record<ModalVariant, string> = {
     "flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300",
 };
 
+export type ModalHandle = { open: () => void; close: () => void };
+
 // Native <dialog> gives us focus trapping, Escape-to-close and a ::backdrop
 // for free — no client-side modal library needed for something this simple.
-export function Modal({
-  triggerLabel,
-  triggerIcon,
-  title,
-  variant = "primary",
-  iconOnly = false,
-  children,
-}: {
-  triggerLabel: string;
-  /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
-  triggerIcon?: React.ReactNode;
-  title: string;
-  variant?: ModalVariant;
-  /** Hides triggerLabel visually (kept for a11y via aria-label) — pairs with variant="icon"/"icon-danger". */
-  iconOnly?: boolean;
-  children: React.ReactNode;
-}) {
+export const Modal = forwardRef<
+  ModalHandle,
+  {
+    triggerLabel: string;
+    /** Replaces the default "+" prefix — e.g. a sidebar row icon. */
+    triggerIcon?: React.ReactNode;
+    title: string;
+    variant?: ModalVariant;
+    /** Hides triggerLabel visually (kept for a11y via aria-label) — pairs with variant="icon"/"icon-danger". */
+    iconOnly?: boolean;
+    /** Renders no trigger button at all — open() is driven externally via ref (e.g. from a dropdown menu item). */
+    hideTrigger?: boolean;
+    children: React.ReactNode;
+  }
+>(function Modal(
+  { triggerLabel, triggerIcon, title, variant = "primary", iconOnly = false, hideTrigger = false, children },
+  ref,
+) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const open = () => dialogRef.current?.showModal();
   const close = () => dialogRef.current?.close();
 
+  useImperativeHandle(ref, () => ({ open, close }));
+
   return (
     <>
-      <button
-        type="button"
-        onClick={open}
-        className={TRIGGER_CLASSES[variant]}
-        aria-label={iconOnly ? triggerLabel : undefined}
-      >
-        {triggerIcon ?? (
-          <span aria-hidden className="text-base leading-none">
-            +
-          </span>
-        )}
-        {iconOnly ? <span className="sr-only">{triggerLabel}</span> : triggerLabel}
-      </button>
+      {!hideTrigger && (
+        <button
+          type="button"
+          onClick={open}
+          className={TRIGGER_CLASSES[variant]}
+          aria-label={iconOnly ? triggerLabel : undefined}
+        >
+          {triggerIcon ?? (
+            <span aria-hidden className="text-base leading-none">
+              +
+            </span>
+          )}
+          {iconOnly ? <span className="sr-only">{triggerLabel}</span> : triggerLabel}
+        </button>
+      )}
       <dialog
         ref={dialogRef}
         onClick={(e) => {
@@ -99,4 +106,4 @@ export function Modal({
       </dialog>
     </>
   );
-}
+});
