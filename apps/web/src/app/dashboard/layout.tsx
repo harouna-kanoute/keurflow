@@ -20,9 +20,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, avatar_url")
     .eq("id", user.id)
     .single();
+
+  let avatarSignedUrl: string | null = null;
+  if (profile?.avatar_url) {
+    const { data: signed } = await supabase.storage
+      .from("avatars")
+      .createSignedUrl(profile.avatar_url, 3600);
+    avatarSignedUrl = signed?.signedUrl ?? null;
+  }
 
   const { count: unreadNotificationCount } = await supabase
     .from("notifications")
@@ -52,6 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <DashboardChrome
       userName={profile?.full_name ?? null}
       userEmail={user.email ?? ""}
+      userAvatarUrl={avatarSignedUrl}
       organizationName={organization?.name ?? null}
       organizationTypeLabel={
         organization ? (ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type) : null

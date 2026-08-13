@@ -13,6 +13,7 @@ import {
   LogoutIcon,
   MenuIcon,
   SettingsIcon,
+  UserIcon,
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
@@ -27,6 +28,7 @@ function getInitials(displayName: string): string {
 export function DashboardChrome({
   userName,
   userEmail,
+  userAvatarUrl,
   organizationName,
   organizationTypeLabel,
   unreadNotificationCount,
@@ -35,6 +37,7 @@ export function DashboardChrome({
 }: {
   userName: string | null;
   userEmail: string;
+  userAvatarUrl?: string | null;
   organizationName: string | null;
   organizationTypeLabel: string | null;
   unreadNotificationCount: number;
@@ -58,6 +61,7 @@ export function DashboardChrome({
     {
       label: "Compte",
       items: [
+        { href: "/dashboard/settings", label: "Mon profil", icon: UserIcon },
         ...(hasOrganization
           ? [{ href: "/dashboard/audit-log", label: "Journal d'activité", icon: ClockIcon }]
           : []),
@@ -191,9 +195,18 @@ export function DashboardChrome({
 
             <details className="group relative">
               <summary className="flex cursor-pointer list-none items-center gap-2.5 rounded-full py-1 pr-1 pl-1 hover:bg-slate-50 sm:pr-3 dark:hover:bg-slate-800">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
-                  {getInitials(displayName)}
-                </span>
+                {userAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- signed URL expires; not worth Next/Image's optimization pipeline for a private, ephemeral avatar.
+                  <img
+                    src={userAvatarUrl}
+                    alt=""
+                    className="h-8 w-8 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+                    {getInitials(displayName)}
+                  </span>
+                )}
                 <span className="hidden min-w-0 text-left sm:block">
                   <span className="block max-w-[10rem] truncate text-sm font-medium text-slate-900 dark:text-slate-50">
                     {displayName}
@@ -204,6 +217,13 @@ export function DashboardChrome({
                 </span>
               </summary>
               <div className="absolute top-full right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                <Link
+                  href="/dashboard/settings"
+                  className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <UserIcon className="h-4 w-4" />
+                  Mon profil
+                </Link>
                 <form action={signOut}>
                   <button
                     type="submit"
