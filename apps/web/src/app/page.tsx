@@ -10,12 +10,14 @@ import {
 import { CURRENCIES } from "@keurflow/config";
 import {
   BudgetIcon,
+  CheckIcon,
   ClockIcon,
   FlagIcon,
   GlobeIcon,
-  HeroIllustration,
   ReceiptIcon,
+  ShieldIcon,
   UsersIcon,
+  WarningIcon,
 } from "@/components/icons";
 import { ScrollReveal } from "@/components/scroll-reveal";
 
@@ -31,8 +33,16 @@ const demoExpenses = [
 const NAV_LINKS = [
   { href: "#fonctionnalites", label: "Fonctionnalités" },
   { href: "#comment-ca-marche", label: "Comment ça marche" },
+  { href: "#securite", label: "Sécurité" },
   { href: "#tarifs", label: "Tarifs" },
 ];
+
+const PAIN_POINTS = [
+  "Des dépenses éparpillées entre WhatsApp, appels et notes papier",
+  "Des photos de chantier perdues dans des conversations sans fin",
+  "Aucune vue claire sur ce qu'il reste vraiment à financer",
+  "Des reçus et documents qui s'égarent avant même d'arriver jusqu'à vous",
+] as const;
 
 const FEATURES = [
   {
@@ -82,14 +92,30 @@ const STEPS = [
   },
 ] as const;
 
+const SECURITY_POINTS = [
+  {
+    title: "Isolation stricte entre organisations",
+    description: "Chaque espace de travail est cloisonné — personne d'autre ne voit vos projets, jamais.",
+  },
+  {
+    title: "Fichiers privés, jamais publics",
+    description: "Reçus, photos et documents sont servis via des liens signés et temporaires, propres à chaque consultation.",
+  },
+  {
+    title: "Permissions par rôle",
+    description: "Propriétaire, responsable, collaborateur, lecture seule — chacun n'accède qu'à ce qui le concerne.",
+  },
+] as const;
+
 // Free-license photos (Unsplash) — real construction-site imagery, per user
 // request, layered onto a grid so no single shot has to "represent Africa".
+const HERO_PHOTO = {
+  id: "wdFwHVkEwy8",
+  url: "https://images.unsplash.com/photo-1668609268461-4f6a15269ff1?q=80&w=800&auto=format&fit=crop",
+  alt: "Ouvrier portant des briques sur un chantier",
+};
+
 const GALLERY_PHOTOS = [
-  {
-    id: "wdFwHVkEwy8",
-    url: "https://images.unsplash.com/photo-1668609268461-4f6a15269ff1?q=80&w=800&auto=format&fit=crop",
-    alt: "Ouvrier portant des briques sur un chantier",
-  },
   {
     id: "04rZ7R1fKhY",
     url: "https://images.unsplash.com/photo-1563166423-482a8c14b2d6?q=80&w=800&auto=format&fit=crop",
@@ -153,7 +179,7 @@ export default function Home() {
           >
             KeurFlow
           </Link>
-          <nav className="hidden items-center gap-8 sm:flex">
+          <nav className="hidden items-center gap-8 lg:flex">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.href}
@@ -182,10 +208,16 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 flex-col">
-        <section className="mx-auto grid w-full max-w-6xl items-center gap-16 px-6 py-24 lg:grid-cols-2">
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-16 px-6 pt-20 pb-32 lg:grid-cols-2 lg:pb-24">
           <div>
-            <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-900 sm:text-5xl dark:text-slate-50">
-              Votre projet en Afrique. Votre argent. Votre visibilité.
+            <span className="inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3.5 py-1.5 text-xs font-medium text-brand-700 dark:border-brand-900 dark:bg-brand-900/40 dark:text-brand-300">
+              <GlobeIcon className="h-3.5 w-3.5" />
+              Pensé pour la diaspora africaine
+            </span>
+            <h1 className="mt-6 max-w-xl text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-slate-50">
+              Votre projet en Afrique.
+              <br />
+              Votre argent. Votre visibilité.
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600 dark:text-slate-400">
               Suivez vos financements, vos dépenses, vos justificatifs et
@@ -199,16 +231,42 @@ export default function Home() {
               >
                 Commencer gratuitement
               </Link>
-              <span className="text-sm text-slate-500 dark:text-slate-400">
-                7 jours gratuits, sans carte bancaire
+              <a
+                href="#comment-ca-marche"
+                className="flex h-12 items-center justify-center rounded-full border border-slate-300 px-6 text-base font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
+              >
+                Découvrir comment ça marche
+              </a>
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
+                Sans engagement
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
+                Données privées et sécurisées
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
+                En français
               </span>
             </div>
           </div>
 
-          <div className="flex w-full max-w-sm flex-col gap-6 justify-self-center lg:justify-self-end">
-            <HeroIllustration className="hidden h-auto w-full sm:block" />
+          <div className="relative mb-10 w-full max-w-sm justify-self-center lg:mb-0 lg:justify-self-end">
+            <div className="relative aspect-4/5 w-full overflow-hidden rounded-3xl shadow-xl">
+              <Image
+                src={HERO_PHOTO.url}
+                alt={HERO_PHOTO.alt}
+                fill
+                priority
+                sizes="(min-width: 1024px) 24rem, 90vw"
+                className="object-cover"
+              />
+            </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="absolute -bottom-10 left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-lg dark:border-slate-800 dark:bg-slate-900 sm:left-1/2 sm:w-72">
               <p className="text-xs font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
                 Construction maison familiale — Sénégal
               </p>
@@ -242,6 +300,35 @@ export default function Home() {
           </div>
         </section>
 
+        <section className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Le constat
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                Suivre un chantier à distance, ça vire vite au chaos
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
+                WhatsApp, appels, photos éparpillées, factures papier, tableurs
+                Excel... Suivre un projet depuis l&apos;étranger devient vite
+                stressant et opaque.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-4 sm:grid-cols-2">
+              {PAIN_POINTS.map((point) => (
+                <div
+                  key={point}
+                  className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-canvas p-5 dark:border-slate-800 dark:bg-slate-950"
+                >
+                  <WarningIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-500 dark:text-amber-400" />
+                  <p className="text-sm leading-6 text-slate-700 dark:text-slate-300">{point}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </section>
+
         <section id="fonctionnalites" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
           <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
@@ -252,10 +339,15 @@ export default function Home() {
                 Tout ce qu&apos;il faut pour financer à distance, en confiance
               </h2>
             </div>
-            <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {FEATURES.map((feature) => (
-                <div key={feature.title}>
-                  <feature.icon className="h-7 w-7 text-brand-600 dark:text-brand-500" />
+                <div
+                  key={feature.title}
+                  className="rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/40">
+                    <feature.icon className="h-5.5 w-5.5 text-brand-600 dark:text-brand-400" />
+                  </span>
                   <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">
                     {feature.title}
                   </h3>
@@ -281,10 +373,14 @@ export default function Home() {
                 Opérationnel en trois étapes
               </h2>
             </div>
-            <ol className="mt-12 grid gap-10 sm:grid-cols-3">
+            <ol className="relative mt-12 grid gap-10 sm:grid-cols-3">
+              <div
+                aria-hidden
+                className="absolute top-5 right-0 left-0 hidden h-px bg-slate-200 sm:block dark:bg-slate-800"
+              />
               {STEPS.map((step, index) => (
-                <li key={step.title}>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-700 dark:bg-brand-900 dark:text-brand-300">
+                <li key={step.title} className="relative">
+                  <span className="relative z-10 flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 text-sm font-semibold text-white dark:bg-brand-500">
                     {index + 1}
                   </span>
                   <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">
@@ -334,6 +430,44 @@ export default function Home() {
           </ScrollReveal>
         </section>
 
+        <section
+          id="securite"
+          className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900"
+        >
+          <ScrollReveal className="mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-2">
+            <div>
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Sécurité
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                Vos données restent les vôtres
+              </h2>
+              <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-400">
+                Chaque projet est privé. Seules les personnes que vous invitez
+                peuvent y accéder, selon les permissions que vous définissez.
+              </p>
+              <ul className="mt-8 flex flex-col gap-6">
+                {SECURITY_POINTS.map((point) => (
+                  <li key={point.title} className="flex items-start gap-3">
+                    <CheckIcon className="mt-0.5 h-5 w-5 shrink-0 text-brand-600 dark:text-brand-500" />
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                        {point.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                        {point.description}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex aspect-square w-full items-center justify-center rounded-3xl bg-brand-50 dark:bg-brand-900/20">
+              <ShieldIcon className="h-32 w-32 text-brand-600 dark:text-brand-400" />
+            </div>
+          </ScrollReveal>
+        </section>
+
         <section id="tarifs" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
           <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
@@ -346,7 +480,10 @@ export default function Home() {
             </div>
 
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="relative rounded-2xl border-2 border-brand-600 bg-white p-8 shadow-sm dark:border-brand-500 dark:bg-slate-900">
+                <span className="absolute -top-3 left-8 rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white dark:bg-brand-500">
+                  Pour commencer
+                </span>
                 <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
                   Particulier
                 </p>
@@ -357,11 +494,15 @@ export default function Home() {
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                   7 jours d&apos;essai gratuit, sans carte bancaire.
                 </p>
-                <ul className="mt-6 flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <li>1 projet actif</li>
-                  <li>Application mobile</li>
-                  <li>Collaborateurs illimités</li>
-                  <li>Rapports d&apos;avancement</li>
+                <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                  {["1 projet actif", "Application mobile", "Collaborateurs illimités", "Rapports d'avancement"].map(
+                    (item) => (
+                      <li key={item} className="flex items-center gap-2.5">
+                        <CheckIcon className="h-4 w-4 shrink-0 text-brand-600 dark:text-brand-500" />
+                        {item}
+                      </li>
+                    ),
+                  )}
                 </ul>
                 <Link
                   href="/signup"
@@ -379,11 +520,15 @@ export default function Home() {
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                   14 jours d&apos;essai gratuit. Tarif adapté à votre volume de chantiers.
                 </p>
-                <ul className="mt-6 flex flex-col gap-2 text-sm text-slate-700 dark:text-slate-300">
-                  <li>Plusieurs chantiers</li>
-                  <li>Tableau de bord agence</li>
-                  <li>Gestion multi-clients</li>
-                  <li>Rapports d&apos;avancement</li>
+                <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                  {["Plusieurs chantiers", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
+                    (item) => (
+                      <li key={item} className="flex items-center gap-2.5">
+                        <CheckIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-600" />
+                        {item}
+                      </li>
+                    ),
+                  )}
                 </ul>
                 <Link
                   href="/signup"
