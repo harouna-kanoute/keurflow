@@ -7,10 +7,12 @@ import {
   signInSchema,
   signUpSchema,
   updatePasswordSchema,
+  verifyEmailOtpSchema,
   type RequestPasswordResetInput,
   type SignInInput,
   type SignUpInput,
   type UpdatePasswordInput,
+  type VerifyEmailOtpInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -90,6 +92,34 @@ export async function updatePassword(input: UpdatePasswordInput): Promise<Action
 
   revalidatePath("/", "layout");
   redirect("/dashboard");
+}
+
+// Called only from a Server Action invoked by an explicit "Confirmer" click
+// (see auth/confirm) — never from a bare GET. Supabase's own hosted /verify
+// link consumes the one-time token on any visit, so an email client or
+// security scanner prefetching the link burns it before the real user
+// clicks; requiring a POST here means prefetchers (which only issue GETs)
+// can't trigger it.
+export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<ActionResult> {
+  const parsed = verifyEmailOtpSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    token_hash: parsed.data.tokenHash,
+    type: parsed.data.type,
+  });
+  if (error) {
+    console.error("[verifyEmailOtp] Supabase error:", error.code, error.message);
+    return { error: "Ce lien n'est plus valide ou a expiré. Demandez-en un nouveau." };
+  }
+
+  revalidatePath("/", "layout");
+  // invite/recovery land the user with no usable password yet — recovery
+  // already sends its own explicit ?next=/reset-password, invite doesn't.
+  redirect(
+    parsed.data.type === "invite" ? "/reset-password" : (parsed.data.next ?? "/dashboard"),
+  );
 }
 
 export async function signOut() {
