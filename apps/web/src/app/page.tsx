@@ -331,13 +331,13 @@ export default function Home() {
                 href="/signup"
                 event="hero_cta_click"
                 eventParams={{ location: "hero" }}
-                className="flex h-12 items-center justify-center rounded-full bg-brand-600 px-6 text-base font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+                className="flex h-12 shrink-0 items-center justify-center rounded-full bg-brand-600 px-6 text-base font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
               >
                 Commencer gratuitement
               </TrackedLink>
               <a
                 href="#comment-ca-marche"
-                className="flex h-12 items-center justify-center rounded-full border border-slate-300 px-6 text-base font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
+                className="flex h-12 shrink-0 items-center justify-center rounded-full border border-slate-300 px-6 text-base font-medium whitespace-nowrap text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
               >
                 Découvrir comment ça marche
               </a>
