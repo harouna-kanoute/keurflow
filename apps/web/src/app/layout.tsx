@@ -33,6 +33,7 @@ export const metadata: Metadata = {
     "suivi budget construction",
     "chantier depuis l'étranger",
   ],
+  manifest: "/site.webmanifest",
   openGraph: { title: TITLE, description: DESCRIPTION, locale: "fr_FR", type: "website" },
   twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };

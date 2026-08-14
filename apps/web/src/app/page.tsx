@@ -25,6 +25,7 @@ import {
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { TrackedLink } from "@/components/tracked-link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
+import { KeurFlowMark } from "@/components/keurflow-mark";
 
 // Demo data only (§93) — a fictional diaspora project, not a real user's data.
 const eur = CURRENCIES.find((c) => c.code === "EUR")!;
@@ -275,11 +276,8 @@ export default function Home() {
       />
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-canvas/90 backdrop-blur-sm dark:border-slate-800">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
-          <Link
-            href="/"
-            className="text-sm font-medium tracking-wide text-slate-900 uppercase dark:text-slate-50"
-          >
-            KeurFlow
+          <Link href="/" aria-label="KeurFlow">
+            <KeurFlowMark className="h-8 w-8 shrink-0" />
           </Link>
           <nav className="hidden items-center gap-8 lg:flex">
             {NAV_LINKS.map((link) => (
@@ -819,9 +817,12 @@ export default function Home() {
       <footer className="border-t border-slate-200 px-6 py-12 dark:border-slate-800">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-medium tracking-wide text-slate-900 uppercase dark:text-slate-50">
-              KeurFlow
-            </p>
+            <div className="flex items-center gap-2">
+              <KeurFlowMark className="h-6 w-6 shrink-0" />
+              <p className="text-sm font-medium tracking-wide text-slate-900 uppercase dark:text-slate-50">
+                KeurFlow
+              </p>
+            </div>
             <p className="mt-2 max-w-xs text-sm text-slate-500 dark:text-slate-400">
               KeurFlow aide la diaspora africaine à suivre ses projets en
               Afrique, depuis n&apos;importe où dans le monde.
