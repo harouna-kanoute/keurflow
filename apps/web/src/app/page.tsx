@@ -7,19 +7,24 @@ import {
   getTotalFunded,
   toMinorUnits,
 } from "@keurflow/business";
-import { CURRENCIES } from "@keurflow/config";
+import { COUNTRIES, CURRENCIES } from "@keurflow/config";
 import {
+  BriefcaseIcon,
   BudgetIcon,
   CheckIcon,
   ClockIcon,
+  EditIcon,
   FlagIcon,
   GlobeIcon,
+  HomeIcon,
   ReceiptIcon,
   ShieldIcon,
   UsersIcon,
   WarningIcon,
 } from "@/components/icons";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { TrackedLink } from "@/components/tracked-link";
+import { AnalyticsPageView } from "@/components/analytics-page-view";
 
 // Demo data only (§93) — a fictional diaspora project, not a real user's data.
 const eur = CURRENCIES.find((c) => c.code === "EUR")!;
@@ -29,6 +34,11 @@ const demoExpenses = [
   { amountMinor: toMinorUnits(9_200, eur.minorUnit), status: "approved" as const },
   { amountMinor: toMinorUnits(1_500, eur.minorUnit), status: "pending" as const },
 ];
+
+// The one country list this page will ever show — pulled from the same
+// catalog the signup form's country picker uses, so the "où" claims here
+// can never drift ahead of what actually works.
+const ACTIVE_COUNTRIES = COUNTRIES.filter((c) => c.active);
 
 const NAV_LINKS = [
   { href: "#fonctionnalites", label: "Fonctionnalités" },
@@ -42,6 +52,14 @@ const PAIN_POINTS = [
   "Des photos de chantier perdues dans des conversations sans fin",
   "Aucune vue claire sur ce qu'il reste vraiment à financer",
   "Des reçus et documents qui s'égarent avant même d'arriver jusqu'à vous",
+  "Un avancement des travaux difficile à vérifier à distance",
+  "Des informations réparties entre plusieurs personnes, sans vue d'ensemble",
+] as const;
+
+const DIASPORA_ROUTES = [
+  { from: "Paris 🇫🇷", to: "Abidjan 🇨🇮" },
+  { from: "Bruxelles 🇧🇪", to: "Bamako 🇲🇱" },
+  { from: "Montréal 🇨🇦", to: "Dakar 🇸🇳" },
 ] as const;
 
 const FEATURES = [
@@ -56,7 +74,7 @@ const FEATURES = [
     icon: ReceiptIcon,
   },
   {
-    title: "Étapes de chantier suivies",
+    title: "Étapes de projet suivies",
     description: "L'avancement des travaux jalon par jalon, du terrassement à la livraison.",
     icon: FlagIcon,
   },
@@ -92,6 +110,34 @@ const STEPS = [
   },
 ] as const;
 
+const AUDIENCE_CARDS = [
+  {
+    title: "Vous construisez",
+    description: "Votre maison dans votre pays d'origine.",
+    icon: HomeIcon,
+  },
+  {
+    title: "Vous rénovez",
+    description: "Vous souhaitez suivre des travaux à distance.",
+    icon: EditIcon,
+  },
+  {
+    title: "Vous investissez",
+    description: "Vous gérez un investissement immobilier depuis l'étranger.",
+    icon: BudgetIcon,
+  },
+  {
+    title: "Vous gérez un projet familial",
+    description: "Vous financez un projet avec des proches sur place.",
+    icon: UsersIcon,
+  },
+  {
+    title: "Vous développez un projet professionnel",
+    description: "Commerce, local, entreprise ou tout autre projet.",
+    icon: BriefcaseIcon,
+  },
+] as const;
+
 const SECURITY_POINTS = [
   {
     title: "Isolation stricte entre organisations",
@@ -104,6 +150,10 @@ const SECURITY_POINTS = [
   {
     title: "Permissions par rôle",
     description: "Propriétaire, responsable, collaborateur, lecture seule — chacun n'accède qu'à ce qui le concerne.",
+  },
+  {
+    title: "Journal d'activité complet",
+    description: "Chaque création, modification et validation est horodatée et attribuée, consultable à tout moment.",
   },
 ] as const;
 
@@ -145,6 +195,31 @@ const GALLERY_PHOTOS = [
 
 const FAQ = [
   {
+    question: "KeurFlow fonctionne-t-il dans mon pays ?",
+    answer:
+      "KeurFlow est pensé pour la diaspora africaine dans son ensemble, pas pour un seul pays. Il prend en charge le Sénégal, la Côte d'Ivoire, le Mali, la Guinée, la Mauritanie, le Burkina Faso, le Niger, le Bénin, le Togo, le Cameroun, le Gabon, le Congo et la RDC, avec de nouveaux pays ajoutés régulièrement.",
+  },
+  {
+    question: "Puis-je gérer un projet situé dans un autre pays africain ?",
+    answer:
+      "Oui. Chaque projet garde son propre pays et sa propre devise locale — vous pouvez suivre plusieurs projets dans plusieurs pays depuis le même compte.",
+  },
+  {
+    question: "Puis-je utiliser KeurFlow depuis n'importe quel pays d'accueil ?",
+    answer:
+      "Oui, KeurFlow fonctionne depuis n'importe où dans le monde : il vous suffit d'une connexion internet, où que vous résidiez.",
+  },
+  {
+    question: "Puis-je inviter ma famille ou mes collaborateurs ?",
+    answer:
+      "Oui, vous pouvez inviter un gérant sur place, des proches financeurs ou un vérificateur de confiance, chacun avec le niveau d'accès que vous choisissez.",
+  },
+  {
+    question: "Puis-je suivre plusieurs projets ?",
+    answer:
+      "Le plan Particulier permet de suivre un projet actif. Pour en suivre plusieurs simultanément, l'option projets illimités ou le plan Agence immobilière sont faits pour ça.",
+  },
+  {
     question: "Puis-je annuler à tout moment ?",
     answer: "Oui, sans engagement, directement depuis votre espace abonnement.",
   },
@@ -152,10 +227,6 @@ const FAQ = [
     question: "Mes données sont-elles en sécurité ?",
     answer:
       "Oui. Chaque organisation est strictement isolée des autres, vos documents restent privés et vos données ne sont jamais revendues.",
-  },
-  {
-    question: "Dans quels pays KeurFlow fonctionne-t-il ?",
-    answer: "Partout : chaque projet garde son propre pays et sa propre devise.",
   },
   {
     question: "Ai-je besoin d'une carte bancaire pour l'essai ?",
@@ -170,8 +241,38 @@ export default function Home() {
   const individualPriceMinor = toMinorUnits(9.9, eur.minorUnit);
   const agencyPriceMinor = toMinorUnits(19.9, eur.minorUnit);
 
+  const softwareApplicationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "KeurFlow",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web, iOS, Android",
+    description:
+      "KeurFlow aide la diaspora africaine à suivre à distance ses projets de construction et d'investissement en Afrique : budget, dépenses, documents, photos et avancement, centralisés en un seul espace.",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Particulier",
+        price: (individualPriceMinor / 10 ** eur.minorUnit).toFixed(2),
+        priceCurrency: eur.code,
+        priceValidUntil: undefined,
+      },
+      {
+        "@type": "Offer",
+        name: "Agence immobilière",
+        price: (agencyPriceMinor / 10 ** eur.minorUnit).toFixed(2),
+        priceCurrency: eur.code,
+      },
+    ],
+  };
+
   return (
     <div className="flex flex-1 flex-col bg-canvas">
+      <AnalyticsPageView event="landing_view" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
+      />
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-canvas/90 backdrop-blur-sm dark:border-slate-800">
         <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
           <Link
@@ -198,12 +299,14 @@ export default function Home() {
             >
               Se connecter
             </Link>
-            <Link
+            <TrackedLink
               href="/signup"
+              event="hero_cta_click"
+              eventParams={{ location: "header" }}
               className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
             >
-              Commencer
-            </Link>
+              Commencer gratuitement
+            </TrackedLink>
           </div>
         </div>
       </header>
@@ -218,20 +321,22 @@ export default function Home() {
             <h1 className="mt-6 max-w-xl text-5xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-slate-50">
               Votre projet en Afrique.
               <br />
-              Votre argent. Votre visibilité.
+              Votre visibilité, où que vous soyez.
             </h1>
             <p className="mt-6 max-w-lg text-lg leading-8 text-slate-600 dark:text-slate-400">
-              Suivez vos financements, vos dépenses, vos justificatifs et
-              l&apos;avancement de vos travaux depuis n&apos;importe où dans le
-              monde.
+              Suivez vos projets, centralisez vos dépenses, vos documents, vos
+              photos et l&apos;avancement des travaux depuis un seul espace —
+              où que vous viviez en Europe, en Amérique ou ailleurs.
             </p>
             <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Link
+              <TrackedLink
                 href="/signup"
+                event="hero_cta_click"
+                eventParams={{ location: "hero" }}
                 className="flex h-12 items-center justify-center rounded-full bg-brand-600 px-6 text-base font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
               >
                 Commencer gratuitement
-              </Link>
+              </TrackedLink>
               <a
                 href="#comment-ca-marche"
                 className="flex h-12 items-center justify-center rounded-full border border-slate-300 px-6 text-base font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
@@ -240,9 +345,9 @@ export default function Home() {
               </a>
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
-              <span className="flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
                 <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
-                Sans engagement
+                7 jours gratuits · Sans engagement
               </span>
               <span className="flex items-center gap-1.5">
                 <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
@@ -269,7 +374,7 @@ export default function Home() {
 
             <div className="absolute -bottom-10 left-1/2 w-[calc(100%-2rem)] -translate-x-1/2 rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-lg dark:border-slate-800 dark:bg-slate-900 sm:left-1/2 sm:w-72">
               <p className="text-xs font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
-                Construction maison familiale — Sénégal
+                Construction maison familiale
               </p>
               <p className="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
                 {formatMoney(remaining, eur.code, eur.minorUnit)}{" "}
@@ -308,15 +413,15 @@ export default function Home() {
                 Le constat
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                Suivre un chantier à distance, ça vire vite au chaos
+                Vous êtes loin. Votre projet ne devrait pas vous échapper.
               </h2>
               <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
-                WhatsApp, appels, photos éparpillées, factures papier, tableurs
-                Excel... Suivre un projet depuis l&apos;étranger devient vite
-                stressant et opaque.
+                KeurFlow vous permet de garder une vision claire de ce qui se
+                passe sur le terrain, même à des milliers de kilomètres. À
+                distance, gérer un projet peut vite devenir compliqué :
               </p>
             </div>
-            <div className="mt-12 grid gap-4 sm:grid-cols-2">
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {PAIN_POINTS.map((point) => (
                 <div
                   key={point}
@@ -327,10 +432,64 @@ export default function Home() {
                 </div>
               ))}
             </div>
+            <p className="mt-10 text-center text-base font-medium text-slate-900 dark:text-slate-50">
+              KeurFlow rassemble tout au même endroit.
+            </p>
           </ScrollReveal>
         </section>
 
-        <section id="fonctionnalites" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
+        <section className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
+            <div className="mx-auto max-w-xl text-center">
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Votre histoire
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                Vous êtes à Paris. Votre projet est à Abidjan.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
+                Vous vivez à l&apos;étranger. Votre projet, votre famille et
+                vos prestataires sont en Afrique. KeurFlow fonctionne quel que
+                soit le trajet.
+              </p>
+            </div>
+            <div className="mt-12 grid gap-4 sm:grid-cols-3">
+              {DIASPORA_ROUTES.map((route) => (
+                <div
+                  key={`${route.from}-${route.to}`}
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                      Vous êtes à
+                    </p>
+                    <p className="mt-1 truncate text-base font-semibold text-slate-900 dark:text-slate-50">
+                      {route.from}
+                    </p>
+                  </div>
+                  <span aria-hidden className="shrink-0 text-lg text-brand-600 dark:text-brand-400">
+                    →
+                  </span>
+                  <div className="min-w-0 text-right">
+                    <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                      Votre projet est à
+                    </p>
+                    <p className="mt-1 truncate text-base font-semibold text-slate-900 dark:text-slate-50">
+                      {route.to}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="mx-auto mt-10 max-w-2xl text-center text-base leading-7 text-slate-600 dark:text-slate-400">
+              Au lieu de chercher des informations dans plusieurs
+              conversations, vous retrouvez le budget, les dépenses, les
+              photos, les documents et l&apos;avancement — dans KeurFlow.
+            </p>
+          </ScrollReveal>
+        </section>
+
+        <section id="fonctionnalites" className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
           <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
               <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
@@ -344,7 +503,7 @@ export default function Home() {
               {FEATURES.map((feature) => (
                 <div
                   key={feature.title}
-                  className="rounded-2xl border border-slate-200 bg-white p-6 transition-colors hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-slate-700"
+                  className="rounded-2xl border border-slate-200 p-6 transition-colors hover:border-slate-300 dark:border-slate-800 dark:hover:border-slate-700"
                 >
                   <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/40">
                     <feature.icon className="h-5.5 w-5.5 text-brand-600 dark:text-brand-400" />
@@ -363,7 +522,7 @@ export default function Home() {
 
         <section
           id="comment-ca-marche"
-          className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900"
+          className="border-t border-slate-200 px-6 py-24 dark:border-slate-800"
         >
           <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
@@ -393,6 +552,37 @@ export default function Home() {
                 </li>
               ))}
             </ol>
+          </ScrollReveal>
+        </section>
+
+        <section className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
+            <div className="mx-auto max-w-xl text-center">
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Pour qui
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                KeurFlow est fait pour vous si...
+              </h2>
+            </div>
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {AUDIENCE_CARDS.map((card) => (
+                <div
+                  key={card.title}
+                  className="rounded-2xl border border-slate-200 p-6 dark:border-slate-800"
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-900/40">
+                    <card.icon className="h-5.5 w-5.5 text-brand-600 dark:text-brand-400" />
+                  </span>
+                  <h3 className="mt-4 text-base font-semibold text-slate-900 dark:text-slate-50">
+                    {card.title}
+                  </h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                    {card.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </ScrollReveal>
         </section>
 
@@ -431,9 +621,40 @@ export default function Home() {
           </ScrollReveal>
         </section>
 
+        <section className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
+          <ScrollReveal className="mx-auto w-full max-w-6xl">
+            <div className="mx-auto max-w-xl text-center">
+              <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
+                Vision internationale
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
+                Un seul espace. Plusieurs pays. Une même simplicité.
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600 dark:text-slate-400">
+                KeurFlow est pensé pour accompagner les projets de la
+                diaspora africaine, où qu&apos;ils se trouvent sur le
+                continent.
+              </p>
+            </div>
+            <div className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-2.5">
+              {ACTIVE_COUNTRIES.map((country) => (
+                <span
+                  key={country.code}
+                  className="rounded-full border border-slate-200 bg-canvas px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
+                >
+                  {country.name}
+                </span>
+              ))}
+              <span className="rounded-full border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-slate-400 dark:border-slate-700 dark:text-slate-500">
+                Et bientôt plus encore
+              </span>
+            </div>
+          </ScrollReveal>
+        </section>
+
         <section
           id="securite"
-          className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900"
+          className="border-t border-slate-200 px-6 py-24 dark:border-slate-800"
         >
           <ScrollReveal className="mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-2">
             <div>
@@ -441,7 +662,7 @@ export default function Home() {
                 Sécurité
               </p>
               <h2 className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
-                Vos données restent les vôtres
+                Vos informations méritent d&apos;être protégées
               </h2>
               <p className="mt-4 max-w-lg text-base leading-7 text-slate-600 dark:text-slate-400">
                 Chaque projet est privé. Seules les personnes que vous invitez
@@ -469,7 +690,7 @@ export default function Home() {
           </ScrollReveal>
         </section>
 
-        <section id="tarifs" className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
+        <section id="tarifs" className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
           <ScrollReveal className="mx-auto w-full max-w-6xl">
             <div className="max-w-xl">
               <p className="text-sm font-medium tracking-wide text-brand-600 uppercase dark:text-brand-400">
@@ -481,7 +702,7 @@ export default function Home() {
             </div>
 
             <div className="mt-12 grid gap-6 sm:grid-cols-2">
-              <div className="relative rounded-2xl border-2 border-brand-600 bg-white p-8 shadow-sm dark:border-brand-500 dark:bg-slate-900">
+              <div className="relative rounded-2xl border-2 border-brand-600 bg-canvas p-8 dark:border-brand-500 dark:bg-slate-950">
                 <span className="absolute -top-3 left-8 rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white dark:bg-brand-500">
                   Pour commencer
                 </span>
@@ -505,15 +726,17 @@ export default function Home() {
                     ),
                   )}
                 </ul>
-                <Link
+                <TrackedLink
                   href="/signup"
+                  event="pricing_cta_click"
+                  eventParams={{ plan: "individual" }}
                   className="mt-8 flex h-11 items-center justify-center rounded-full bg-brand-600 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
                 >
                   Commencer gratuitement
-                </Link>
+                </TrackedLink>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <div className="rounded-2xl border border-slate-200 bg-canvas p-8 dark:border-slate-800 dark:bg-slate-950">
                 <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
                   Agence immobilière
                 </p>
@@ -534,18 +757,20 @@ export default function Home() {
                     ),
                   )}
                 </ul>
-                <Link
+                <TrackedLink
                   href="/signup"
+                  event="pricing_cta_click"
+                  eventParams={{ plan: "agency" }}
                   className="mt-8 flex h-11 items-center justify-center rounded-full border border-slate-300 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
                 >
-                  Essayer gratuitement
-                </Link>
+                  Commencer gratuitement
+                </TrackedLink>
               </div>
             </div>
           </ScrollReveal>
         </section>
 
-        <section className="border-t border-slate-200 bg-white px-6 py-24 dark:border-slate-800 dark:bg-slate-900">
+        <section className="border-t border-slate-200 px-6 py-24 dark:border-slate-800">
           <ScrollReveal className="mx-auto w-full max-w-3xl">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-50">
               Questions fréquentes
@@ -572,12 +797,14 @@ export default function Home() {
               Prêt à suivre votre projet, où que vous soyez ?
             </h2>
             <div className="flex flex-col items-center gap-3 sm:flex-row">
-              <Link
+              <TrackedLink
                 href="/signup"
+                event="hero_cta_click"
+                eventParams={{ location: "final_cta" }}
                 className="flex h-12 items-center justify-center rounded-full bg-white px-6 text-base font-medium text-brand-700 transition-colors hover:bg-brand-50"
               >
                 Commencer gratuitement
-              </Link>
+              </TrackedLink>
               <Link
                 href="/login"
                 className="flex h-12 items-center justify-center rounded-full border border-white/40 px-6 text-base font-medium text-white transition-colors hover:border-white"
@@ -596,7 +823,8 @@ export default function Home() {
               KeurFlow
             </p>
             <p className="mt-2 max-w-xs text-sm text-slate-500 dark:text-slate-400">
-              Suivez vos projets de construction en Afrique, depuis n&apos;importe où dans le monde.
+              KeurFlow aide la diaspora africaine à suivre ses projets en
+              Afrique, depuis n&apos;importe où dans le monde.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-12 gap-y-6">

@@ -19,13 +19,20 @@ const lora = Lora({
   subsets: ["latin"],
 });
 
-const TITLE = "KeurFlow — Votre projet en Afrique. Votre argent. Votre visibilité.";
+const TITLE = "KeurFlow — Votre projet en Afrique. Votre visibilité, où que vous soyez.";
 const DESCRIPTION =
-  "Suivez vos financements, dépenses, justificatifs et travaux depuis n'importe où dans le monde.";
+  "KeurFlow aide la diaspora africaine à suivre à distance ses projets de construction et d'investissement en Afrique : budget, dépenses, documents et avancement, centralisés en un seul espace.";
 
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
+  keywords: [
+    "suivi chantier Afrique",
+    "gérer un projet immobilier à distance",
+    "diaspora africaine",
+    "suivi budget construction",
+    "chantier depuis l'étranger",
+  ],
   openGraph: { title: TITLE, description: DESCRIPTION, locale: "fr_FR", type: "website" },
   twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
