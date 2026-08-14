@@ -18,6 +18,7 @@ import {
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
+import { KeurFlowMark } from "@/components/keurflow-mark";
 
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -88,9 +89,7 @@ export function DashboardChrome({
       >
         <div className="flex h-16 shrink-0 items-center justify-between px-5">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white dark:bg-brand-500">
-              K
-            </span>
+            <KeurFlowMark className="h-7 w-7 shrink-0" />
             <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-50">
               KeurFlow
             </span>
@@ -179,7 +178,8 @@ export function DashboardChrome({
           >
             <MenuIcon className="h-6 w-6" />
           </button>
-          <span className="text-sm font-medium tracking-wide text-slate-900 uppercase lg:hidden dark:text-slate-50">
+          <span className="flex items-center gap-1.5 text-sm font-medium tracking-wide text-slate-900 uppercase lg:hidden dark:text-slate-50">
+            <KeurFlowMark className="h-5 w-5 shrink-0" />
             KeurFlow
           </span>
 

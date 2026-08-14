@@ -1,0 +1,13 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="KeurFlow">
+  <defs>
+    <linearGradient id="kf-bg" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0%" stop-color="#5C35E0"/>
+      <stop offset="100%" stop-color="#1D2E86"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" fill="url(#kf-bg)"/>
+  <rect x="170" y="120" width="56" height="272" fill="#FFFFFF"/>
+  <path d="M226,256 L366,120" stroke="#FFFFFF" stroke-width="56" stroke-linecap="square" fill="none"/>
+  <path d="M226,256 L366,392" stroke="#FFFFFF" stroke-width="56" stroke-linecap="square" fill="none"/>
+  <circle cx="400" cy="304" r="26" fill="#16BEC7"/>
+</svg>
