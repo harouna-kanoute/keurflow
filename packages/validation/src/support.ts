@@ -14,5 +14,9 @@ export const createSupportTicketSchema = z.object({
   // Auto-captured from the page the user was on — helps reproduce the issue,
   // not something they type in themselves.
   pageUrl: z.string().trim().max(300).optional(),
+  // Storage paths, already uploaded client-side before this is submitted —
+  // see createSupportTicket's own comment on why paths, not files, cross
+  // the Server Action boundary.
+  attachmentPaths: z.array(z.string().trim().min(1)).max(4).optional(),
 });
 export type CreateSupportTicketInput = z.infer<typeof createSupportTicketSchema>;
