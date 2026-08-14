@@ -56,7 +56,7 @@ export async function signUp(input: SignUpInput): Promise<ActionResult> {
   if (!parsed.success) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -77,6 +77,15 @@ export async function signUp(input: SignUpInput): Promise<ActionResult> {
       return { error: "Un compte existe déjà avec cet email." };
     }
     return { error: GENERIC_ERROR };
+  }
+
+  // With email confirmation on, Supabase deliberately doesn't return an
+  // error for an email that already has a confirmed account — it returns
+  // an obfuscated user with an empty identities array instead, so this
+  // endpoint can't be used to enumerate registered emails. A genuinely new
+  // signup always has at least one identity at this point.
+  if (data.user && data.user.identities?.length === 0) {
+    return { error: "Un compte existe déjà avec cet email." };
   }
 
   redirect("/signup/check-email");
