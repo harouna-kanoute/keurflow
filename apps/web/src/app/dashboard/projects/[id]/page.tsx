@@ -338,12 +338,13 @@ export default async function ProjectDetailPage({
 
   const { data: photoRows } = await supabase
     .from("photos")
-    .select("id, storage_path, caption")
+    .select("id, storage_path, caption, uploaded_by")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false })
     .limit(30);
 
-  let photos: { id: string; url: string | null; caption: string | null }[] = [];
+  let photos: { id: string; url: string | null; caption: string | null; uploadedBy: string }[] =
+    [];
   if (photoRows && photoRows.length > 0) {
     const { data: signedUrls } = await supabase.storage
       .from("project-photos")
@@ -354,6 +355,7 @@ export default async function ProjectDetailPage({
     photos = photoRows.map((p, i) => ({
       id: p.id,
       caption: p.caption,
+      uploadedBy: p.uploaded_by,
       url: signedUrls?.[i]?.signedUrl ?? null,
     }));
   }
@@ -847,7 +849,7 @@ export default async function ProjectDetailPage({
                   </Modal>
                 </div>
                 <div className="mt-3">
-                  <PhotoGallery photos={photos} />
+                  <PhotoGallery photos={photos} currentUserId={user.id} canManageAny={canApprove} />
                 </div>
               </div>
             ),

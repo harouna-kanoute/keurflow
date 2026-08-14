@@ -22,6 +22,7 @@ import {
   createFundingSchema,
   createMilestoneSchema,
   createReportSchema,
+  deletePhotoSchema,
   deleteProjectSchema,
   inviteProjectMemberSchema,
   removeProjectMemberSchema,
@@ -37,6 +38,7 @@ import {
   type CreateFundingInput,
   type CreateMilestoneInput,
   type CreateReportInput,
+  type DeletePhotoInput,
   type DeleteProjectInput,
   type InviteProjectMemberInput,
   type RemoveProjectMemberInput,
@@ -508,6 +510,53 @@ export async function attachPhoto(
   }
 
   revalidatePath(`/dashboard/projects/${parsed.data.projectId}`);
+  return {};
+}
+
+export async function deletePhoto(input: DeletePhotoInput): Promise<ActionResult> {
+  const parsed = deletePhotoSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: photo } = await supabase
+    .from("photos")
+    .select("project_id, storage_path")
+    .eq("id", parsed.data.photoId)
+    .maybeSingle();
+  if (!photo) return { error: GENERIC_ERROR };
+
+  // RLS (photos_delete_own_or_managers) is the authoritative check — the
+  // uploader can always remove their own photo, managers can remove any.
+  const { error } = await supabase.from("photos").delete().eq("id", parsed.data.photoId);
+  if (error) {
+    console.error("[deletePhoto] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  // Best-effort: storage RLS (project_photos_delete) is role-gated and
+  // narrower than the row policy above, so a plain member deleting their
+  // own upload can lose this step — the row is already gone either way.
+  const { error: storageError } = await supabase.storage
+    .from("project-photos")
+    .remove([photo.storage_path]);
+  if (storageError) {
+    console.error("[deletePhoto] storage remove error:", storageError.message);
+  }
+
+  await logAudit({
+    projectId: photo.project_id,
+    userId: user.id,
+    action: "photo_deleted",
+    entityType: "photo",
+    entityId: parsed.data.photoId,
+  });
+
+  revalidatePath(`/dashboard/projects/${photo.project_id}`);
   return {};
 }
 

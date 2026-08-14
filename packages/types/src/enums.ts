@@ -60,6 +60,7 @@ export const AUDIT_ACTIONS = [
   "expense_rejected",
   "document_uploaded",
   "photo_uploaded",
+  "photo_deleted",
   "funding_created",
   "milestone_updated",
   "comment_created",
