@@ -12,6 +12,7 @@ import {
   getTotalFunded,
   hasOrgRoleAtLeast,
   hasProjectRoleAtLeast,
+  type ReportData,
 } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
@@ -789,7 +790,7 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
     status: m.status as "pending" | "in_progress" | "completed" | "delayed",
   }));
 
-  const summary = generateProjectReportSummary({
+  const reportData: ReportData = {
     projectName: project.name,
     periodStart: parsed.data.periodStart,
     periodEnd: parsed.data.periodEnd,
@@ -805,15 +806,19 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
     milestonesTotal: milestoneList.length,
     documentsMissingCount,
     toReviewCount,
-  });
+  };
 
+  // metrics stores the exact numbers the text summary was rendered from —
+  // lets the UI chart a report without ever recomputing it live, keeping
+  // the "immutable point-in-time snapshot" guarantee (see report.ts).
   const { data: report, error } = await supabase
     .from("reports")
     .insert({
       project_id: parsed.data.projectId,
       period_start: parsed.data.periodStart,
       period_end: parsed.data.periodEnd,
-      summary,
+      summary: generateProjectReportSummary(reportData),
+      metrics: reportData,
     })
     .select("id")
     .single();

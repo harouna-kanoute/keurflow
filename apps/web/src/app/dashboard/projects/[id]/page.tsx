@@ -15,6 +15,7 @@ import {
   hasOrgRoleAtLeast,
   hasProjectRoleAtLeast,
   isProjectDelayed,
+  type ReportData,
 } from "@keurflow/business";
 import { CURRENCIES, EXPENSE_CATEGORIES, PROJECT_TYPES } from "@keurflow/config";
 import type { OrganizationRole, ProjectRole } from "@keurflow/types";
@@ -377,11 +378,19 @@ export default async function ProjectDetailPage({
     : { data: [] };
   const memberNames = new Map((memberProfiles.data ?? []).map((p) => [p.id, p.full_name]));
 
-  const { data: reports } = await supabase
+  const { data: reportsRaw } = await supabase
     .from("reports")
-    .select("id, period_start, period_end, summary, created_at")
+    .select("id, period_start, period_end, summary, metrics, created_at")
     .eq("project_id", project.id)
     .order("created_at", { ascending: false });
+
+  // metrics is untyped jsonb at the DB level — cast to the exact shape
+  // createReport() writes (see actions.ts), null for reports generated
+  // before this column existed.
+  const reports = (reportsRaw ?? []).map((r) => ({
+    ...r,
+    metrics: r.metrics as ReportData | null,
+  }));
 
   // Aperçu charts — derived from data already fetched above (budget,
   // expenses, milestones), no extra queries. Category/monthly totals only
@@ -620,7 +629,7 @@ export default async function ProjectDetailPage({
             etapes: milestones?.length ?? 0,
             photos: photos.length,
             membres: members?.length ?? 0,
-            rapports: reports?.length ?? 0,
+            rapports: reports.length,
           }}
           panels={{
             apercu: (
@@ -892,7 +901,7 @@ export default async function ProjectDetailPage({
                     <CreateReportForm projectId={project.id} />
                   </Modal>
                 </div>
-                {reports && reports.length > 0 ? (
+                {reports.length > 0 ? (
                   <ul className="mt-3 flex flex-col gap-2">
                     {reports.map((report) => (
                       <li
@@ -903,7 +912,55 @@ export default async function ProjectDetailPage({
                           <summary className="cursor-pointer text-slate-900 dark:text-slate-100">
                             {report.period_start} → {report.period_end}
                           </summary>
-                          <pre className="mt-3 whitespace-pre-wrap font-sans text-slate-600 dark:text-slate-400">
+                          {report.metrics && (
+                            <div className="mt-4 flex flex-col gap-5 border-b border-slate-100 pb-5 dark:border-slate-800">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                <DonutChart
+                                  size={96}
+                                  strokeWidth={12}
+                                  total={report.metrics.milestonesTotal}
+                                  segments={[
+                                    {
+                                      value: report.metrics.milestonesCompleted,
+                                      colorClassName: "text-green-500 dark:text-green-400",
+                                    },
+                                  ]}
+                                  centerLabel={`${report.metrics.progressPercent}%`}
+                                  centerSublabel="fait"
+                                />
+                                <div className="grid flex-1 grid-cols-2 gap-3">
+                                  <BudgetStat
+                                    icon={AlertIcon}
+                                    tone={report.metrics.documentsMissingCount > 0 ? "amber" : "slate"}
+                                    label="Documents manquants"
+                                    value={String(report.metrics.documentsMissingCount)}
+                                  />
+                                  <BudgetStat
+                                    icon={ClockIcon}
+                                    tone={report.metrics.toReviewCount > 0 ? "amber" : "slate"}
+                                    label="À vérifier"
+                                    value={String(report.metrics.toReviewCount)}
+                                  />
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                                  Financier ({report.metrics.currencyCode})
+                                </p>
+                                <div className="mt-3">
+                                  <BarChart
+                                    data={[
+                                      { label: "Budget", value: report.metrics.budgetMinor },
+                                      { label: "Financé", value: report.metrics.fundedInPeriodMinor },
+                                      { label: "Dépensé", value: report.metrics.approvedInPeriodMinor },
+                                    ]}
+                                    formatValue={(v) => formatCompact(v, report.metrics!.minorUnit)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          <pre className="mt-4 whitespace-pre-wrap font-sans text-slate-600 dark:text-slate-400">
                             {report.summary}
                           </pre>
                         </details>
