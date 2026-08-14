@@ -27,6 +27,7 @@ export async function createSupportTicket(input: CreateSupportTicketInput): Prom
     subject: parsed.data.subject,
     description: parsed.data.description,
     page_url: parsed.data.pageUrl ?? null,
+    attachment_paths: parsed.data.attachmentPaths?.length ? parsed.data.attachmentPaths : null,
   });
 
   if (error) {

@@ -45,8 +45,19 @@ export default async function SupportPage() {
 
   const { data: tickets } = await supabase
     .from("support_tickets")
-    .select("id, category, subject, description, status, created_at")
+    .select("id, category, subject, description, status, attachment_paths, created_at")
     .order("created_at", { ascending: false });
+
+  // One batch signed-url call across every ticket's attachments rather than
+  // one per ticket — same approach as the project photo gallery.
+  const allPaths = (tickets ?? []).flatMap((t) => t.attachment_paths ?? []);
+  const { data: signedUrls } =
+    allPaths.length > 0
+      ? await supabase.storage.from("support-attachments").createSignedUrls(allPaths, 3600)
+      : { data: [] };
+  const signedUrlByPath = new Map(
+    (signedUrls ?? []).map((s) => [s.path, s.signedUrl] as const),
+  );
 
   return (
     <div className="flex flex-1 flex-col bg-canvas px-6 py-10">
@@ -63,7 +74,10 @@ export default async function SupportPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <CreateSupportTicketForm organizationId={membership?.organization_id ?? null} />
+          <CreateSupportTicketForm
+            userId={user.id}
+            organizationId={membership?.organization_id ?? null}
+          />
         </div>
 
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-200">
@@ -100,6 +114,23 @@ export default async function SupportPage() {
                     </div>
                   </div>
                   <p className="mt-2 text-slate-600 dark:text-slate-400">{ticket.description}</p>
+                  {ticket.attachment_paths && ticket.attachment_paths.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {ticket.attachment_paths.map((path: string) => {
+                        const url = signedUrlByPath.get(path);
+                        return url ? (
+                          <a key={path} href={url} target="_blank" rel="noopener noreferrer">
+                            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL expires; not worth Next/Image's optimization pipeline for a private, ephemeral attachment. */}
+                            <img
+                              src={url}
+                              alt="Capture d'écran jointe au signalement"
+                              className="h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
+                            />
+                          </a>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                   <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                     {new Date(ticket.created_at).toLocaleDateString("fr-FR", {
                       day: "numeric",

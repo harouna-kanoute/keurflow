@@ -37,4 +37,22 @@ describe("createSupportTicketSchema", () => {
   it("makes organizationId and pageUrl optional", () => {
     expect(createSupportTicketSchema.safeParse(base).success).toBe(true);
   });
+
+  it("accepts up to 4 attachment paths", () => {
+    expect(
+      createSupportTicketSchema.safeParse({
+        ...base,
+        attachmentPaths: ["a/1.png", "a/2.png", "a/3.png", "a/4.png"],
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects more than 4 attachment paths", () => {
+    expect(
+      createSupportTicketSchema.safeParse({
+        ...base,
+        attachmentPaths: ["a/1.png", "a/2.png", "a/3.png", "a/4.png", "a/5.png"],
+      }).success,
+    ).toBe(false);
+  });
 });
