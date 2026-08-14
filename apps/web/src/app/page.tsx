@@ -26,6 +26,7 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { TrackedLink } from "@/components/tracked-link";
 import { AnalyticsPageView } from "@/components/analytics-page-view";
 import { KeurFlowMark } from "@/components/keurflow-mark";
+import { createClient } from "@/lib/supabase/server";
 
 // Demo data only (§93) — a fictional diaspora project, not a real user's data.
 const eur = CURRENCIES.find((c) => c.code === "EUR")!;
@@ -235,7 +236,12 @@ const FAQ = [
   },
 ] as const;
 
-export default function Home() {
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const funded = getTotalFunded(demoFundings);
   const remaining = getRemainingBudget(budgetMinor, demoExpenses);
   const consumedPercent = getBudgetConsumptionPercent(budgetMinor, demoExpenses);
@@ -291,20 +297,31 @@ export default function Home() {
             ))}
           </nav>
           <div className="flex items-center gap-5">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-            >
-              Se connecter
-            </Link>
-            <TrackedLink
-              href="/signup"
-              event="hero_cta_click"
-              eventParams={{ location: "header" }}
-              className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
-            >
-              Commencer gratuitement
-            </TrackedLink>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                >
+                  Se connecter
+                </Link>
+                <TrackedLink
+                  href="/signup"
+                  event="hero_cta_click"
+                  eventParams={{ location: "header" }}
+                  className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+                >
+                  Commencer gratuitement
+                </TrackedLink>
+              </>
+            )}
           </div>
         </div>
       </header>

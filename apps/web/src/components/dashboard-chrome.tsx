@@ -88,11 +88,8 @@ export function DashboardChrome({
         }`}
       >
         <div className="flex h-16 shrink-0 items-center justify-between px-5">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href="/dashboard" aria-label="KeurFlow">
             <KeurFlowMark className="h-7 w-7 shrink-0" />
-            <span className="text-sm font-semibold tracking-wide text-slate-900 dark:text-slate-50">
-              KeurFlow
-            </span>
           </Link>
           <button
             type="button"
@@ -178,10 +175,7 @@ export function DashboardChrome({
           >
             <MenuIcon className="h-6 w-6" />
           </button>
-          <span className="flex items-center gap-1.5 text-sm font-medium tracking-wide text-slate-900 uppercase lg:hidden dark:text-slate-50">
-            <KeurFlowMark className="h-5 w-5 shrink-0" />
-            KeurFlow
-          </span>
+          <KeurFlowMark className="h-6 w-6 shrink-0 lg:hidden" />
 
           <div className="ml-auto flex items-center gap-2">
             <Link

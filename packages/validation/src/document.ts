@@ -33,3 +33,8 @@ export const uploadPhotoSchema = z.object({
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
 });
 export type UploadPhotoInput = z.infer<typeof uploadPhotoSchema>;
+
+export const deletePhotoSchema = z.object({
+  photoId: uuidSchema,
+});
+export type DeletePhotoInput = z.infer<typeof deletePhotoSchema>;
