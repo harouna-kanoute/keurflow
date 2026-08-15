@@ -1,7 +1,12 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_AUTH_ROUTES = ["/login", "/signup", "/forgot-password", "/reset-password"];
+// Redirected to /dashboard if the visitor is already logged in — does NOT
+// include /reset-password, since that page is precisely where the invite
+// and password-recovery flows land an already-authenticated (token-scoped)
+// user; bouncing them away from it would strand them before they ever set
+// a password.
+const PUBLIC_AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 const PROTECTED_PREFIXES = ["/dashboard"];
 
 // Runs on every request (see src/middleware.ts matcher). Refreshes the

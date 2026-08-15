@@ -30,9 +30,21 @@ export function ExpenseStatusBadge({ status }: { status: string }) {
 export function ExpenseStatusActions({
   expenseId,
   canApprove,
+  categoryLabel,
+  amountLabel,
+  supplierName,
+  submitterName,
+  submitterPhone,
+  projectUrl,
 }: {
   expenseId: string;
   canApprove: boolean;
+  categoryLabel: string;
+  amountLabel: string;
+  supplierName: string | null;
+  submitterName: string | null;
+  submitterPhone: string | null;
+  projectUrl: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -42,6 +54,19 @@ export function ExpenseStatusActions({
     startTransition(async () => {
       await updateExpenseStatus({ expenseId, status });
     });
+  };
+
+  // Opened synchronously, in direct response to the click — not after the
+  // `await` below — so browsers don't treat it as an unrequested popup.
+  const requestInfo = () => {
+    if (submitterPhone) {
+      const digits = submitterPhone.replace(/\D/g, "");
+      const greeting = submitterName ? `Bonjour ${submitterName},` : "Bonjour,";
+      const details = `${categoryLabel}${supplierName ? ` (${supplierName})` : ""} — ${amountLabel}`;
+      const message = `${greeting} une information complémentaire est nécessaire sur la dépense "${details}" sur KeurFlow. Merci de la compléter ou d'ajouter un justificatif : ${projectUrl}`;
+      window.open(`https://wa.me/${digits}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    }
+    setStatus("needs_information");
   };
 
   return (
@@ -57,7 +82,7 @@ export function ExpenseStatusActions({
       <button
         type="button"
         disabled={isPending}
-        onClick={() => setStatus("needs_information")}
+        onClick={requestInfo}
         className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300"
       >
         Demander des infos

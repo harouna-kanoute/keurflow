@@ -8,11 +8,13 @@ import {
   signUpSchema,
   updatePasswordSchema,
   verifyEmailOtpSchema,
+  whatsappNumberSchema,
   type RequestPasswordResetInput,
   type SignInInput,
   type SignUpInput,
   type UpdatePasswordInput,
   type VerifyEmailOtpInput,
+  type WhatsAppNumberInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -144,9 +146,35 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Action
   revalidatePath("/", "layout");
   // invite/recovery land the user with no usable password yet — recovery
   // already sends its own explicit ?next=/reset-password, invite doesn't.
+  // The ?invite=1 marker tells /reset-password to also collect a WhatsApp
+  // number, since a freshly-invited collaborator has never had a chance to.
   redirect(
-    parsed.data.type === "invite" ? "/reset-password" : (parsed.data.next ?? "/dashboard"),
+    parsed.data.type === "invite" ? "/reset-password?invite=1" : (parsed.data.next ?? "/dashboard"),
   );
+}
+
+// Reuses profiles.phone as the collaborator's WhatsApp number, collected once
+// during invite acceptance (see /reset-password) so that requesting more
+// info on an expense can deep-link straight to a chat with them.
+export async function setWhatsAppNumber(input: WhatsAppNumberInput): Promise<ActionResult> {
+  const parsed = whatsappNumberSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  // RLS (profiles_update_own) is the authoritative check — this can only
+  // ever touch the caller's own row regardless of what's passed.
+  const { error } = await supabase.from("profiles").update({ phone: parsed.data.phone }).eq("id", user.id);
+  if (error) {
+    console.error("[setWhatsAppNumber] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  return {};
 }
 
 export async function signOut() {
