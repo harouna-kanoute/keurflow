@@ -17,10 +17,12 @@ function getInitials(displayName: string): string {
 export function AvatarUpload({
   userId,
   displayName,
+  phone,
   avatarSignedUrl,
 }: {
   userId: string;
   displayName: string;
+  phone: string | null;
   avatarSignedUrl: string | null;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -88,6 +90,12 @@ export function AvatarUpload({
         </span>
       )}
       <div className="flex flex-col gap-2">
+        <div>
+          <p className="text-sm font-medium text-slate-900 dark:text-slate-50">{displayName}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {phone ? `WhatsApp : ${phone}` : "Aucun numéro WhatsApp renseigné"}
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
