@@ -38,7 +38,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, avatar_url")
+    .select("full_name, avatar_url, phone")
     .eq("id", user.id)
     .single();
 
@@ -68,8 +68,11 @@ export default async function SettingsPage() {
           />
         </SettingsSection>
 
-        <SettingsSection title="Informations personnelles">
-          <ProfileForm fullName={profile?.full_name ?? ""} />
+        <SettingsSection
+          title="Informations personnelles"
+          description="Votre numéro WhatsApp est utilisé par vos collaborateurs pour vous contacter au sujet d'une dépense."
+        >
+          <ProfileForm fullName={profile?.full_name ?? ""} phone={profile?.phone ?? ""} />
         </SettingsSection>
 
         <SettingsSection
