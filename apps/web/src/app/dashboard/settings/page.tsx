@@ -64,6 +64,7 @@ export default async function SettingsPage() {
           <AvatarUpload
             userId={user.id}
             displayName={profile?.full_name || user.email || ""}
+            phone={profile?.phone ?? null}
             avatarSignedUrl={avatarSignedUrl}
           />
         </SettingsSection>
