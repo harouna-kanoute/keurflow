@@ -33,10 +33,12 @@ export async function updateProfile(input: UpdateProfileInput): Promise<ActionRe
   if (!user) return { error: GENERIC_ERROR };
 
   // RLS (profiles_update_own) is the authoritative check — this can only
-  // ever touch the caller's own row regardless of what's passed.
+  // ever touch the caller's own row regardless of what's passed. phone is
+  // always overwritten (including to null) to match how fullName behaves —
+  // an omitted/empty field means "cleared", not "leave unchanged".
   const { error } = await supabase
     .from("profiles")
-    .update({ full_name: parsed.data.fullName })
+    .update({ full_name: parsed.data.fullName, phone: parsed.data.phone ?? null })
     .eq("id", user.id);
 
   if (error) {

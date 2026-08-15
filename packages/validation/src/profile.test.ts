@@ -19,6 +19,24 @@ describe("updateProfileSchema", () => {
   it("rejects a name longer than 120 characters", () => {
     expect(updateProfileSchema.safeParse({ fullName: "A".repeat(121) }).success).toBe(false);
   });
+
+  it("accepts a fullName with no phone", () => {
+    expect(updateProfileSchema.safeParse({ fullName: "Harouna Niaka" }).success).toBe(true);
+  });
+
+  it("accepts a valid phone alongside the name", () => {
+    const result = updateProfileSchema.safeParse({
+      fullName: "Harouna Niaka",
+      phone: "+221771234567",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an invalid phone", () => {
+    expect(
+      updateProfileSchema.safeParse({ fullName: "Harouna Niaka", phone: "0612345" }).success,
+    ).toBe(false);
+  });
 });
 
 describe("updateAvatarSchema", () => {

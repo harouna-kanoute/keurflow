@@ -8,7 +8,7 @@ import { FormField } from "@/components/form-field";
 import { SubmitButton } from "@/components/submit-button";
 import { updateProfile } from "./actions";
 
-export function ProfileForm({ fullName }: { fullName: string }) {
+export function ProfileForm({ fullName, phone }: { fullName: string; phone: string }) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const {
@@ -18,7 +18,7 @@ export function ProfileForm({ fullName }: { fullName: string }) {
     formState: { errors },
   } = useForm<UpdateProfileInput>({
     resolver: zodResolver(updateProfileSchema),
-    defaultValues: { fullName },
+    defaultValues: { fullName, phone },
   });
 
   const onSubmit = handleSubmit((data) => {
@@ -40,6 +40,15 @@ export function ProfileForm({ fullName }: { fullName: string }) {
         label="Nom complet"
         error={errors.fullName?.message}
         {...register("fullName")}
+      />
+      <FormField
+        id="phone"
+        label="Numéro WhatsApp"
+        type="tel"
+        autoComplete="tel"
+        placeholder="+221771234567"
+        error={errors.phone?.message}
+        {...register("phone", { setValueAs: (v) => (v === "" ? undefined : v) })}
       />
       {errors.root && <p className="text-sm text-red-600">{errors.root.message}</p>}
       {saved && <p className="text-sm text-green-600 dark:text-green-400">Profil mis à jour.</p>}
