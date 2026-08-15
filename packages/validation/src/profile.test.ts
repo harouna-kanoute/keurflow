@@ -4,6 +4,7 @@ import {
   updateAvatarSchema,
   updateEmailSchema,
   updateProfileSchema,
+  whatsappNumberSchema,
 } from "./profile";
 
 describe("updateProfileSchema", () => {
@@ -41,6 +42,28 @@ describe("updateEmailSchema", () => {
 
   it("rejects an invalid email", () => {
     expect(updateEmailSchema.safeParse({ email: "not-an-email" }).success).toBe(false);
+  });
+});
+
+describe("whatsappNumberSchema", () => {
+  it("accepts an international number with a leading +", () => {
+    expect(whatsappNumberSchema.safeParse({ phone: "+221771234567" }).success).toBe(true);
+  });
+
+  it("accepts an international number without a leading +", () => {
+    expect(whatsappNumberSchema.safeParse({ phone: "221771234567" }).success).toBe(true);
+  });
+
+  it("rejects a number without a country code", () => {
+    expect(whatsappNumberSchema.safeParse({ phone: "0771234567" }).success).toBe(false);
+  });
+
+  it("rejects a number with spaces or dashes", () => {
+    expect(whatsappNumberSchema.safeParse({ phone: "+221 77 123 45 67" }).success).toBe(false);
+  });
+
+  it("rejects a non-numeric value", () => {
+    expect(whatsappNumberSchema.safeParse({ phone: "not-a-phone" }).success).toBe(false);
   });
 });
 

@@ -238,9 +238,23 @@ export default async function ProjectDetailPage({
 
   const { data: expenses } = await supabase
     .from("expenses")
-    .select("id, amount_minor, currency_code, category, supplier_name, expense_date, status")
+    .select("id, amount_minor, currency_code, category, supplier_name, expense_date, status, created_by")
     .eq("project_id", project.id)
     .order("expense_date", { ascending: false });
+
+  // Submitter name + WhatsApp number, resolved for the "Demander des infos"
+  // deep link — same shared-context join already used for milestone/comment
+  // authors below (profiles_select_shared_context covers every collaborator
+  // visible on this page).
+  const submitterIds = [...new Set((expenses ?? []).map((e) => e.created_by))];
+  const { data: submitterProfiles } =
+    submitterIds.length > 0
+      ? await supabase.from("profiles").select("id, full_name, phone").in("id", submitterIds)
+      : { data: [] };
+  const submitterById = new Map((submitterProfiles ?? []).map((p) => [p.id, p]));
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const projectUrl = `${appUrl}/dashboard/projects/${project.id}`;
 
   const { data: documents } = await supabase
     .from("documents")
@@ -781,6 +795,7 @@ export default async function ProjectDetailPage({
                       const documentationStatus = deriveDocumentationStatus(
                         documentCountByExpense.get(expense.id) ?? 0,
                       );
+                      const submitter = submitterById.get(expense.created_by);
                       return (
                         <li
                           key={expense.id}
@@ -801,7 +816,16 @@ export default async function ProjectDetailPage({
                               {DOCUMENTATION_STATUS_LABEL[documentationStatus]}
                             </span>
                           </div>
-                          <ExpenseStatusActions expenseId={expense.id} canApprove={canApprove} />
+                          <ExpenseStatusActions
+                            expenseId={expense.id}
+                            canApprove={canApprove}
+                            categoryLabel={CATEGORY_LABELS.get(expense.category) ?? expense.category}
+                            amountLabel={formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
+                            supplierName={expense.supplier_name}
+                            submitterName={submitter?.full_name ?? null}
+                            submitterPhone={submitter?.phone ?? null}
+                            projectUrl={projectUrl}
+                          />
                           <ExpenseComments
                             expenseId={expense.id}
                             comments={commentsByExpense.get(expense.id) ?? []}
