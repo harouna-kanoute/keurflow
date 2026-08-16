@@ -15,11 +15,11 @@ import {
   SettingsIcon,
   SupportIcon,
   UserIcon,
-  UsersIcon,
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { KeurFlowMark } from "@/components/keurflow-mark";
+import { TeamModal } from "@/components/team-modal";
 
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -66,20 +66,6 @@ export function DashboardChrome({
         { href: "/dashboard/billing", label: "Abonnement", icon: CreditCardIcon },
       ],
     },
-    ...(currentProjectId
-      ? [
-          {
-            label: "Chantier",
-            items: [
-              {
-                href: `/dashboard/projects/${currentProjectId}?tab=membres`,
-                label: "Équipe",
-                icon: UsersIcon,
-              },
-            ],
-          },
-        ]
-      : []),
     {
       label: "Compte",
       items: [
@@ -147,10 +133,7 @@ export function DashboardChrome({
                 </p>
                 <div className="mt-1 flex flex-col gap-1">
                   {group.items.map((item) => {
-                    // The "Équipe" link carries a `?tab=` query string that
-                    // usePathname() never includes — compare against just
-                    // the path portion so it still highlights correctly.
-                    const active = pathname === item.href.split("?")[0];
+                    const active = pathname === item.href;
                     return (
                       <Link
                         key={item.href}
@@ -183,6 +166,19 @@ export function DashboardChrome({
                     </Modal>
                   )}
                 </div>
+                {group.label === "Général" && currentProjectId && (
+                  <div className="mt-4">
+                    <p className="px-3 text-[11px] font-medium tracking-wide text-slate-400 uppercase dark:text-slate-500">
+                      Chantier
+                    </p>
+                    <div className="mt-1 flex flex-col gap-1">
+                      <TeamModal
+                        projectId={currentProjectId}
+                        onNavigate={() => setMobileOpen(false)}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
         </nav>

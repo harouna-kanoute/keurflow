@@ -33,6 +33,7 @@ import {
   updateProjectStatusSchema,
   uploadDocumentSchema,
   uploadPhotoSchema,
+  uuidSchema,
   type CreateExpenseCommentInput,
   type CreateExpenseInput,
   type CreateFundingInput,
@@ -558,6 +559,76 @@ export async function deletePhoto(input: DeletePhotoInput): Promise<ActionResult
 
   revalidatePath(`/dashboard/projects/${photo.project_id}`);
   return {};
+}
+
+const TEAM_ROLE_LABELS: Record<string, string> = {
+  project_owner: "Propriétaire",
+  project_manager: "Responsable",
+  project_member: "Collaborateur",
+  project_viewer: "Client (lecture seule)",
+};
+
+export type ProjectTeamMember = {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  avatarSignedUrl: string | null;
+  roleLabel: string;
+  invited: boolean;
+};
+
+// Powers the sidebar's quick "Équipe" popup (DashboardChrome), which has no
+// server-rendered data of its own — the full member roster with edit/remove
+// actions still lives on the project page's Équipe tab; this is a
+// read-only, on-demand fetch for the popup only.
+export async function getProjectTeamMembers(
+  projectId: string,
+): Promise<{ data?: ProjectTeamMember[]; error?: string }> {
+  if (!uuidSchema.safeParse(projectId).success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+
+  // RLS (project_members_select_...) is the authoritative scope here — a
+  // caller with no relationship to this project simply gets an empty list,
+  // same as the project page's own member query.
+  const { data: members } = await supabase
+    .from("project_members")
+    .select("id, user_id, role, status")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: true });
+
+  if (!members?.length) return { data: [] };
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, phone")
+    .in(
+      "id",
+      members.map((m) => m.user_id),
+    );
+
+  const avatarPaths = (profiles ?? []).map((p) => p.avatar_url).filter((p): p is string => !!p);
+  const { data: signedUrls } =
+    avatarPaths.length > 0
+      ? await supabase.storage.from("avatars").createSignedUrls(avatarPaths, 3600)
+      : { data: [] };
+  const avatarUrlByPath = new Map((signedUrls ?? []).map((s) => [s.path, s.signedUrl] as const));
+
+  const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  return {
+    data: members.map((m) => {
+      const profile = profileById.get(m.user_id);
+      return {
+        id: m.id,
+        fullName: profile?.full_name ?? "Membre",
+        phone: profile?.phone ?? null,
+        avatarSignedUrl: profile?.avatar_url ? (avatarUrlByPath.get(profile.avatar_url) ?? null) : null,
+        roleLabel: TEAM_ROLE_LABELS[m.role] ?? m.role,
+        invited: m.status === "invited",
+      };
+    }),
+  };
 }
 
 export async function inviteProjectMember(input: InviteProjectMemberInput): Promise<ActionResult> {
