@@ -1,25 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { TABS, type ProjectTabId } from "./project-tab-ids";
 
-export type ProjectTabId =
-  | "apercu"
-  | "financements"
-  | "depenses"
-  | "etapes"
-  | "photos"
-  | "membres"
-  | "rapports";
-
-const TABS: { id: ProjectTabId; label: string }[] = [
-  { id: "apercu", label: "Aperçu" },
-  { id: "financements", label: "Financements" },
-  { id: "depenses", label: "Dépenses" },
-  { id: "etapes", label: "Étapes" },
-  { id: "photos", label: "Photos" },
-  { id: "membres", label: "Équipe" },
-  { id: "rapports", label: "Rapports" },
-];
+export type { ProjectTabId } from "./project-tab-ids";
 
 // Groups the six project sub-sections behind tabs instead of one long
 // two-column scroll (user request: "trop de detail... rendre simple") —
@@ -28,11 +12,13 @@ const TABS: { id: ProjectTabId; label: string }[] = [
 export function ProjectTabs({
   counts,
   panels,
+  initialTab = "apercu",
 }: {
   counts: Record<ProjectTabId, number>;
   panels: Record<ProjectTabId, React.ReactNode>;
+  initialTab?: ProjectTabId;
 }) {
-  const [active, setActive] = useState<ProjectTabId>("apercu");
+  const [active, setActive] = useState<ProjectTabId>(initialTab);
 
   return (
     <div className="min-w-0 rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">

@@ -15,6 +15,7 @@ import {
   SettingsIcon,
   SupportIcon,
   UserIcon,
+  UsersIcon,
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
@@ -51,6 +52,11 @@ export function DashboardChrome({
 
   const displayName = userName || userEmail;
 
+  // Only meaningful while viewing one specific chantier — extracted from the
+  // URL rather than fetched, so the global chrome never needs to know about
+  // project data just to link to it.
+  const currentProjectId = pathname.match(/^\/dashboard\/projects\/([^/]+)/)?.[1];
+
   const navGroups = [
     {
       label: "Général",
@@ -60,6 +66,20 @@ export function DashboardChrome({
         { href: "/dashboard/billing", label: "Abonnement", icon: CreditCardIcon },
       ],
     },
+    ...(currentProjectId
+      ? [
+          {
+            label: "Chantier",
+            items: [
+              {
+                href: `/dashboard/projects/${currentProjectId}?tab=membres`,
+                label: "Équipe",
+                icon: UsersIcon,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: "Compte",
       items: [
@@ -127,7 +147,10 @@ export function DashboardChrome({
                 </p>
                 <div className="mt-1 flex flex-col gap-1">
                   {group.items.map((item) => {
-                    const active = pathname === item.href;
+                    // The "Équipe" link carries a `?tab=` query string that
+                    // usePathname() never includes — compare against just
+                    // the path portion so it still highlights correctly.
+                    const active = pathname === item.href.split("?")[0];
                     return (
                       <Link
                         key={item.href}

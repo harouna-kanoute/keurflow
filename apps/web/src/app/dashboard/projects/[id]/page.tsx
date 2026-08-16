@@ -49,6 +49,8 @@ import { CreateReportForm } from "./create-report-form";
 import { DeleteProjectForm } from "./delete-project-form";
 import { ProjectStatusSelect, PROJECT_STATUS_COLORS } from "./project-status";
 import { ProjectTabs } from "./project-tabs";
+import { PROJECT_TAB_IDS, type ProjectTabId } from "./project-tab-ids";
+import { MemberProfileTrigger } from "./member-profile";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -187,10 +189,16 @@ export async function generateMetadata({
 
 export default async function ProjectDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { id } = await params;
+  const { tab } = await searchParams;
+  const initialTab: ProjectTabId = PROJECT_TAB_IDS.includes(tab as ProjectTabId)
+    ? (tab as ProjectTabId)
+    : "apercu";
   const supabase = await createClient();
   const {
     data: { user },
@@ -381,18 +389,41 @@ export default async function ProjectDetailPage({
     .order("created_at", { ascending: true });
 
   // profiles_select_shared_context (Phase 12) is what makes these names
-  // visible — without it, this query would only ever return the caller's
-  // own profile row, per profiles_select_own.
+  // (and, below, avatars/phone) visible — without it, this query would only
+  // ever return the caller's own profile row, per profiles_select_own.
   const memberProfiles = members?.length
     ? await supabase
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, avatar_url, phone")
         .in(
           "id",
           members.map((m) => m.user_id),
         )
     : { data: [] };
-  const memberNames = new Map((memberProfiles.data ?? []).map((p) => [p.id, p.full_name]));
+
+  // One batch signed-url call across every member's avatar rather than one
+  // per member — same approach as the project photo gallery.
+  const memberAvatarPaths = (memberProfiles.data ?? [])
+    .map((p) => p.avatar_url)
+    .filter((p): p is string => !!p);
+  const { data: memberAvatarSigned } =
+    memberAvatarPaths.length > 0
+      ? await supabase.storage.from("avatars").createSignedUrls(memberAvatarPaths, 3600)
+      : { data: [] };
+  const memberAvatarUrlByPath = new Map(
+    (memberAvatarSigned ?? []).map((s) => [s.path, s.signedUrl] as const),
+  );
+
+  const memberInfoById = new Map(
+    (memberProfiles.data ?? []).map((p) => [
+      p.id,
+      {
+        fullName: p.full_name ?? "Membre",
+        phone: p.phone,
+        avatarSignedUrl: p.avatar_url ? (memberAvatarUrlByPath.get(p.avatar_url) ?? null) : null,
+      },
+    ]),
+  );
 
   const { data: reportsRaw } = await supabase
     .from("reports")
@@ -638,6 +669,8 @@ export default async function ProjectDetailPage({
         </div>
 
         <ProjectTabs
+          key={initialTab}
+          initialTab={initialTab}
           counts={{
             apercu: 0,
             financements: fundings?.length ?? 0,
@@ -888,32 +921,34 @@ export default async function ProjectDetailPage({
                 </div>
                 {members && members.length > 0 ? (
                   <ul className="mt-3 flex flex-col gap-2">
-                    {members.map((member) => (
-                      <li
-                        key={member.id}
-                        className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
-                      >
-                        <span className="text-slate-900 dark:text-slate-100">
-                          {memberNames.get(member.user_id) ?? "Membre"}
-                          {member.status === "invited" && (
-                            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
-                              (invité·e)
-                            </span>
-                          )}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500 dark:text-slate-400">
-                            {PROJECT_ROLE_LABELS[member.role] ?? member.role}
-                          </span>
-                          <MemberRowActions
-                            memberId={member.id}
-                            memberName={memberNames.get(member.user_id) ?? "ce membre"}
-                            role={member.role}
-                            canManage={canApprove}
+                    {members.map((member) => {
+                      const info = memberInfoById.get(member.user_id);
+                      return (
+                        <li
+                          key={member.id}
+                          className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+                        >
+                          <MemberProfileTrigger
+                            fullName={info?.fullName ?? "Membre"}
+                            phone={info?.phone ?? null}
+                            avatarSignedUrl={info?.avatarSignedUrl ?? null}
+                            roleLabel={PROJECT_ROLE_LABELS[member.role] ?? member.role}
+                            invited={member.status === "invited"}
                           />
-                        </div>
-                      </li>
-                    ))}
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="text-slate-500 dark:text-slate-400">
+                              {PROJECT_ROLE_LABELS[member.role] ?? member.role}
+                            </span>
+                            <MemberRowActions
+                              memberId={member.id}
+                              memberName={info?.fullName ?? "ce membre"}
+                              role={member.role}
+                              canManage={canApprove}
+                            />
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">Aucun membre.</p>
