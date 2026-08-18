@@ -1006,6 +1006,7 @@ export default async function ProjectDetailPage({
                               periodStart={report.period_start}
                               periodEnd={report.period_end}
                               summary={report.summary}
+                              metrics={report.metrics}
                             />
                           </div>
                           {report.metrics && (
