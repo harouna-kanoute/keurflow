@@ -4,8 +4,10 @@ import { revalidatePath } from "next/cache";
 import {
   createOrganizationSchema,
   createProjectSchema,
+  updateOrganizationSchema,
   type CreateOrganizationInput,
   type CreateProjectInput,
+  type UpdateOrganizationInput,
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
@@ -45,6 +47,46 @@ export async function createOrganization(input: CreateOrganizationInput): Promis
     console.error("[createOrganization] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
   }
+
+  revalidatePath("/dashboard");
+  return {};
+}
+
+export async function updateOrganization(input: UpdateOrganizationInput): Promise<ActionResult> {
+  const parsed = updateOrganizationSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  // RLS (organizations_update_admins) is the actual authority here — only
+  // an owner/admin of this organization can update it.
+  const { error } = await supabase
+    .from("organizations")
+    .update({
+      name: parsed.data.name,
+      address: parsed.data.address ?? null,
+      phone: parsed.data.phone ?? null,
+      email: parsed.data.email ?? null,
+    })
+    .eq("id", parsed.data.organizationId);
+
+  if (error) {
+    console.error("[updateOrganization] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  await logAudit({
+    organizationId: parsed.data.organizationId,
+    userId: user.id,
+    action: "organization_updated",
+    entityType: "organization",
+    entityId: parsed.data.organizationId,
+    metadata: { name: parsed.data.name },
+  });
 
   revalidatePath("/dashboard");
   return {};
