@@ -343,6 +343,43 @@ export function SupportIcon({ className }: IconProps) {
   );
 }
 
+export function DownloadIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <path d="M12 3v12" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+      <path
+        d="M7 11l5 5 5-5"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M4 20h16" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function PrintIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
+      <path
+        d="M6 9V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <rect x="3" y="9" width="18" height="8" rx="1.5" stroke="currentColor" strokeWidth={1.5} />
+      <path
+        d="M6 15h12v6a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-6Z"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function WarningIcon({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden>
