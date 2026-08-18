@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupportTicketSchema, type CreateSupportTicketInput } from "@keurflow/validation";
+import {
+  createSupportTicketSchema,
+  deleteSupportAttachmentSchema,
+  type CreateSupportTicketInput,
+  type DeleteSupportAttachmentInput,
+} from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
@@ -33,6 +38,55 @@ export async function createSupportTicket(input: CreateSupportTicketInput): Prom
   if (error) {
     console.error("[createSupportTicket] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
+  }
+
+  revalidatePath("/dashboard/support");
+  return {};
+}
+
+export async function deleteSupportAttachment(
+  input: DeleteSupportAttachmentInput,
+): Promise<ActionResult> {
+  const parsed = deleteSupportAttachmentSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: ticket } = await supabase
+    .from("support_tickets")
+    .select("attachment_paths")
+    .eq("id", parsed.data.ticketId)
+    .maybeSingle();
+  if (!ticket) return { error: GENERIC_ERROR };
+
+  const remainingPaths = (ticket.attachment_paths ?? []).filter(
+    (path: string) => path !== parsed.data.path,
+  );
+
+  // support_tickets_update_own_attachments (RLS) + a column-level grant are
+  // the actual authority here — they let this UPDATE touch attachment_paths
+  // only, keeping subject/description/category/status immutable from the
+  // client either way.
+  const { error } = await supabase
+    .from("support_tickets")
+    .update({ attachment_paths: remainingPaths.length > 0 ? remainingPaths : null })
+    .eq("id", parsed.data.ticketId);
+  if (error) {
+    console.error("[deleteSupportAttachment] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  // Best-effort: support_attachments_delete_own already permits this, but the
+  // ticket row above is the source of truth the UI reads from either way.
+  const { error: storageError } = await supabase.storage
+    .from("support-attachments")
+    .remove([parsed.data.path]);
+  if (storageError) {
+    console.error("[deleteSupportAttachment] storage remove error:", storageError.message);
   }
 
   revalidatePath("/dashboard/support");

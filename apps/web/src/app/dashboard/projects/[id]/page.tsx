@@ -41,6 +41,7 @@ import { CreateFundingForm } from "./create-funding-form";
 import { CreateExpenseForm } from "./create-expense-form";
 import { ExpenseStatusActions, ExpenseStatusBadge } from "./expense-status";
 import { ExpenseComments, type ExpenseCommentView } from "./expense-comments";
+import { ExpenseDocuments, type ExpenseDocumentView } from "./expense-documents";
 import { AddMilestoneForm, MilestoneStatusSelect } from "./milestones";
 import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
@@ -266,14 +267,34 @@ export default async function ProjectDetailPage({
 
   const { data: documents } = await supabase
     .from("documents")
-    .select("expense_id")
+    .select("id, expense_id, filename, storage_path, uploaded_by")
     .eq("project_id", project.id)
     .not("expense_id", "is", null);
 
+  // One batch signed-url call across every document rather than one per
+  // document — same approach as the project photo gallery.
+  const documentPaths = (documents ?? []).map((d) => d.storage_path);
+  const { data: documentSignedUrls } =
+    documentPaths.length > 0
+      ? await supabase.storage.from("expense-receipts").createSignedUrls(documentPaths, 3600)
+      : { data: [] };
+  const documentUrlByPath = new Map(
+    (documentSignedUrls ?? []).map((s) => [s.path, s.signedUrl] as const),
+  );
+
   const documentCountByExpense = new Map<string, number>();
+  const documentsByExpense = new Map<string, ExpenseDocumentView[]>();
   for (const doc of documents ?? []) {
     if (!doc.expense_id) continue;
     documentCountByExpense.set(doc.expense_id, (documentCountByExpense.get(doc.expense_id) ?? 0) + 1);
+    const list = documentsByExpense.get(doc.expense_id) ?? [];
+    list.push({
+      id: doc.id,
+      filename: doc.filename,
+      url: documentUrlByPath.get(doc.storage_path) ?? null,
+      uploadedBy: doc.uploaded_by,
+    });
+    documentsByExpense.set(doc.expense_id, list);
   }
 
   const expenseIds = (expenses ?? []).map((e) => e.id);
@@ -858,6 +879,11 @@ export default async function ProjectDetailPage({
                             submitterName={submitter?.full_name ?? null}
                             submitterPhone={submitter?.phone ?? null}
                             projectUrl={projectUrl}
+                          />
+                          <ExpenseDocuments
+                            documents={documentsByExpense.get(expense.id) ?? []}
+                            currentUserId={user.id}
+                            canManageAny={canApprove}
                           />
                           <ExpenseComments
                             expenseId={expense.id}

@@ -22,6 +22,7 @@ import {
   createFundingSchema,
   createMilestoneSchema,
   createReportSchema,
+  deleteDocumentSchema,
   deletePhotoSchema,
   deleteProjectSchema,
   inviteProjectMemberSchema,
@@ -39,6 +40,7 @@ import {
   type CreateFundingInput,
   type CreateMilestoneInput,
   type CreateReportInput,
+  type DeleteDocumentInput,
   type DeletePhotoInput,
   type DeleteProjectInput,
   type InviteProjectMemberInput,
@@ -558,6 +560,53 @@ export async function deletePhoto(input: DeletePhotoInput): Promise<ActionResult
   });
 
   revalidatePath(`/dashboard/projects/${photo.project_id}`);
+  return {};
+}
+
+export async function deleteDocument(input: DeleteDocumentInput): Promise<ActionResult> {
+  const parsed = deleteDocumentSchema.safeParse(input);
+  if (!parsed.success) return { error: GENERIC_ERROR };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: GENERIC_ERROR };
+
+  const { data: document } = await supabase
+    .from("documents")
+    .select("project_id, storage_path")
+    .eq("id", parsed.data.documentId)
+    .maybeSingle();
+  if (!document) return { error: GENERIC_ERROR };
+
+  // RLS (documents_delete_own_or_managers) is the authoritative check — the
+  // uploader can always remove their own document, managers can remove any.
+  const { error } = await supabase.from("documents").delete().eq("id", parsed.data.documentId);
+  if (error) {
+    console.error("[deleteDocument] Supabase error:", error.code, error.message);
+    return { error: GENERIC_ERROR };
+  }
+
+  // Best-effort: storage RLS (expense_receipts_delete) is role-gated and
+  // narrower than the row policy above, so a plain member deleting their
+  // own upload can lose this step — the row is already gone either way.
+  const { error: storageError } = await supabase.storage
+    .from("expense-receipts")
+    .remove([document.storage_path]);
+  if (storageError) {
+    console.error("[deleteDocument] storage remove error:", storageError.message);
+  }
+
+  await logAudit({
+    projectId: document.project_id,
+    userId: user.id,
+    action: "document_deleted",
+    entityType: "document",
+    entityId: parsed.data.documentId,
+  });
+
+  revalidatePath(`/dashboard/projects/${document.project_id}`);
   return {};
 }
 

@@ -38,3 +38,8 @@ export const deletePhotoSchema = z.object({
   photoId: uuidSchema,
 });
 export type DeletePhotoInput = z.infer<typeof deletePhotoSchema>;
+
+export const deleteDocumentSchema = z.object({
+  documentId: uuidSchema,
+});
+export type DeleteDocumentInput = z.infer<typeof deleteDocumentSchema>;

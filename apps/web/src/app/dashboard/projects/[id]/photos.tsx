@@ -121,7 +121,7 @@ export function PhotoGallery({
   currentUserId,
   canManageAny,
 }: {
-  photos: { id: string; url: string | null; caption: string | null; uploadedBy: string }[];
+  photos: { id: string; url: string | null; caption: string | null; uploadedBy: string | null }[];
   currentUserId: string;
   canManageAny: boolean;
 }) {
