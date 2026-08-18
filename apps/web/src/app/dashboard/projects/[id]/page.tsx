@@ -46,6 +46,7 @@ import { PhotoGallery, UploadPhotoForm } from "./photos";
 import { InviteMemberForm } from "./invite-member-form";
 import { MemberRowActions } from "./member-actions";
 import { CreateReportForm } from "./create-report-form";
+import { ReportActions } from "./report-actions";
 import { DeleteProjectForm } from "./delete-project-form";
 import { ProjectStatusSelect, PROJECT_STATUS_COLORS } from "./project-status";
 import { ProjectTabs } from "./project-tabs";
@@ -973,6 +974,14 @@ export default async function ProjectDetailPage({
                           <summary className="cursor-pointer text-slate-900 dark:text-slate-100">
                             {report.period_start} → {report.period_end}
                           </summary>
+                          <div className="mt-2 flex justify-end">
+                            <ReportActions
+                              projectName={project.name}
+                              periodStart={report.period_start}
+                              periodEnd={report.period_end}
+                              summary={report.summary}
+                            />
+                          </div>
                           {report.metrics && (
                             <div className="mt-4 flex flex-col gap-5 border-b border-slate-100 pb-5 dark:border-slate-800">
                               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
