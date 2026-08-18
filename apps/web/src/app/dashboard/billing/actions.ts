@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
-import type { OrganizationRole } from "@keurflow/types";
+import { getAnnualPriceMinor, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
+import type { BillingPeriod, OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
@@ -39,16 +39,19 @@ async function requireOrgAdmin(organizationId: string) {
 // The only two plans checkout can ever target — never trust a plan code
 // from the client beyond this allowlist (it ends up in a Stripe price).
 const CHECKOUT_PLAN_CODES = new Set(["individual", "individual_unlimited"]);
+const BILLING_PERIODS = new Set<BillingPeriod>(["month", "year"]);
 
 export async function createCheckoutSession(
   organizationId: string,
   planCode: string = "individual",
+  billingPeriod: BillingPeriod = "month",
 ): Promise<ActionResult> {
   const auth = await requireOrgAdmin(organizationId);
   if (!auth) return { error: GENERIC_ERROR };
   const { supabase, user } = auth;
 
   if (!CHECKOUT_PLAN_CODES.has(planCode)) return { error: GENERIC_ERROR };
+  if (!BILLING_PERIODS.has(billingPeriod)) return { error: GENERIC_ERROR };
 
   const productId = process.env.STRIPE_PRODUCT_ID_INDIVIDUAL;
   if (!productId) return { error: GENERIC_ERROR };
@@ -68,6 +71,12 @@ export async function createCheckoutSession(
     .eq("code", planCode)
     .single();
   if (!plan || plan.price_minor <= 0) return { error: GENERIC_ERROR };
+
+  // plans.price_minor is always the monthly price — the annual price is a
+  // 20% discount off 12x that, computed here rather than stored, so the two
+  // never drift (see getAnnualPriceMinor).
+  const unitAmount =
+    billingPeriod === "year" ? getAnnualPriceMinor(plan.price_minor) : plan.price_minor;
 
   const stripe = getStripe();
   // subscriptions has no UPDATE policy for `authenticated` (writes are
@@ -112,8 +121,8 @@ export async function createCheckoutSession(
             price_data: {
               product: productId,
               currency: plan.currency_code.toLowerCase(),
-              unit_amount: plan.price_minor,
-              recurring: { interval: "month" },
+              unit_amount: unitAmount,
+              recurring: { interval: billingPeriod },
             },
           },
         ],
@@ -133,7 +142,10 @@ export async function createCheckoutSession(
       return { error: GENERIC_ERROR };
     }
 
-    await admin.from("subscriptions").update({ plan_code: planCode }).eq("organization_id", organizationId);
+    await admin
+      .from("subscriptions")
+      .update({ plan_code: planCode, billing_period: billingPeriod })
+      .eq("organization_id", organizationId);
 
     redirect(`${APP_URL}/dashboard/billing?checkout=success`);
   }
@@ -148,8 +160,8 @@ export async function createCheckoutSession(
           price_data: {
             product: productId,
             currency: plan.currency_code.toLowerCase(),
-            unit_amount: plan.price_minor,
-            recurring: { interval: "month" },
+            unit_amount: unitAmount,
+            recurring: { interval: billingPeriod },
           },
           quantity: 1,
         },

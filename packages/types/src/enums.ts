@@ -80,6 +80,9 @@ export const SUBSCRIPTION_STATUSES = [
 ] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
+export const BILLING_PERIODS = ["month", "year"] as const;
+export type BillingPeriod = (typeof BILLING_PERIODS)[number];
+
 export const SUPPORT_TICKET_CATEGORIES = ["bug", "security", "other"] as const;
 export type SupportTicketCategory = (typeof SUPPORT_TICKET_CATEGORIES)[number];
 
