@@ -24,6 +24,17 @@ export function getTrialDaysRemaining(trialEndsAt: string | null, now: Date = ne
   return Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
 }
 
+// 20% off the monthly price, billed as one annual payment — e.g. 14,99€/mo
+// -> 143,90€/yr instead of 179,88€/yr. Derived from plans.price_minor rather
+// than stored as its own column: one number to keep in sync, not two (same
+// reasoning as Stripe checkout building price_data dynamically instead of
+// pre-created Price objects — see createCheckoutSession).
+export const ANNUAL_DISCOUNT_RATE = 0.2;
+
+export function getAnnualPriceMinor(monthlyPriceMinor: number): number {
+  return Math.round(monthlyPriceMinor * 12 * (1 - ANNUAL_DISCOUNT_RATE));
+}
+
 export function isTrialExpired(trialEndsAt: string | null, now: Date = new Date()): boolean {
   if (!trialEndsAt) return false;
   return new Date(trialEndsAt).getTime() < now.getTime();

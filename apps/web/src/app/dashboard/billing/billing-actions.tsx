@@ -1,16 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { BillingPeriod } from "@keurflow/types";
 import { createBillingPortalSession, createCheckoutSession } from "./actions";
 
 export function SubscribeButton({
   organizationId,
   planCode = "individual",
+  billingPeriod = "month",
   label = "S'abonner",
   variant = "primary",
 }: {
   organizationId: string;
   planCode?: string;
+  billingPeriod?: BillingPeriod;
   label?: string;
   variant?: "primary" | "secondary";
 }) {
@@ -24,7 +27,7 @@ export function SubscribeButton({
         disabled={isPending}
         onClick={() =>
           startTransition(async () => {
-            const result = await createCheckoutSession(organizationId, planCode);
+            const result = await createCheckoutSession(organizationId, planCode, billingPeriod);
             if (result?.error) setError(result.error);
           })
         }

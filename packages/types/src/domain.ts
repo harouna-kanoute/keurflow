@@ -1,4 +1,5 @@
 import type {
+  BillingPeriod,
   DocumentationStatus,
   DocumentType,
   ExpenseStatus,
@@ -231,6 +232,7 @@ export interface Subscription {
   organizationId: string;
   planCode: string;
   status: SubscriptionStatus;
+  billingPeriod: BillingPeriod;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
   trialEndsAt: string | null;

@@ -1,20 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { formatMoney, getTrialDaysRemaining, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
-import type { OrganizationRole } from "@keurflow/types";
+import { getTrialDaysRemaining, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
+import type { BillingPeriod, OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
-import { ManageBillingButton, SubscribeButton } from "./billing-actions";
+import { BillingPlanCards } from "./billing-plan-cards";
 
 export const metadata: Metadata = { title: "Abonnement — KeurFlow" };
-
-const STATUS_LABELS: Record<string, string> = {
-  trialing: "Essai en cours",
-  active: "Actif",
-  past_due: "Paiement en retard",
-  canceled: "Annulé",
-  incomplete: "Incomplet",
-};
 
 export default async function BillingPage({
   searchParams,
@@ -56,7 +48,7 @@ export default async function BillingPage({
   // created atomically by create_organization() (§15, Phase 15).
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("plan_code, status, trial_ends_at, current_period_end, stripe_customer_id")
+    .select("plan_code, status, billing_period, trial_ends_at, current_period_end, stripe_customer_id")
     .eq("organization_id", membership.organization_id)
     .single();
 
@@ -93,10 +85,6 @@ export default async function BillingPage({
     ? getTrialDaysRemaining(subscription.trial_ends_at)
     : 0;
   const displayPrice = (plan?.price_minor === 0 ? paidIndividualPlan : null) ?? plan;
-  const unlimitedDelta =
-    unlimitedPlan && paidIndividualPlan
-      ? unlimitedPlan.price_minor - paidIndividualPlan.price_minor
-      : null;
 
   return (
     <div className="flex flex-1 flex-col items-center bg-canvas px-6 py-16">
@@ -122,101 +110,41 @@ export default async function BillingPage({
         )}
 
         {plan && subscription ? (
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-              Plan actuel
-            </p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">{plan.label}</p>
-
-            <dl className="mt-4 grid grid-cols-2 gap-y-2 text-sm">
-              <dt className="text-slate-500 dark:text-slate-400">Statut</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">
-                {STATUS_LABELS[subscription.status] ?? subscription.status}
-              </dd>
-
-              <dt className="text-slate-500 dark:text-slate-400">Prix</dt>
-              <dd className="text-right text-slate-900 dark:text-slate-100">
-                {displayPrice && displayPrice.price_minor > 0 ? (
-                  <>
-                    {formatMoney(displayPrice.price_minor, displayPrice.currency_code, 2)} / mois
-                    {paidIndividualPlan && " (après l'essai)"}
-                  </>
-                ) : (
-                  "—"
-                )}
-              </dd>
-
-              {subscription.status === "trialing" && (
-                <>
-                  <dt className="text-slate-500 dark:text-slate-400">Essai</dt>
-                  <dd className="text-right text-slate-900 dark:text-slate-100">
-                    {trialDaysRemaining > 0
-                      ? `${trialDaysRemaining} jour${trialDaysRemaining > 1 ? "s" : ""} restant${trialDaysRemaining > 1 ? "s" : ""}`
-                      : "Terminé"}
-                  </dd>
-                </>
-              )}
-
-              {subscription.current_period_end && (
-                <>
-                  <dt className="text-slate-500 dark:text-slate-400">Renouvellement</dt>
-                  <dd className="text-right text-slate-900 dark:text-slate-100">
-                    {new Date(subscription.current_period_end).toLocaleDateString("fr-FR")}
-                  </dd>
-                </>
-              )}
-            </dl>
-
-            {canManageBilling && isBillableTrack && (
-              <div className="mt-6 flex flex-col gap-3">
-                {subscription.status !== "active" && (
-                  <SubscribeButton
-                    organizationId={membership.organization_id}
-                    planCode={isUnlimited ? "individual_unlimited" : "individual"}
-                  />
-                )}
-                {subscription.stripe_customer_id && (
-                  <ManageBillingButton organizationId={membership.organization_id} />
-                )}
-              </div>
-            )}
-
-            {!canManageBilling && (
-              <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
-                Seuls les propriétaires et administrateurs peuvent gérer l&apos;abonnement.
-              </p>
-            )}
-          </div>
+          <BillingPlanCards
+            organizationId={membership.organization_id}
+            canManageBilling={canManageBilling}
+            planLabel={plan.label}
+            subscriptionStatus={subscription.status}
+            billingPeriod={subscription.billing_period as BillingPeriod}
+            trialDaysRemaining={trialDaysRemaining}
+            currentPeriodEnd={subscription.current_period_end}
+            stripeCustomerId={subscription.stripe_customer_id}
+            isBillableTrack={isBillableTrack}
+            isUnlimited={isUnlimited}
+            displayPrice={
+              displayPrice
+                ? { priceMinor: displayPrice.price_minor, currencyCode: displayPrice.currency_code }
+                : null
+            }
+            showsAfterTrialSuffix={plan?.price_minor === 0 && !!paidIndividualPlan}
+            unlimitedPlan={
+              unlimitedPlan
+                ? { priceMinor: unlimitedPlan.price_minor, currencyCode: unlimitedPlan.currency_code }
+                : null
+            }
+            paidIndividualPlan={
+              paidIndividualPlan
+                ? {
+                    priceMinor: paidIndividualPlan.price_minor,
+                    currencyCode: paidIndividualPlan.currency_code,
+                  }
+                : null
+            }
+          />
         ) : (
           <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">
             Aucun abonnement trouvé pour cette organisation.
           </p>
-        )}
-
-        {canManageBilling && unlimitedPlan && unlimitedDelta !== null && (
-          <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-left dark:border-brand-900 dark:bg-brand-900/20">
-            <p className="text-xs font-medium tracking-wide text-brand-700 uppercase dark:text-brand-300">
-              Option
-            </p>
-            <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Chantiers illimités
-            </p>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Passez à l&apos;offre illimitée pour créer autant de chantiers que nécessaire.
-            </p>
-            <p className="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-              +{formatMoney(unlimitedDelta, unlimitedPlan.currency_code, 2)}
-              <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
-            </p>
-            <div className="mt-4">
-              <SubscribeButton
-                organizationId={membership.organization_id}
-                planCode="individual_unlimited"
-                label="Passer à l'illimité"
-                variant="secondary"
-              />
-            </div>
-          </div>
         )}
       </div>
     </div>

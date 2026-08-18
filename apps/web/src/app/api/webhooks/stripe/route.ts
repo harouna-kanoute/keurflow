@@ -37,19 +37,26 @@ async function syncSubscription(
     return;
   }
 
-  const periodEnd = subscription.items.data[0]?.current_period_end;
+  const item = subscription.items.data[0];
+  const periodEnd = item?.current_period_end;
   // Set on the subscription (or its metadata, on creation and on any later
   // plan-code-changing update — see createCheckoutSession) by us, never
   // inferred from the price: Stripe has no concept of our plan codes.
   // "individual" is the fallback for subscriptions created before this
   // field existed.
   const planCode = subscription.metadata?.plan_code || "individual";
+  // Unlike plan_code, Stripe *does* natively track the billing interval on
+  // the price itself — read it straight from there instead of duplicating
+  // it in metadata, so it can never drift (e.g. a plan-dashboard proration
+  // or a Stripe-dashboard-driven change still resolves correctly).
+  const billingPeriod = item?.price?.recurring?.interval === "year" ? "year" : "month";
 
   await admin
     .from("subscriptions")
     .update({
       plan_code: planCode,
       status: mapStripeStatus(subscription.status),
+      billing_period: billingPeriod,
       stripe_subscription_id: subscription.id,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
     })

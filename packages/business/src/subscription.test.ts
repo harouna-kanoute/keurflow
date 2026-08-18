@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getTrialDaysRemaining, isBillablePlan, isSubscriptionBlocked, isTrialExpired } from "./subscription";
+import {
+  getAnnualPriceMinor,
+  getTrialDaysRemaining,
+  isBillablePlan,
+  isSubscriptionBlocked,
+  isTrialExpired,
+} from "./subscription";
 
 const now = new Date("2026-08-11T00:00:00Z");
 
@@ -28,6 +34,22 @@ describe("getTrialDaysRemaining", () => {
 
   it("clamps to 0 once the trial has passed — never negative", () => {
     expect(getTrialDaysRemaining("2026-08-01T00:00:00Z", now)).toBe(0);
+  });
+});
+
+describe("getAnnualPriceMinor", () => {
+  it("applies a 20% discount to 12x the monthly price", () => {
+    // 14,99€/mo * 12 = 179,88€ -> -20% = 143,904€ -> rounded to 14390 cents
+    expect(getAnnualPriceMinor(1499)).toBe(14390);
+  });
+
+  it("rounds to the nearest minor unit", () => {
+    expect(getAnnualPriceMinor(990)).toBe(9504); // 990 * 12 * 0.8 = 9504 exactly
+    expect(getAnnualPriceMinor(1000)).toBe(9600);
+  });
+
+  it("is 0 for a free plan", () => {
+    expect(getAnnualPriceMinor(0)).toBe(0);
   });
 });
 
