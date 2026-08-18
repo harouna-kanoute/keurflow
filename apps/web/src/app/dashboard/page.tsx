@@ -35,6 +35,7 @@ const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
 const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_owner: "Propriétaire",
   project_manager: "Responsable",
+  project_approver: "Propriétaire du chantier",
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };

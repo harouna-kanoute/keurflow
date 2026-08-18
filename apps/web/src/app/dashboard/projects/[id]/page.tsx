@@ -72,6 +72,7 @@ const PROJECT_TYPE_LABELS = new Map(PROJECT_TYPES.map((t) => [t.code, t.label]))
 const PROJECT_ROLE_LABELS: Record<string, string> = {
   project_owner: "Propriétaire",
   project_manager: "Responsable",
+  project_approver: "Propriétaire du chantier",
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };
@@ -231,6 +232,16 @@ export default async function ProjectDetailPage({
     .eq("id", project.country_id)
     .maybeSingle();
 
+  // Drives the invite form's framing (§ contextual invite): an agency
+  // invites the chantier's owner to follow remotely, an individual invites
+  // a collaborator to track it for them — see InviteMemberForm.
+  const { data: organization } = await supabase
+    .from("organizations")
+    .select("type")
+    .eq("id", project.organization_id)
+    .maybeSingle();
+  const isAgencyOrg = organization?.type === "agency" || organization?.type === "company";
+
   const { data: fundings } = await supabase
     .from("fundings")
     .select("id, amount_minor, currency_code, payment_method_id, reference, funding_date")
@@ -349,6 +360,16 @@ export default async function ProjectDetailPage({
   const canApprove =
     (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
     (!!projectMembership && canApproveExpense(projectMembership.role as ProjectRole));
+
+  // A narrower bar than canApprove — project_approver (the agency-invited
+  // chantier owner) satisfies canApprove but must NOT get member
+  // management, project status changes, or delete-any-photo/document; those
+  // stay at project_manager+ (matches project_members_manage RLS, which
+  // doesn't list project_approver).
+  const canManageProject =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_manager"));
 
   // Deletion is a higher bar than canApprove — org owners/admins or the
   // project's own owner, not managers (see deleteProject's own check,
@@ -536,7 +557,7 @@ export default async function ProjectDetailPage({
                   <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                     {PROJECT_TYPE_LABELS.get(project.project_type) ?? project.project_type}
                   </span>
-                  {canApprove ? (
+                  {canManageProject ? (
                     <ProjectStatusSelect projectId={project.id} status={project.status} />
                   ) : (
                     <span
@@ -884,7 +905,7 @@ export default async function ProjectDetailPage({
                           <ExpenseDocuments
                             documents={documentsByExpense.get(expense.id) ?? []}
                             currentUserId={user.id}
-                            canManageAny={canApprove}
+                            canManageAny={canManageProject}
                           />
                           <ExpenseComments
                             expenseId={expense.id}
@@ -933,16 +954,20 @@ export default async function ProjectDetailPage({
                   </Modal>
                 </div>
                 <div className="mt-3">
-                  <PhotoGallery photos={photos} currentUserId={user.id} canManageAny={canApprove} />
+                  <PhotoGallery photos={photos} currentUserId={user.id} canManageAny={canManageProject} />
                 </div>
               </div>
             ),
             membres: (
               <div>
                 <div className="flex justify-end">
-                  {canApprove && (
-                    <Modal triggerLabel="Inviter" title="Inviter un membre" variant="secondary">
-                      <InviteMemberForm projectId={project.id} />
+                  {canManageProject && (
+                    <Modal
+                      triggerLabel="Inviter"
+                      title={isAgencyOrg ? "Inviter le propriétaire du chantier" : "Inviter un collaborateur"}
+                      variant="secondary"
+                    >
+                      <InviteMemberForm projectId={project.id} isAgencyOrg={isAgencyOrg} />
                     </Modal>
                   )}
                 </div>
@@ -970,7 +995,7 @@ export default async function ProjectDetailPage({
                               memberId={member.id}
                               memberName={info?.fullName ?? "ce membre"}
                               role={member.role}
-                              canManage={canApprove}
+                              canManage={canManageProject}
                             />
                           </div>
                         </li>

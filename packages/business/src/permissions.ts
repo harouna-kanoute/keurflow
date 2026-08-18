@@ -19,8 +19,12 @@ export function hasProjectRoleAtLeast(role: ProjectRole, required: ProjectRole):
   return PROJECT_ROLE_RANK[role] >= PROJECT_ROLE_RANK[required];
 }
 
+// Not a rank threshold: project_approver ranks below project_manager (so it
+// correctly stays excluded from member-management/project-edit checks,
+// which ARE rank-based) but must still pass this one — matches the
+// expenses_update_own_pending_or_managers RLS policy's explicit role list.
 export function canApproveExpense(role: ProjectRole): boolean {
-  return hasProjectRoleAtLeast(role, "project_manager");
+  return role === "project_owner" || role === "project_manager" || role === "project_approver";
 }
 
 export function canManageMembers(role: OrganizationRole): boolean {
