@@ -15,8 +15,9 @@ import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
-import { BellIcon } from "@/components/icons";
+import { BellIcon, EditIcon } from "@/components/icons";
 import { CreateOrganizationForm } from "./create-organization-form";
+import { EditOrganizationForm } from "./edit-organization-form";
 import { CreateProjectForm } from "./create-project-form";
 import { AgencyDashboard } from "./agency-dashboard";
 import { ProjectActionsMenu } from "./project-actions-menu";
@@ -72,10 +73,15 @@ export default async function DashboardPage() {
   const { data: organization } = membership
     ? await supabase
         .from("organizations")
-        .select("id, name, type")
+        .select("id, name, type, address, phone, email")
         .eq("id", membership.organization_id)
         .single()
     : { data: null };
+
+  // Matches the organizations_update_admins RLS policy — only an owner/admin
+  // can actually update the org; this just decides whether to show the button.
+  const canEditOrganization =
+    !!membership && hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin");
 
   const { count: memberCount } = organization
     ? await supabase
@@ -232,29 +238,80 @@ export default async function DashboardPage() {
 
           <div className="relative z-10 -mt-8 px-1">
             {organization ? (
-              <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div>
-                  <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                    {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
-                  </p>
-                  <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
-                    {organization.name}
-                  </p>
+              <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-start gap-2">
+                    <div>
+                      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                        {ORGANIZATION_TYPE_LABELS[organization.type] ?? organization.type}
+                      </p>
+                      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-50">
+                        {organization.name}
+                      </p>
+                    </div>
+                    {canEditOrganization && (
+                      <Modal
+                        triggerLabel="Modifier l'organisation"
+                        triggerIcon={<EditIcon className="h-4 w-4" />}
+                        title="Modifier l'organisation"
+                        variant="icon"
+                        iconOnly
+                      >
+                        <EditOrganizationForm
+                          defaultValues={{
+                            organizationId: organization.id,
+                            name: organization.name,
+                            address: organization.address ?? undefined,
+                            phone: organization.phone ?? undefined,
+                            email: organization.email ?? undefined,
+                          }}
+                        />
+                      </Modal>
+                    )}
+                  </div>
+                  <dl className="flex gap-8 text-sm">
+                    <div>
+                      <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
+                      <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                        {membership?.role}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
+                      <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                        {memberCount ?? 1}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
-                <dl className="flex gap-8 text-sm">
-                  <div>
-                    <dt className="text-slate-500 dark:text-slate-400">Votre rôle</dt>
-                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
-                      {membership?.role}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-500 dark:text-slate-400">Membres</dt>
-                    <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
-                      {memberCount ?? 1}
-                    </dd>
-                  </div>
-                </dl>
+                {(organization.address || organization.phone || organization.email) && (
+                  <dl className="flex flex-wrap gap-x-8 gap-y-2 border-t border-slate-100 pt-3 text-sm dark:border-slate-800">
+                    {organization.address && (
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Adresse</dt>
+                        <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                          {organization.address}
+                        </dd>
+                      </div>
+                    )}
+                    {organization.phone && (
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Téléphone</dt>
+                        <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                          {organization.phone}
+                        </dd>
+                      </div>
+                    )}
+                    {organization.email && (
+                      <div>
+                        <dt className="text-slate-500 dark:text-slate-400">Email</dt>
+                        <dd className="mt-0.5 font-medium text-slate-900 dark:text-slate-100">
+                          {organization.email}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">

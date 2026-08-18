@@ -58,6 +58,9 @@ export interface Organization {
   countryId: string;
   ownerId: string;
   logoUrl: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
   createdAt: string;
   updatedAt: string;
 }

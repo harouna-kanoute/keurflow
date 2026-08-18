@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createOrganizationSchema, inviteOrganizationMemberSchema } from "./organization";
+import {
+  createOrganizationSchema,
+  inviteOrganizationMemberSchema,
+  updateOrganizationSchema,
+} from "./organization";
 
 describe("createOrganizationSchema", () => {
   it("accepts a valid individual organization", () => {
@@ -42,5 +46,44 @@ describe("inviteOrganizationMemberSchema", () => {
         role: "member",
       }).success,
     ).toBe(true);
+  });
+});
+
+describe("updateOrganizationSchema", () => {
+  const organizationId = "50450d0e-1ae3-46cc-a46e-b29ea758757d";
+
+  it("accepts a name with no contact details", () => {
+    expect(
+      updateOrganizationSchema.safeParse({ organizationId, name: "Ma maison" }).success,
+    ).toBe(true);
+  });
+
+  it("accepts valid contact details alongside the name", () => {
+    expect(
+      updateOrganizationSchema.safeParse({
+        organizationId,
+        name: "Ma maison",
+        address: "Dakar, Sénégal",
+        phone: "+221771234567",
+        email: "contact@exemple.com",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an invalid email", () => {
+    expect(
+      updateOrganizationSchema.safeParse({
+        organizationId,
+        name: "Ma maison",
+        email: "not-an-email",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects a phone that's too short", () => {
+    expect(
+      updateOrganizationSchema.safeParse({ organizationId, name: "Ma maison", phone: "123" })
+        .success,
+    ).toBe(false);
   });
 });
