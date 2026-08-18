@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SupportIcon } from "@/components/icons";
 import { CreateSupportTicketForm } from "./create-support-ticket-form";
+import { TicketAttachments } from "./ticket-attachments";
 
 export const metadata: Metadata = { title: "Support — KeurFlow" };
 
@@ -114,23 +115,13 @@ export default async function SupportPage() {
                     </div>
                   </div>
                   <p className="mt-2 text-slate-600 dark:text-slate-400">{ticket.description}</p>
-                  {ticket.attachment_paths && ticket.attachment_paths.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {ticket.attachment_paths.map((path: string) => {
-                        const url = signedUrlByPath.get(path);
-                        return url ? (
-                          <a key={path} href={url} target="_blank" rel="noopener noreferrer">
-                            {/* eslint-disable-next-line @next/next/no-img-element -- signed URL expires; not worth Next/Image's optimization pipeline for a private, ephemeral attachment. */}
-                            <img
-                              src={url}
-                              alt="Capture d'écran jointe au signalement"
-                              className="h-16 w-16 rounded-lg border border-slate-200 object-cover dark:border-slate-700"
-                            />
-                          </a>
-                        ) : null;
-                      })}
-                    </div>
-                  )}
+                  <TicketAttachments
+                    ticketId={ticket.id}
+                    attachments={(ticket.attachment_paths ?? []).map((path: string) => ({
+                      path,
+                      url: signedUrlByPath.get(path) ?? null,
+                    }))}
+                  />
                   <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                     {new Date(ticket.created_at).toLocaleDateString("fr-FR", {
                       day: "numeric",

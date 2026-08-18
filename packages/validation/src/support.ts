@@ -20,3 +20,9 @@ export const createSupportTicketSchema = z.object({
   attachmentPaths: z.array(z.string().trim().min(1)).max(4).optional(),
 });
 export type CreateSupportTicketInput = z.infer<typeof createSupportTicketSchema>;
+
+export const deleteSupportAttachmentSchema = z.object({
+  ticketId: uuidSchema,
+  path: z.string().trim().min(1),
+});
+export type DeleteSupportAttachmentInput = z.infer<typeof deleteSupportAttachmentSchema>;

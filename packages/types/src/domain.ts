@@ -106,7 +106,7 @@ export interface ProjectMember {
 export interface Funding {
   id: string;
   projectId: string;
-  createdBy: string;
+  createdBy: string | null;
   amountMinor: number;
   currencyCode: string;
   paymentMethodId: string;
@@ -121,7 +121,7 @@ export interface Funding {
 export interface Expense {
   id: string;
   projectId: string;
-  createdBy: string;
+  createdBy: string | null;
   amountMinor: number;
   currencyCode: string;
   category: string;
@@ -173,7 +173,7 @@ export interface Photo {
   projectId: string;
   milestoneId: string | null;
   expenseId: string | null;
-  uploadedBy: string;
+  uploadedBy: string | null;
   storagePath: string;
   caption: string | null;
   takenAt: string | null;
@@ -183,7 +183,7 @@ export interface Photo {
 export interface ProjectDocument {
   id: string;
   projectId: string;
-  uploadedBy: string;
+  uploadedBy: string | null;
   documentType: DocumentType;
   storagePath: string;
   filename: string;
@@ -197,7 +197,7 @@ export interface ProjectDocument {
 export interface Report {
   id: string;
   projectId: string;
-  createdBy: string;
+  createdBy: string | null;
   periodStart: string;
   periodEnd: string;
   summary: string;

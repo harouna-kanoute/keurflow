@@ -180,6 +180,14 @@ export async function deleteAccount(input: DeleteAccountInput): Promise<ActionRe
     };
   }
 
+  // Captured before the delete — profiles cascades away with auth.users, so
+  // this is the last point avatar_url is still reachable.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .maybeSingle();
+
   // Deleting the auth.users row itself is what everything else (profile,
   // organization_members, project_members, ...) cascades from — none of
   // that is reachable through the RLS-scoped client, hence the admin client.
@@ -188,6 +196,15 @@ export async function deleteAccount(input: DeleteAccountInput): Promise<ActionRe
   if (error) {
     console.error("[deleteAccount] Supabase error:", error.code, error.message);
     return { error: GENERIC_ERROR };
+  }
+
+  // Best-effort: the account is already gone either way, an orphaned avatar
+  // file isn't worth surfacing an error for at this point.
+  if (profile?.avatar_url) {
+    const { error: storageError } = await admin.storage.from("avatars").remove([profile.avatar_url]);
+    if (storageError) {
+      console.error("[deleteAccount] avatar cleanup error:", storageError.message);
+    }
   }
 
   await supabase.auth.signOut();
