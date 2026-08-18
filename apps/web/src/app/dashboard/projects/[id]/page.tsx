@@ -231,6 +231,16 @@ export default async function ProjectDetailPage({
     .eq("id", project.country_id)
     .maybeSingle();
 
+  // Drives the invite form's framing (§ contextual invite): an agency
+  // invites the chantier's owner to follow remotely, an individual invites
+  // a collaborator to track it for them — see InviteMemberForm.
+  const { data: organization } = await supabase
+    .from("organizations")
+    .select("type")
+    .eq("id", project.organization_id)
+    .maybeSingle();
+  const isAgencyOrg = organization?.type === "agency" || organization?.type === "company";
+
   const { data: fundings } = await supabase
     .from("fundings")
     .select("id, amount_minor, currency_code, payment_method_id, reference, funding_date")
@@ -941,8 +951,12 @@ export default async function ProjectDetailPage({
               <div>
                 <div className="flex justify-end">
                   {canApprove && (
-                    <Modal triggerLabel="Inviter" title="Inviter un membre" variant="secondary">
-                      <InviteMemberForm projectId={project.id} />
+                    <Modal
+                      triggerLabel="Inviter"
+                      title={isAgencyOrg ? "Inviter le propriétaire du chantier" : "Inviter un collaborateur"}
+                      variant="secondary"
+                    >
+                      <InviteMemberForm projectId={project.id} isAgencyOrg={isAgencyOrg} />
                     </Modal>
                   )}
                 </div>
