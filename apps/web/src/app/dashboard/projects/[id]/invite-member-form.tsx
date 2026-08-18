@@ -17,14 +17,17 @@ import { inviteProjectMember } from "./actions";
 // framing/default/label order here differs by organization type (see
 // page.tsx's isAgencyOrg — organizations.type === "agency" | "company").
 //
-// The owner defaults to project_manager, not project_viewer: they need to
-// approve/reject/request-info on expenses and generate reports
-// (canApproveExpense() and the reports_insert_non_viewers RLS policy both
-// require at least project_manager — project_viewer can't do either). A
-// pure read-only "Client" tier is still offered for cases where the owner
-// genuinely only wants to watch.
+// The owner defaults to project_approver, not project_viewer: they need to
+// approve/reject/request-info on expenses and generate reports, which
+// project_viewer can't do. project_approver is deliberately NOT
+// project_manager — that would also hand them member management (invite,
+// change roles, remove), which is the agency's job, not the client's. A
+// plain project_manager ("Responsable") is still offered for the agency's
+// own internal staff, and a pure read-only "Client" tier for owners who
+// genuinely only want to watch.
 const AGENCY_ROLE_LABELS: Record<string, string> = {
-  project_manager: "Propriétaire du chantier",
+  project_approver: "Propriétaire du chantier",
+  project_manager: "Responsable",
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };
@@ -44,7 +47,7 @@ export function InviteMemberForm({
 }) {
   const close = useModalClose();
   const [isPending, startTransition] = useTransition();
-  const defaultRole = isAgencyOrg ? "project_manager" : "project_member";
+  const defaultRole = isAgencyOrg ? "project_approver" : "project_member";
   const roleLabels = isAgencyOrg ? AGENCY_ROLE_LABELS : INDIVIDUAL_ROLE_LABELS;
   const {
     register,

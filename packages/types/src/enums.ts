@@ -11,6 +11,7 @@ export type OrganizationRole = (typeof ORGANIZATION_ROLES)[number];
 export const PROJECT_ROLES = [
   "project_owner",
   "project_manager",
+  "project_approver",
   "project_member",
   "project_viewer",
 ] as const;
@@ -106,9 +107,16 @@ export const ORGANIZATION_ROLE_RANK: Record<OrganizationRole, number> = {
   owner: 4,
 };
 
+// project_approver ranks below project_manager on purpose: it must NOT
+// satisfy hasProjectRoleAtLeast(role, "project_manager") checks (project
+// edit/delete, member management, invite authorization) — those stay
+// exclusive to manager+. Its own actual grants (expense approval, report
+// creation) are wired as explicit checks/RLS lists instead of a rank
+// threshold — see canApproveExpense in @keurflow/business/permissions.
 export const PROJECT_ROLE_RANK: Record<ProjectRole, number> = {
   project_viewer: 0,
   project_member: 1,
-  project_manager: 2,
-  project_owner: 3,
+  project_approver: 2,
+  project_manager: 3,
+  project_owner: 4,
 };

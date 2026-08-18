@@ -15,6 +15,7 @@ import { updateProjectMemberRole, removeProjectMember } from "./actions";
 
 const ROLE_LABELS: Record<string, string> = {
   project_manager: "Responsable",
+  project_approver: "Propriétaire du chantier",
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };

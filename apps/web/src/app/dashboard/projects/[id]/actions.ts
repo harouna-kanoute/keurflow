@@ -613,6 +613,7 @@ export async function deleteDocument(input: DeleteDocumentInput): Promise<Action
 const TEAM_ROLE_LABELS: Record<string, string> = {
   project_owner: "Propriétaire",
   project_manager: "Responsable",
+  project_approver: "Propriétaire du chantier",
   project_member: "Collaborateur",
   project_viewer: "Client (lecture seule)",
 };

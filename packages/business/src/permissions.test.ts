@@ -22,12 +22,18 @@ describe("hasProjectRoleAtLeast", () => {
     expect(hasProjectRoleAtLeast("project_owner", "project_viewer")).toBe(true);
     expect(hasProjectRoleAtLeast("project_viewer", "project_manager")).toBe(false);
   });
+
+  it("ranks project_approver below project_manager — it must not inherit member-management/project-edit rights", () => {
+    expect(hasProjectRoleAtLeast("project_approver", "project_manager")).toBe(false);
+    expect(hasProjectRoleAtLeast("project_approver", "project_member")).toBe(true);
+  });
 });
 
 describe("canApproveExpense", () => {
-  it("requires at least project_manager — this is UI-only, RLS is authoritative (§69/§83)", () => {
+  it("requires at least project_manager, plus project_approver — this is UI-only, RLS is authoritative (§69/§83)", () => {
     expect(canApproveExpense("project_manager")).toBe(true);
     expect(canApproveExpense("project_owner")).toBe(true);
+    expect(canApproveExpense("project_approver")).toBe(true);
     expect(canApproveExpense("project_member")).toBe(false);
     expect(canApproveExpense("project_viewer")).toBe(false);
   });
