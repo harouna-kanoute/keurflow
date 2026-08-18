@@ -281,8 +281,8 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareApplicationJsonLd) }}
       />
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-canvas/90 backdrop-blur-sm dark:border-slate-800">
-        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
-          <Link href="/" aria-label="KeurFlow">
+        <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Link href="/" aria-label="KeurFlow" className="shrink-0">
             <KeurFlowMark className="h-8 w-8 shrink-0" />
           </Link>
           <nav className="hidden items-center gap-8 lg:flex">
@@ -296,11 +296,11 @@ export default async function Home() {
               </a>
             ))}
           </nav>
-          <div className="flex items-center gap-5">
+          <div className="flex shrink-0 items-center gap-3 sm:gap-5">
             {user ? (
               <Link
                 href="/dashboard"
-                className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+                className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
               >
                 Dashboard
               </Link>
@@ -308,7 +308,7 @@ export default async function Home() {
               <>
                 <Link
                   href="/login"
-                  className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+                  className="text-sm font-medium whitespace-nowrap text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
                 >
                   Se connecter
                 </Link>
@@ -316,9 +316,10 @@ export default async function Home() {
                   href="/signup"
                   event="hero_cta_click"
                   eventParams={{ location: "header" }}
-                  className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+                  className="flex h-9 items-center justify-center rounded-full bg-brand-600 px-3 text-sm font-medium whitespace-nowrap text-white transition-colors hover:bg-brand-700 sm:px-4 dark:bg-brand-500 dark:hover:bg-brand-600"
                 >
-                  Commencer gratuitement
+                  <span className="sm:hidden">S&apos;inscrire</span>
+                  <span className="hidden sm:inline">Commencer gratuitement</span>
                 </TrackedLink>
               </>
             )}
