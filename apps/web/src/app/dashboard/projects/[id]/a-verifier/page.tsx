@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { deriveDocumentationStatus, formatMoney } from "@keurflow/business";
+import { deriveDocumentationStatus } from "@keurflow/business";
 import { CURRENCIES, EXPENSE_CATEGORIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
+import { Money } from "@/components/money";
 import { WhatsAppShareLink } from "@/components/whatsapp-share-link";
 
 function minorUnitFor(currencyCode: string): number {
@@ -108,7 +109,7 @@ export default async function ToReviewPage({
                   <span className="text-amber-900 dark:text-amber-300">
                     {CATEGORY_LABELS.get(e.category) ?? e.category}
                     {e.supplier_name ? ` · ${e.supplier_name}` : ""} —{" "}
-                    {formatMoney(e.amount_minor, e.currency_code, minorUnit)}
+                    <Money amountMinor={e.amount_minor} currencyCode={e.currency_code} minorUnit={minorUnit} />
                   </span>
                   <WhatsAppShareLink
                     text={`Merci de vérifier la dépense "${CATEGORY_LABELS.get(e.category) ?? e.category}" sur KeurFlow : ${projectUrl}`}
@@ -133,7 +134,7 @@ export default async function ToReviewPage({
                   <span className="text-orange-900 dark:text-orange-300">
                     {CATEGORY_LABELS.get(e.category) ?? e.category}
                     {e.supplier_name ? ` · ${e.supplier_name}` : ""} —{" "}
-                    {formatMoney(e.amount_minor, e.currency_code, minorUnit)}
+                    <Money amountMinor={e.amount_minor} currencyCode={e.currency_code} minorUnit={minorUnit} />
                   </span>
                   <WhatsAppShareLink
                     text={`Des informations sont demandées sur la dépense "${CATEGORY_LABELS.get(e.category) ?? e.category}" sur KeurFlow : ${projectUrl}`}
@@ -158,7 +159,7 @@ export default async function ToReviewPage({
                   <span className="text-red-900 dark:text-red-300">
                     {CATEGORY_LABELS.get(e.category) ?? e.category}
                     {e.supplier_name ? ` · ${e.supplier_name}` : ""} —{" "}
-                    {formatMoney(e.amount_minor, e.currency_code, minorUnit)}
+                    <Money amountMinor={e.amount_minor} currencyCode={e.currency_code} minorUnit={minorUnit} />
                   </span>
                   <WhatsAppShareLink
                     text={`Merci d'ajouter un justificatif pour la dépense "${CATEGORY_LABELS.get(e.category) ?? e.category}" sur KeurFlow : ${projectUrl}`}

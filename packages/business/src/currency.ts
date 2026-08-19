@@ -23,11 +23,60 @@ export function convertEurMinorToCfa(eurPriceMinor: number): number {
   return Math.round((eurPriceMinor / 100) * EUR_TO_CFA_RATE);
 }
 
-// EUR has 2 decimal places; both CFA zones have 0. Billing only ever charges
-// in one of these three, so this is a closed lookup rather than a currencies
-// table round-trip.
-export function getBillingCurrencyMinorUnit(currencyCode: string): number {
-  return isCfaCurrency(currencyCode) ? 0 : 2;
+// The four currencies KeurFlow ever actively converts between — either for
+// billing (EUR + the two CFA zones) or for the personal display-currency
+// preference (adds USD on top). A closed lookup rather than a currencies
+// table round-trip, since the display preference must also work client-side
+// (localStorage), where a DB call isn't an option. Other project currencies
+// (GNF, MRU, CDF...) stay usable for fundings/expenses but are never a
+// conversion target — see convertDisplayAmountMinor.
+const CURRENCY_MINOR_UNITS: Record<string, number> = {
+  EUR: 2,
+  USD: 2,
+  XOF: 0,
+  XAF: 0,
+};
+
+export function getCurrencyMinorUnit(currencyCode: string): number {
+  return CURRENCY_MINOR_UNITS[currencyCode] ?? 2;
+}
+
+// Manually maintained approximate rate — not a live FX feed. Only used for
+// the personal display-currency preference (never for billing, which always
+// charges whatever currency was actually shown at checkout — see
+// getBillingCurrency/convertEurMinorToCfa, which stay independent of this).
+export const EUR_TO_USD_RATE = 1.08;
+
+// Every rate here expressed against EUR, the pivot currency for converting
+// between any two of the four. 1 / EUR_TO_CFA_RATE converts XOF/XAF back to
+// EUR; multiplying by another currency's own EUR rate then converts onward.
+const CURRENCY_TO_EUR_RATE: Record<string, number> = {
+  EUR: 1,
+  XOF: 1 / EUR_TO_CFA_RATE,
+  XAF: 1 / EUR_TO_CFA_RATE,
+  USD: 1 / EUR_TO_USD_RATE,
+};
+
+// Converts a minor-unit amount from one currency to another via EUR as the
+// pivot, for the personal display-currency preference only — never for
+// billing. Returns null (not a same-value fallback) when either currency
+// isn't one of the four this app converts between, so callers combining
+// several amounts (e.g. summing a multi-currency total) can tell a partial,
+// silently-wrong conversion apart from a real one and fall back accordingly.
+export function convertDisplayAmountMinor(
+  amountMinor: number,
+  fromCurrency: string,
+  toCurrency: string,
+): number | null {
+  if (fromCurrency === toCurrency) return amountMinor;
+  const fromRate = CURRENCY_TO_EUR_RATE[fromCurrency];
+  const toRate = CURRENCY_TO_EUR_RATE[toCurrency];
+  if (!fromRate || !toRate) return null;
+
+  const fromMajor = amountMinor / 10 ** getCurrencyMinorUnit(fromCurrency);
+  const eurMajor = fromMajor * fromRate;
+  const toMajor = eurMajor / toRate;
+  return Math.round(toMajor * 10 ** getCurrencyMinorUnit(toCurrency));
 }
 
 // The currency an organization is billed in: its own country's currency if

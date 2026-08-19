@@ -1,34 +1,13 @@
 import {
   deriveDocumentationStatus,
-  formatMoney,
   getApprovedExpensesTotal,
   isProjectDelayed,
   sumByCurrency,
 } from "@keurflow/business";
-import { CURRENCIES } from "@keurflow/config";
 import { createClient } from "@/lib/supabase/server";
 import { AlertIcon, BudgetIcon, ClockIcon, FlagIcon, ReceiptIcon, UsersIcon } from "@/components/icons";
+import { MultiCurrencyAmount } from "@/components/multi-currency-amount";
 import { AgencyProjectsTable, type AgencyProjectRow } from "./agency-projects-table";
-
-function minorUnitFor(currencyCode: string): number {
-  return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
-}
-
-function MultiCurrencyAmount({ totals }: { totals: Record<string, number> }) {
-  const entries = Object.entries(totals);
-  if (entries.length === 0) {
-    return <span>{formatMoney(0, "EUR", 2)}</span>;
-  }
-  return (
-    <span>
-      {entries
-        .map(([currencyCode, amountMinor]) =>
-          formatMoney(amountMinor, currencyCode, minorUnitFor(currencyCode)),
-        )
-        .join(" + ")}
-    </span>
-  );
-}
 
 const TONE_CLASSES = {
   brand: "bg-brand-50 text-brand-600 dark:bg-brand-900 dark:text-brand-300",
