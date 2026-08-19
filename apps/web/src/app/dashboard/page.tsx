@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  formatMoney,
   getApprovedExpensesTotal,
   getMilestoneProgressPercent,
   getTotalFunded,
@@ -15,6 +14,7 @@ import type { OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
+import { Money } from "@/components/money";
 import { BellIcon, EditIcon } from "@/components/icons";
 import { CreateOrganizationForm } from "./create-organization-form";
 import { EditOrganizationForm } from "./edit-organization-form";
@@ -451,19 +451,31 @@ export default async function DashboardPage() {
                             <div className="flex items-center justify-between">
                               <dt className="text-slate-500 dark:text-slate-400">Budget</dt>
                               <dd className="text-slate-900 dark:text-slate-100">
-                                {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
+                                <Money
+                                  amountMinor={project.budget_minor}
+                                  currencyCode={project.currency_code}
+                                  minorUnit={minorUnit}
+                                />
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
                               <dt className="text-slate-500 dark:text-slate-400">Financé</dt>
                               <dd className="text-slate-900 dark:text-slate-100">
-                                {formatMoney(project.funded, project.currency_code, minorUnit)}
+                                <Money
+                                  amountMinor={project.funded}
+                                  currencyCode={project.currency_code}
+                                  minorUnit={minorUnit}
+                                />
                               </dd>
                             </div>
                             <div className="flex items-center justify-between">
                               <dt className="text-slate-500 dark:text-slate-400">Dépensé</dt>
                               <dd className="text-slate-900 dark:text-slate-100">
-                                {formatMoney(project.spent, project.currency_code, minorUnit)}
+                                <Money
+                                  amountMinor={project.spent}
+                                  currencyCode={project.currency_code}
+                                  minorUnit={minorUnit}
+                                />
                               </dd>
                             </div>
                           </dl>

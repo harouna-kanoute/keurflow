@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { formatMoney } from "@keurflow/business";
 import { CURRENCIES } from "@keurflow/config";
 import { DonutChart } from "@/components/donut-chart";
+import { Money } from "@/components/money";
 import { ProjectActionsMenu } from "./project-actions-menu";
 
 export interface AgencyProjectRow {
@@ -152,8 +152,9 @@ export function AgencyProjectsTable({
                     </div>
                   </div>
                   <span className="text-slate-500 dark:text-slate-400">
-                    {formatMoney(project.spentMinor, project.currencyCode, minorUnit)} /{" "}
-                    {formatMoney(project.budgetMinor, project.currencyCode, minorUnit)}
+                    <Money amountMinor={project.spentMinor} currencyCode={project.currencyCode} minorUnit={minorUnit} />{" "}
+                    /{" "}
+                    <Money amountMinor={project.budgetMinor} currencyCode={project.currencyCode} minorUnit={minorUnit} />
                   </span>
                 </Link>
                 <ProjectActionsMenu

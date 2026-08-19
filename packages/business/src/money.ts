@@ -40,3 +40,15 @@ export function formatMoney(
     maximumFractionDigits: minorUnit,
   }).format(major);
 }
+
+// Abbreviated form without a currency symbol (e.g. "53,6k") — for chart
+// axis/bar labels, where the currency is already stated once in a shared
+// heading rather than repeated on every value.
+export function formatCompactMoney(
+  amountMinor: number,
+  minorUnit: number,
+  locale = "fr-FR",
+): string {
+  const major = fromMajorUnits(amountMinor, minorUnit);
+  return new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(major);
+}

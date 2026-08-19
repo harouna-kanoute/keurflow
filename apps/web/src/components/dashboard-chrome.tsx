@@ -18,6 +18,7 @@ import {
 } from "@/components/icons";
 import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
+import { CurrencySettings } from "@/components/currency-settings";
 import { KeurFlowMark } from "@/components/keurflow-mark";
 import { TeamModal } from "@/components/team-modal";
 
@@ -159,10 +160,14 @@ export function DashboardChrome({
                     <Modal
                       triggerLabel="Paramètres"
                       triggerIcon={<SettingsIcon className="h-5 w-5 shrink-0" />}
-                      title="Paramètres d'apparence"
+                      title="Paramètres"
                       variant="ghost"
                     >
-                      <AppearanceSettings />
+                      <div className="flex flex-col gap-6">
+                        <CurrencySettings />
+                        <hr className="border-slate-200 dark:border-slate-800" />
+                        <AppearanceSettings />
+                      </div>
                     </Modal>
                   )}
                 </div>
