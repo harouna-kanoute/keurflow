@@ -20,3 +20,11 @@ export const COUNTRIES: readonly Omit<Country, "id">[] = [
   { code: "CD", name: "RDC", currencyCode: "CDF", active: true },
   { code: "CV", name: "Cap-Vert", currencyCode: "CVE", active: false },
 ] as const;
+
+// Regional indicator symbols: each ISO 3166-1 alpha-2 letter maps to
+// U+1F1E6 + (letter offset from 'A') — no flag image assets needed.
+export function countryCodeToFlagEmoji(code: string): string {
+  return String.fromCodePoint(
+    ...[...code.toUpperCase()].map((char) => 0x1f1e6 + (char.charCodeAt(0) - 65)),
+  );
+}
