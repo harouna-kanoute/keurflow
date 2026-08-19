@@ -16,9 +16,12 @@ describe("isBillablePlan", () => {
     expect(isBillablePlan("individual_unlimited")).toBe(true);
   });
 
-  it("is false for agency plans — B2B pricing isn't decided yet", () => {
-    expect(isBillablePlan("agency_starter")).toBe(false);
-    expect(isBillablePlan("agency_business")).toBe(false);
+  it("is true for the two self-serve agency tiers", () => {
+    expect(isBillablePlan("agency_starter")).toBe(true);
+    expect(isBillablePlan("agency_business")).toBe(true);
+  });
+
+  it("is false for agency_enterprise — sold sur devis, never self-serve", () => {
     expect(isBillablePlan("agency_enterprise")).toBe(false);
   });
 });
@@ -68,14 +71,24 @@ describe("isTrialExpired", () => {
 });
 
 describe("isSubscriptionBlocked", () => {
-  it("never blocks a non-billable (agency) plan, whatever the status", () => {
+  it("never blocks the non-billable agency_enterprise tier, whatever the status", () => {
     expect(
       isSubscriptionBlocked(
         { status: "canceled", trialEndsAt: "2026-08-01T00:00:00Z" },
-        "agency_starter",
+        "agency_enterprise",
         now,
       ),
     ).toBe(false);
+  });
+
+  it("blocks agency_starter once the trial has lapsed — same as the individual family", () => {
+    expect(
+      isSubscriptionBlocked(
+        { status: "trialing", trialEndsAt: "2026-08-01T00:00:00Z" },
+        "agency_starter",
+        now,
+      ),
+    ).toBe(true);
   });
 
   it("blocks individual_trial once the trial has lapsed — this is the whole point of the trial", () => {

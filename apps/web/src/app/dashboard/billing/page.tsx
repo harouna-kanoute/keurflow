@@ -5,6 +5,7 @@ import { getTrialDaysRemaining, hasOrgRoleAtLeast, isBillablePlan } from "@keurf
 import type { BillingPeriod, OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { BillingPlanCards } from "./billing-plan-cards";
+import { getOrgBillingCurrency } from "./currency";
 
 export const metadata: Metadata = { title: "Abonnement — KeurFlow" };
 
@@ -48,36 +49,52 @@ export default async function BillingPage({
   // created atomically by create_organization() (§15, Phase 15).
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("plan_code, status, billing_period, trial_ends_at, current_period_end, stripe_customer_id")
+    .select(
+      "plan_code, status, billing_period, currency_code, trial_ends_at, current_period_end, stripe_customer_id, stripe_subscription_id",
+    )
     .eq("organization_id", membership.organization_id)
     .single();
 
   const { data: plan } = subscription
     ? await supabase
         .from("plans")
-        .select("code, label, price_minor, currency_code, trial_days")
+        .select("code, label, price_minor, trial_days")
         .eq("code", subscription.plan_code)
         .single()
     : { data: null };
 
   const isBillableTrack = !!subscription && isBillablePlan(subscription.plan_code);
   const isUnlimited = subscription?.plan_code === "individual_unlimited";
+  // Only the individual family gets the "unlimited chantiers" add-on
+  // upsell — agencies have separate Starter/Business/Enterprise tiers
+  // instead, which is a plan upgrade, not an add-on.
+  const isIndividualFamily =
+    subscription?.plan_code === "individual_trial" ||
+    subscription?.plan_code === "individual" ||
+    subscription?.plan_code === "individual_unlimited";
+
+  // Currency is immutable on a live Stripe subscription — once one exists,
+  // subscriptions.currency_code (kept in sync by the webhook) is
+  // authoritative. Before that (still trialing, never checked out), preview
+  // what a *new* subscription would be created in, derived from the org's
+  // current type/country (see getOrgBillingCurrency) — same computation
+  // createCheckoutSession itself uses.
+  const currencyCode = subscription?.stripe_subscription_id
+    ? subscription.currency_code
+    : await getOrgBillingCurrency(supabase, membership.organization_id);
 
   // individual_trial is itself priced at 0 (it's the trial row) — the price
   // actually shown/charged is the "individual" plan's, fetched separately
   // so the trial view can say what it converts to. Also doubles as the
   // baseline for the unlimited add-on's "+X€" delta below.
-  const { data: paidIndividualPlan } = isBillableTrack
-    ? await supabase.from("plans").select("price_minor, currency_code").eq("code", "individual").single()
-    : { data: null };
+  const { data: paidIndividualPlan } =
+    isBillableTrack && isIndividualFamily
+      ? await supabase.from("plans").select("price_minor").eq("code", "individual").single()
+      : { data: null };
 
   const { data: unlimitedPlan } =
-    isBillableTrack && !isUnlimited
-      ? await supabase
-          .from("plans")
-          .select("price_minor, currency_code")
-          .eq("code", "individual_unlimited")
-          .single()
+    isBillableTrack && isIndividualFamily && !isUnlimited
+      ? await supabase.from("plans").select("price_minor").eq("code", "individual_unlimited").single()
       : { data: null };
 
   const canManageBilling = hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin");
@@ -113,33 +130,19 @@ export default async function BillingPage({
           <BillingPlanCards
             organizationId={membership.organization_id}
             canManageBilling={canManageBilling}
+            planCode={subscription.plan_code}
             planLabel={plan.label}
             subscriptionStatus={subscription.status}
             billingPeriod={subscription.billing_period as BillingPeriod}
+            currencyCode={currencyCode}
             trialDaysRemaining={trialDaysRemaining}
             currentPeriodEnd={subscription.current_period_end}
             stripeCustomerId={subscription.stripe_customer_id}
             isBillableTrack={isBillableTrack}
-            isUnlimited={isUnlimited}
-            displayPrice={
-              displayPrice
-                ? { priceMinor: displayPrice.price_minor, currencyCode: displayPrice.currency_code }
-                : null
-            }
+            displayPriceMinor={displayPrice?.price_minor ?? null}
             showsAfterTrialSuffix={plan?.price_minor === 0 && !!paidIndividualPlan}
-            unlimitedPlan={
-              unlimitedPlan
-                ? { priceMinor: unlimitedPlan.price_minor, currencyCode: unlimitedPlan.currency_code }
-                : null
-            }
-            paidIndividualPlan={
-              paidIndividualPlan
-                ? {
-                    priceMinor: paidIndividualPlan.price_minor,
-                    currencyCode: paidIndividualPlan.currency_code,
-                  }
-                : null
-            }
+            unlimitedPlanMinor={unlimitedPlan?.price_minor ?? null}
+            paidIndividualPlanMinor={paidIndividualPlan?.price_minor ?? null}
           />
         ) : (
           <p className="mt-6 text-sm text-slate-500 dark:text-slate-400">

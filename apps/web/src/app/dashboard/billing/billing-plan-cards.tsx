@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { formatMoney, getAnnualPriceMinor } from "@keurflow/business";
+import {
+  convertEurMinorToCfa,
+  formatMoney,
+  getAnnualPriceMinor,
+  getBillingCurrencyMinorUnit,
+  isCfaCurrency,
+} from "@keurflow/business";
 import type { BillingPeriod } from "@keurflow/types";
 import { ManageBillingButton, SubscribeButton } from "./billing-actions";
 
@@ -26,59 +32,74 @@ function periodButtonClass(active: boolean): string {
   }`;
 }
 
+// eurPriceMinor is always the canonical EUR monthly price from `plans`. The
+// annual discount is applied in EUR first, then converted to the target
+// billing currency last (if it's a CFA zone) — keeps the two conversions
+// (period, currency) independent and each easy to verify on its own.
 function priceForPeriod(
-  priceMinor: number,
+  eurPriceMinor: number,
   period: BillingPeriod,
+  currencyCode: string,
 ): { amountMinor: number; suffix: string } {
-  return period === "year"
-    ? { amountMinor: getAnnualPriceMinor(priceMinor), suffix: "/ an" }
-    : { amountMinor: priceMinor, suffix: "/ mois" };
+  const periodAdjusted = period === "year" ? getAnnualPriceMinor(eurPriceMinor) : eurPriceMinor;
+  const amountMinor = isCfaCurrency(currencyCode)
+    ? convertEurMinorToCfa(periodAdjusted)
+    : periodAdjusted;
+  return { amountMinor, suffix: period === "year" ? "/ an" : "/ mois" };
 }
 
 export function BillingPlanCards({
   organizationId,
   canManageBilling,
+  planCode,
   planLabel,
   subscriptionStatus,
   billingPeriod,
+  currencyCode,
   trialDaysRemaining,
   currentPeriodEnd,
   stripeCustomerId,
   isBillableTrack,
-  isUnlimited,
-  displayPrice,
+  displayPriceMinor,
   showsAfterTrialSuffix,
-  unlimitedPlan,
-  paidIndividualPlan,
+  unlimitedPlanMinor,
+  paidIndividualPlanMinor,
 }: {
   organizationId: string;
   canManageBilling: boolean;
+  planCode: string;
   planLabel: string;
   subscriptionStatus: string;
   billingPeriod: BillingPeriod;
+  currencyCode: string;
   trialDaysRemaining: number;
   currentPeriodEnd: string | null;
   stripeCustomerId: string | null;
   isBillableTrack: boolean;
-  isUnlimited: boolean;
-  displayPrice: { priceMinor: number; currencyCode: string } | null;
+  displayPriceMinor: number | null;
   showsAfterTrialSuffix: boolean;
-  unlimitedPlan: { priceMinor: number; currencyCode: string } | null;
-  paidIndividualPlan: { priceMinor: number; currencyCode: string } | null;
+  unlimitedPlanMinor: number | null;
+  paidIndividualPlanMinor: number | null;
 }) {
   // Defaults to what the org already pays for once actively billed, so a
   // returning paying customer doesn't see the toggle silently reset to
   // monthly; otherwise defaults to monthly (the fixed-price option).
   const [period, setPeriod] = useState<BillingPeriod>(billingPeriod);
 
-  const price = displayPrice ? priceForPeriod(displayPrice.priceMinor, period) : null;
+  const minorUnit = getBillingCurrencyMinorUnit(currencyCode);
+  const price =
+    displayPriceMinor !== null ? priceForPeriod(displayPriceMinor, period, currencyCode) : null;
   const monthlyReferenceForAnnual =
-    period === "year" && displayPrice ? displayPrice.priceMinor * 12 : null;
+    period === "year" && displayPriceMinor !== null
+      ? isCfaCurrency(currencyCode)
+        ? convertEurMinorToCfa(displayPriceMinor * 12)
+        : displayPriceMinor * 12
+      : null;
 
   const unlimitedDelta =
-    unlimitedPlan && paidIndividualPlan
-      ? priceForPeriod(unlimitedPlan.priceMinor, period).amountMinor -
-        priceForPeriod(paidIndividualPlan.priceMinor, period).amountMinor
+    unlimitedPlanMinor !== null && paidIndividualPlanMinor !== null
+      ? priceForPeriod(unlimitedPlanMinor, period, currencyCode).amountMinor -
+        priceForPeriod(paidIndividualPlanMinor, period, currencyCode).amountMinor
       : null;
 
   return (
@@ -119,13 +140,13 @@ export function BillingPlanCards({
 
           <dt className="text-slate-500 dark:text-slate-400">Prix</dt>
           <dd className="text-right text-slate-900 dark:text-slate-100">
-            {price && price.amountMinor > 0 && displayPrice ? (
+            {price && price.amountMinor > 0 ? (
               <>
-                {formatMoney(price.amountMinor, displayPrice.currencyCode, 2)} {price.suffix}
+                {formatMoney(price.amountMinor, currencyCode, minorUnit)} {price.suffix}
                 {showsAfterTrialSuffix && " (après l'essai)"}
                 {monthlyReferenceForAnnual !== null && (
                   <span className="block text-xs text-slate-500 dark:text-slate-400">
-                    au lieu de {formatMoney(monthlyReferenceForAnnual, displayPrice.currencyCode, 2)}
+                    au lieu de {formatMoney(monthlyReferenceForAnnual, currencyCode, minorUnit)}
                   </span>
                 )}
               </>
@@ -164,7 +185,7 @@ export function BillingPlanCards({
             {(subscriptionStatus !== "active" || period !== billingPeriod) && (
               <SubscribeButton
                 organizationId={organizationId}
-                planCode={isUnlimited ? "individual_unlimited" : "individual"}
+                planCode={planCode}
                 billingPeriod={period}
                 label={subscriptionStatus === "active" ? "Changer de fréquence" : "S'abonner"}
               />
@@ -180,7 +201,7 @@ export function BillingPlanCards({
         )}
       </div>
 
-      {canManageBilling && unlimitedPlan && unlimitedDelta !== null && (
+      {canManageBilling && unlimitedPlanMinor !== null && unlimitedDelta !== null && (
         <div className="mt-4 rounded-2xl border border-brand-200 bg-brand-50 p-6 text-left dark:border-brand-900 dark:bg-brand-900/20">
           <p className="text-xs font-medium tracking-wide text-brand-700 uppercase dark:text-brand-300">
             Option
@@ -192,7 +213,7 @@ export function BillingPlanCards({
             Passez à l&apos;offre illimitée pour créer autant de chantiers que nécessaire.
           </p>
           <p className="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            +{formatMoney(unlimitedDelta, unlimitedPlan.currencyCode, 2)}
+            +{formatMoney(unlimitedDelta, currencyCode, minorUnit)}
             <span className="text-base font-normal text-slate-500 dark:text-slate-400">
               {" "}
               {period === "year" ? "/ an" : "/ mois"}
