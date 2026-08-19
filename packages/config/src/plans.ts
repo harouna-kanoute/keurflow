@@ -11,7 +11,7 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     maxActiveProjects: 1,
     priceCentsMinor: 0,
     currencyCode: "EUR",
-    trialDays: 7,
+    trialDays: 14,
     features: { web: true, mobile: true, collaborators: true, reports: true },
   },
   {

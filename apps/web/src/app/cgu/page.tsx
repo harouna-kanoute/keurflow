@@ -39,7 +39,7 @@ export default function CGUPage() {
           <section>
             <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">2. Compte et abonnement</h2>
             <p>
-              La création d&apos;un compte particulier ouvre un essai gratuit de 7 jours
+              La création d&apos;un compte particulier ouvre un essai gratuit de 14 jours
               limité à un chantier actif. Passé ce délai, la poursuite du service nécessite
               un abonnement payant (9,90 € / mois au moment de la rédaction), facturé via
               Stripe. L&apos;abonnement peut être résilié à tout moment depuis la page
