@@ -232,7 +232,7 @@ const FAQ = [
   },
   {
     question: "Ai-je besoin d'une carte bancaire pour l'essai ?",
-    answer: "Non, les 7 jours d'essai gratuit ne demandent aucune carte bancaire.",
+    answer: "Non, les 14 jours d'essai gratuit ne demandent aucune carte bancaire.",
   },
 ] as const;
 
@@ -363,7 +363,7 @@ export default async function Home() {
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5 font-medium text-slate-700 dark:text-slate-300">
                 <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
-                7 jours gratuits · Sans engagement
+                14 jours gratuits · Sans engagement
               </span>
               <span className="flex items-center gap-1.5">
                 <CheckIcon className="h-4 w-4 text-brand-600 dark:text-brand-500" />
@@ -730,7 +730,7 @@ export default async function Home() {
                   <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
                 </p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                  7 jours d&apos;essai gratuit, sans carte bancaire.
+                  14 jours d&apos;essai gratuit, sans carte bancaire.
                 </p>
                 <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
                   {["1 projet actif", "Application mobile", "Collaborateurs illimités", "Rapports d'avancement"].map(

@@ -60,7 +60,7 @@ Remplacer les `[À COMPLÉTER]` (identité de l'éditeur, adresse, email de cont
 
 ### 5. Test de bout en bout avant ouverture publique
 
-- Inscription → essai 7 jours → abonnement avec une vraie carte (mode live, petit montant remboursable).
+- Inscription → essai 14 jours → abonnement avec une vraie carte (mode live, petit montant remboursable).
 - Vérifier que le webhook live reçoit bien les événements (Stripe Dashboard → Developers → Webhooks → endpoint → onglet Events).
 - Plan Supabase : le plan gratuit n'a pas de sauvegardes automatiques ni de PITR — à considérer si des données financières réelles sont en jeu dès le lancement.
 

@@ -18,7 +18,6 @@ export default function SignUpPage() {
   const {
     register,
     handleSubmit,
-    watch,
     setError,
     formState: { errors },
   } = useForm<SignUpInput>({
@@ -26,8 +25,7 @@ export default function SignUpPage() {
     defaultValues: { organizationType: "individual" },
   });
 
-  const organizationType = watch("organizationType");
-  const trialDays = organizationType === "individual" ? 7 : 14;
+  const trialDays = 14;
 
   const onSubmit = handleSubmit((data) => {
     startTransition(async () => {
