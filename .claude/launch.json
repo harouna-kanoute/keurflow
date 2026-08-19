@@ -7,11 +7,10 @@
       "runtimeArgs": [
         "D:/Projets/KeurFlow/node_modules/next/dist/bin/next",
         "dev",
-        "D:/Projets/KeurFlow/apps/web",
-        "-p",
-        "3000"
+        "D:/Projets/KeurFlow/apps/web"
       ],
-      "port": 3000
+      "port": 3000,
+      "autoPort": true
     },
     {
       "name": "mobile",
