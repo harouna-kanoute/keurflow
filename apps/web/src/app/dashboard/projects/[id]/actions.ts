@@ -1158,6 +1158,50 @@ export async function deleteProject(input: DeleteProjectInput): Promise<ActionRe
       hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
   if (!authorized) return { error: GENERIC_ERROR };
 
+  // ON DELETE CASCADE only ever removes database rows — it can't and
+  // doesn't touch the actual files in Supabase Storage, so without this
+  // every photo/receipt/proof belonging to the project would become an
+  // orphan the moment the project (and the photos/documents/fundings rows
+  // that reference them) disappears. This has to run *before* the project
+  // delete below: the storage RLS policies for these buckets resolve the
+  // caller's role via get_project_role()/get_organization_role(), both of
+  // which depend on project_members and the projects row itself — once
+  // those cascade away, the same removal call would be denied.
+  const [{ data: photoRows }, { data: documentRows }, { data: fundingRows }] = await Promise.all([
+    supabase.from("photos").select("storage_path").eq("project_id", parsed.data.projectId),
+    supabase.from("documents").select("storage_path").eq("project_id", parsed.data.projectId),
+    supabase
+      .from("fundings")
+      .select("proof_url")
+      .eq("project_id", parsed.data.projectId)
+      .not("proof_url", "is", null),
+  ]);
+
+  const photoPaths = (photoRows ?? []).map((p) => p.storage_path);
+  const documentPaths = (documentRows ?? []).map((d) => d.storage_path);
+  const fundingPaths = (fundingRows ?? [])
+    .map((f) => f.proof_url)
+    .filter((p): p is string => !!p);
+
+  // Best-effort — a leftover orphan file isn't worth blocking a deletion
+  // the user already sees go through, so errors here are logged, not thrown.
+  const [photosResult, documentsResult, fundingsResult] = await Promise.all([
+    photoPaths.length > 0
+      ? supabase.storage.from("project-photos").remove(photoPaths)
+      : Promise.resolve({ error: null }),
+    documentPaths.length > 0
+      ? supabase.storage.from("expense-receipts").remove(documentPaths)
+      : Promise.resolve({ error: null }),
+    fundingPaths.length > 0
+      ? supabase.storage.from("funding-proofs").remove(fundingPaths)
+      : Promise.resolve({ error: null }),
+  ]);
+  for (const result of [photosResult, documentsResult, fundingsResult]) {
+    if (result.error) {
+      console.error("[deleteProject] Storage cleanup error:", result.error.message);
+    }
+  }
+
   // Logged before the delete: audit_logs.project_id is "on delete set
   // null", so this entry survives with organizationId already resolved
   // (passed directly, since the project row it'd otherwise be looked up
