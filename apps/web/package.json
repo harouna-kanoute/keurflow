@@ -17,6 +17,7 @@
     "@keurflow/validation": "*",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
+    "flag-icons": "^7.5.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "next": "16.3.0",

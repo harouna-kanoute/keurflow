@@ -7,7 +7,8 @@ import {
   getTotalFunded,
   toMinorUnits,
 } from "@keurflow/business";
-import { COUNTRIES, countryCodeToFlagEmoji, CURRENCIES } from "@keurflow/config";
+import { COUNTRIES, CURRENCIES } from "@keurflow/config";
+import "flag-icons/css/flag-icons.min.css";
 import {
   BriefcaseIcon,
   BudgetIcon,
@@ -665,7 +666,10 @@ export default async function Home() {
                   key={country.code}
                   className="rounded-full border border-slate-200 bg-canvas px-4 py-2 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
                 >
-                  <span aria-hidden="true">{countryCodeToFlagEmoji(country.code)}</span>{" "}
+                  <span
+                    aria-hidden="true"
+                    className={`fi fi-${country.code.toLowerCase()} rounded-xs`}
+                  />{" "}
                   {country.name}
                 </span>
               ))}
