@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   convertEurMinorToCfa,
-  formatMoney,
   getAnnualPriceMinor,
-  getBillingCurrencyMinorUnit,
+  getCurrencyMinorUnit,
   isCfaCurrency,
 } from "@keurflow/business";
 import type { BillingPeriod } from "@keurflow/types";
+import { Money } from "@/components/money";
+import {
+  getStoredDisplayCurrency,
+  onDisplayCurrencyChange,
+  type DisplayCurrency,
+} from "@/lib/display-currency";
 import { ManageBillingButton, SubscribeButton } from "./billing-actions";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -86,7 +91,23 @@ export function BillingPlanCards({
   // monthly; otherwise defaults to monthly (the fixed-price option).
   const [period, setPeriod] = useState<BillingPeriod>(billingPeriod);
 
-  const minorUnit = getBillingCurrencyMinorUnit(currencyCode);
+  // The prices below render via <Money>, which applies this same preference
+  // — tracked here too only so a clarifying "Facturé en X" note can appear
+  // when the two currencies differ. Stripe always actually charges
+  // currencyCode regardless of what's displayed (see createCheckoutSession);
+  // this page is the one place that distinction matters enough to spell out.
+  const [displayCurrency, setDisplayCurrency] = useState<DisplayCurrency | null>(null);
+  useEffect(() => {
+    // One-time sync from localStorage (an external store, not React state)
+    // on mount — same documented exception as AppearanceSettings.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDisplayCurrency(getStoredDisplayCurrency());
+    return onDisplayCurrencyChange(setDisplayCurrency);
+  }, []);
+  const showsBilledCurrencyNote =
+    !!displayCurrency && displayCurrency !== "native" && displayCurrency !== currencyCode;
+
+  const minorUnit = getCurrencyMinorUnit(currencyCode);
   const price =
     displayPriceMinor !== null ? priceForPeriod(displayPriceMinor, period, currencyCode) : null;
   const monthlyReferenceForAnnual =
@@ -142,11 +163,18 @@ export function BillingPlanCards({
           <dd className="text-right text-slate-900 dark:text-slate-100">
             {price && price.amountMinor > 0 ? (
               <>
-                {formatMoney(price.amountMinor, currencyCode, minorUnit)} {price.suffix}
+                <Money amountMinor={price.amountMinor} currencyCode={currencyCode} minorUnit={minorUnit} />{" "}
+                {price.suffix}
                 {showsAfterTrialSuffix && " (après l'essai)"}
                 {monthlyReferenceForAnnual !== null && (
                   <span className="block text-xs text-slate-500 dark:text-slate-400">
-                    au lieu de {formatMoney(monthlyReferenceForAnnual, currencyCode, minorUnit)}
+                    au lieu de{" "}
+                    <Money amountMinor={monthlyReferenceForAnnual} currencyCode={currencyCode} minorUnit={minorUnit} />
+                  </span>
+                )}
+                {showsBilledCurrencyNote && (
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">
+                    Facturé en {currencyCode}
                   </span>
                 )}
               </>
@@ -213,7 +241,7 @@ export function BillingPlanCards({
             Passez à l&apos;offre illimitée pour créer autant de chantiers que nécessaire.
           </p>
           <p className="mt-3 text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            +{formatMoney(unlimitedDelta, currencyCode, minorUnit)}
+            +<Money amountMinor={unlimitedDelta} currencyCode={currencyCode} minorUnit={minorUnit} />
             <span className="text-base font-normal text-slate-500 dark:text-slate-400">
               {" "}
               {period === "year" ? "/ an" : "/ mois"}

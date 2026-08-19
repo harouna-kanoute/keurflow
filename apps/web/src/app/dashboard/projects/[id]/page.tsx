@@ -22,7 +22,8 @@ import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { Modal } from "@/components/modal";
 import { DonutChart } from "@/components/donut-chart";
-import { BarChart } from "@/components/bar-chart";
+import { Money } from "@/components/money";
+import { MoneyBarChart } from "@/components/money-bar-chart";
 import {
   AlertIcon,
   BudgetIcon,
@@ -131,7 +132,7 @@ function BudgetStat({
   icon: IconComponent;
   tone: keyof typeof STAT_TONE_CLASSES;
   label: string;
-  value: string;
+  value: React.ReactNode;
 }) {
   return (
     <div className="rounded-xl bg-canvas p-3.5 dark:bg-slate-800/40">
@@ -169,13 +170,6 @@ const MONTH_LABELS = [
   "Nov",
   "Déc",
 ];
-
-function formatCompact(amountMinor: number, minorUnit: number): string {
-  const major = amountMinor / 10 ** minorUnit;
-  return new Intl.NumberFormat("fr-FR", { notation: "compact", maximumFractionDigits: 1 }).format(
-    major,
-  );
-}
 
 export async function generateMetadata({
   params,
@@ -687,25 +681,29 @@ export default async function ProjectDetailPage({
                 icon={BudgetIcon}
                 tone="brand"
                 label="Budget"
-                value={formatMoney(project.budget_minor, project.currency_code, minorUnit)}
+                value={
+                  <Money amountMinor={project.budget_minor} currencyCode={project.currency_code} minorUnit={minorUnit} />
+                }
               />
               <BudgetStat
                 icon={ReceiptIcon}
                 tone="green"
                 label={`Financé (${coveragePercent}%)`}
-                value={formatMoney(totalFunded, project.currency_code, minorUnit)}
+                value={<Money amountMinor={totalFunded} currencyCode={project.currency_code} minorUnit={minorUnit} />}
               />
               <BudgetStat
                 icon={AlertIcon}
                 tone={fundingGap >= 0 ? "amber" : "green"}
                 label={fundingGap >= 0 ? "Reste à financer" : "Financé en excédent"}
-                value={formatMoney(Math.abs(fundingGap), project.currency_code, minorUnit)}
+                value={
+                  <Money amountMinor={Math.abs(fundingGap)} currencyCode={project.currency_code} minorUnit={minorUnit} />
+                }
               />
               <BudgetStat
                 icon={CheckIcon}
                 tone="slate"
                 label="Dépensé (approuvé)"
-                value={formatMoney(spentApproved, project.currency_code, minorUnit)}
+                value={<Money amountMinor={spentApproved} currencyCode={project.currency_code} minorUnit={minorUnit} />}
               />
             </div>
           </div>
@@ -750,7 +748,7 @@ export default async function ProjectDetailPage({
                               {c.label}
                             </span>
                             <span className="shrink-0 text-slate-900 dark:text-slate-100">
-                              {formatMoney(c.amountMinor, project.currency_code, minorUnit)}
+                              <Money amountMinor={c.amountMinor} currencyCode={project.currency_code} minorUnit={minorUnit} />
                             </span>
                           </li>
                         ))}
@@ -801,20 +799,22 @@ export default async function ProjectDetailPage({
                 </div>
 
                 <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800 sm:col-span-2">
-                  <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-                    Dépenses approuvées par mois ({project.currency_code})
-                  </p>
                   {monthlyTotals.length > 0 ? (
-                    <div className="mt-4">
-                      <BarChart
-                        data={monthlyTotals.map((m) => ({ label: m.label, value: m.amountMinor }))}
-                        formatValue={(v) => formatCompact(v, minorUnit)}
-                      />
-                    </div>
+                    <MoneyBarChart
+                      title="Dépenses approuvées par mois"
+                      data={monthlyTotals.map((m) => ({ label: m.label, amountMinor: m.amountMinor }))}
+                      currencyCode={project.currency_code}
+                      minorUnit={minorUnit}
+                    />
                   ) : (
-                    <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-                      Aucune dépense approuvée.
-                    </p>
+                    <>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        Dépenses approuvées par mois ({project.currency_code})
+                      </p>
+                      <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+                        Aucune dépense approuvée.
+                      </p>
+                    </>
                   )}
                 </div>
               </div>
@@ -842,7 +842,7 @@ export default async function ProjectDetailPage({
                           {funding.reference ? ` · ${funding.reference}` : ""}
                         </span>
                         <span className="text-slate-500 dark:text-slate-400">
-                          {formatMoney(funding.amount_minor, funding.currency_code, minorUnit)}
+                          <Money amountMinor={funding.amount_minor} currencyCode={funding.currency_code} minorUnit={minorUnit} />
                         </span>
                       </li>
                     ))}
@@ -883,7 +883,7 @@ export default async function ProjectDetailPage({
                               {expense.supplier_name ? ` · ${expense.supplier_name}` : ""}
                             </span>
                             <span className="text-slate-500 dark:text-slate-400">
-                              {formatMoney(expense.amount_minor, expense.currency_code, minorUnit)}
+                              <Money amountMinor={expense.amount_minor} currencyCode={expense.currency_code} minorUnit={minorUnit} />
                             </span>
                           </div>
                           <div className="mt-2 flex items-center gap-2">
@@ -1065,19 +1065,16 @@ export default async function ProjectDetailPage({
                                 </div>
                               </div>
                               <div>
-                                <p className="text-xs font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                                  Financier ({report.metrics.currencyCode})
-                                </p>
-                                <div className="mt-3">
-                                  <BarChart
-                                    data={[
-                                      { label: "Budget", value: report.metrics.budgetMinor },
-                                      { label: "Financé", value: report.metrics.fundedInPeriodMinor },
-                                      { label: "Dépensé", value: report.metrics.approvedInPeriodMinor },
-                                    ]}
-                                    formatValue={(v) => formatCompact(v, report.metrics!.minorUnit)}
-                                  />
-                                </div>
+                                <MoneyBarChart
+                                  title="Financier"
+                                  data={[
+                                    { label: "Budget", amountMinor: report.metrics.budgetMinor },
+                                    { label: "Financé", amountMinor: report.metrics.fundedInPeriodMinor },
+                                    { label: "Dépensé", amountMinor: report.metrics.approvedInPeriodMinor },
+                                  ]}
+                                  currencyCode={report.metrics.currencyCode}
+                                  minorUnit={report.metrics.minorUnit}
+                                />
                               </div>
                             </div>
                           )}

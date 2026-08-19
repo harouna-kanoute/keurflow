@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatMoney, fromMajorUnits, sumByCurrency, toMinorUnits } from "./money";
+import { formatCompactMoney, formatMoney, fromMajorUnits, sumByCurrency, toMinorUnits } from "./money";
 
 describe("toMinorUnits", () => {
   it("scales by the currency's minor unit", () => {
@@ -39,6 +39,18 @@ describe("formatMoney", () => {
 
   it("formats zero without throwing", () => {
     expect(() => formatMoney(0, "EUR", 2)).not.toThrow();
+  });
+});
+
+describe("formatCompactMoney", () => {
+  it("abbreviates large amounts without a currency symbol", () => {
+    const formatted = formatCompactMoney(53_600_000, 2);
+    expect(formatted).not.toContain("€");
+    expect(formatted.toLowerCase()).toContain("k");
+  });
+
+  it("formats zero without throwing", () => {
+    expect(() => formatCompactMoney(0, 2)).not.toThrow();
   });
 });
 
