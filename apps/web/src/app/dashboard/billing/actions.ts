@@ -1,11 +1,18 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getAnnualPriceMinor, hasOrgRoleAtLeast, isBillablePlan } from "@keurflow/business";
+import {
+  convertEurMinorToCfa,
+  getAnnualPriceMinor,
+  hasOrgRoleAtLeast,
+  isBillablePlan,
+  isCfaCurrency,
+} from "@keurflow/business";
 import type { BillingPeriod, OrganizationRole } from "@keurflow/types";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe";
+import { getOrgBillingCurrency } from "./currency";
 
 // Generic fallback per §68 — real Stripe/Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
@@ -36,9 +43,15 @@ async function requireOrgAdmin(organizationId: string) {
   return { supabase, user };
 }
 
-// The only two plans checkout can ever target — never trust a plan code
+// Every self-serve plan checkout can ever target — never trust a plan code
 // from the client beyond this allowlist (it ends up in a Stripe price).
-const CHECKOUT_PLAN_CODES = new Set(["individual", "individual_unlimited"]);
+// agency_enterprise is sold "sur devis" and deliberately excluded.
+const CHECKOUT_PLAN_CODES = new Set([
+  "individual",
+  "individual_unlimited",
+  "agency_starter",
+  "agency_business",
+]);
 const BILLING_PERIODS = new Set<BillingPeriod>(["month", "year"]);
 
 export async function createCheckoutSession(
@@ -53,12 +66,15 @@ export async function createCheckoutSession(
   if (!CHECKOUT_PLAN_CODES.has(planCode)) return { error: GENERIC_ERROR };
   if (!BILLING_PERIODS.has(billingPeriod)) return { error: GENERIC_ERROR };
 
+  // Shared across every plan family (individual and agency alike) — one
+  // Stripe Product ("KeurFlow subscription"), differentiated by price and
+  // plan_code metadata, not by a separate Product per plan.
   const productId = process.env.STRIPE_PRODUCT_ID_INDIVIDUAL;
   if (!productId) return { error: GENERIC_ERROR };
 
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("plan_code, stripe_customer_id, stripe_subscription_id")
+    .select("plan_code, stripe_customer_id, stripe_subscription_id, currency_code")
     .eq("organization_id", organizationId)
     .single();
   // isBillablePlan, not a plain "does a row exist" check: individual_trial
@@ -67,15 +83,17 @@ export async function createCheckoutSession(
 
   const { data: plan } = await supabase
     .from("plans")
-    .select("price_minor, currency_code")
+    .select("price_minor")
     .eq("code", planCode)
     .single();
   if (!plan || plan.price_minor <= 0) return { error: GENERIC_ERROR };
 
-  // plans.price_minor is always the monthly price — the annual price is a
-  // 20% discount off 12x that, computed here rather than stored, so the two
-  // never drift (see getAnnualPriceMinor).
-  const unitAmount =
+  // plans.price_minor is always the canonical EUR monthly price — the
+  // annual price is a 20% discount off 12x that, computed here rather than
+  // stored (getAnnualPriceMinor). Currency conversion (if any) is layered on
+  // top of this EUR figure separately below, once the target currency for
+  // this specific checkout is known.
+  const periodAdjustedEur =
     billingPeriod === "year" ? getAnnualPriceMinor(plan.price_minor) : plan.price_minor;
 
   const stripe = getStripe();
@@ -98,11 +116,21 @@ export async function createCheckoutSession(
   }
 
   // Already has a live Stripe subscription — e.g. switching from
-  // "individual" to the "individual_unlimited" add-on. Update that
-  // subscription's price in place (Stripe prorates automatically) instead
-  // of starting a second `mode: "subscription"` checkout, which would leave
-  // the customer with two active subscriptions and double-billed.
+  // "individual" to the "individual_unlimited" add-on, or just the billing
+  // period. Update that subscription's price in place (Stripe prorates
+  // automatically) instead of starting a second `mode: "subscription"`
+  // checkout, which would leave the customer with two active subscriptions
+  // and double-billed.
   if (subscription.stripe_subscription_id) {
+    // Currency is immutable on a live Stripe subscription — always reuse
+    // what it was actually created in (kept in sync by the webhook from
+    // Stripe's own price object), never recompute from the org's current
+    // country, which could have changed since.
+    const currency = subscription.currency_code;
+    const unitAmount = isCfaCurrency(currency)
+      ? convertEurMinorToCfa(periodAdjustedEur)
+      : periodAdjustedEur;
+
     let existing;
     try {
       existing = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
@@ -120,7 +148,7 @@ export async function createCheckoutSession(
             id: itemId,
             price_data: {
               product: productId,
-              currency: plan.currency_code.toLowerCase(),
+              currency: currency.toLowerCase(),
               unit_amount: unitAmount,
               recurring: { interval: billingPeriod },
             },
@@ -150,6 +178,14 @@ export async function createCheckoutSession(
     redirect(`${APP_URL}/dashboard/billing?checkout=success`);
   }
 
+  // No live subscription yet — this checkout is what determines the
+  // currency the subscription will be created (and then permanently stuck)
+  // in, so it's computed fresh from the org's current type/country here.
+  const currency = await getOrgBillingCurrency(supabase, organizationId);
+  const unitAmount = isCfaCurrency(currency)
+    ? convertEurMinorToCfa(periodAdjustedEur)
+    : periodAdjustedEur;
+
   let session;
   try {
     session = await stripe.checkout.sessions.create({
@@ -159,7 +195,7 @@ export async function createCheckoutSession(
         {
           price_data: {
             product: productId,
-            currency: plan.currency_code.toLowerCase(),
+            currency: currency.toLowerCase(),
             unit_amount: unitAmount,
             recurring: { interval: billingPeriod },
           },

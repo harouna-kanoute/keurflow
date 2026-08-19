@@ -45,11 +45,16 @@ async function syncSubscription(
   // "individual" is the fallback for subscriptions created before this
   // field existed.
   const planCode = subscription.metadata?.plan_code || "individual";
-  // Unlike plan_code, Stripe *does* natively track the billing interval on
-  // the price itself — read it straight from there instead of duplicating
-  // it in metadata, so it can never drift (e.g. a plan-dashboard proration
-  // or a Stripe-dashboard-driven change still resolves correctly).
+  // Unlike plan_code, Stripe *does* natively track the billing interval and
+  // currency on the price itself — read both straight from there instead of
+  // duplicating them in metadata, so they can never drift (e.g. a
+  // plan-dashboard proration or a Stripe-dashboard-driven change still
+  // resolves correctly). Currency in particular is immutable on a live
+  // Stripe subscription, so this is also the authoritative record of what
+  // an org is actually being billed in — never recomputed from the org's
+  // country after the fact.
   const billingPeriod = item?.price?.recurring?.interval === "year" ? "year" : "month";
+  const currencyCode = item?.price?.currency?.toUpperCase() || "EUR";
 
   await admin
     .from("subscriptions")
@@ -57,6 +62,7 @@ async function syncSubscription(
       plan_code: planCode,
       status: mapStripeStatus(subscription.status),
       billing_period: billingPeriod,
+      currency_code: currencyCode,
       stripe_subscription_id: subscription.id,
       current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
     })

@@ -3,13 +3,20 @@ export interface SubscriptionLike {
   trialEndsAt: string | null;
 }
 
-const BILLABLE_PLAN_CODES = new Set(["individual_trial", "individual", "individual_unlimited"]);
+const BILLABLE_PLAN_CODES = new Set([
+  "individual_trial",
+  "individual",
+  "individual_unlimited",
+  "agency_starter",
+  "agency_business",
+]);
 
-// Only the individual plan family is billable right now — agency plans stay
-// free pending a B2B pricing decision (spec §100 TODO). This is driven by
-// the plan *code*, not its price: individual_trial itself is priced at 0
-// minor units (it's the trial row), so gating on price directly would never
-// fire during the very trial it's meant to end.
+// The individual family and the two self-serve agency tiers are billable.
+// agency_enterprise stays excluded — it's sold "sur devis" (negotiated per
+// customer), never self-serve, priced at 0. This is driven by the plan
+// *code*, not its price: individual_trial itself is priced at 0 minor units
+// (it's the trial row), so gating on price directly would never fire during
+// the very trial it's meant to end.
 export function isBillablePlan(planCode: string): boolean {
   return BILLABLE_PLAN_CODES.has(planCode);
 }
@@ -40,7 +47,7 @@ export function isTrialExpired(trialEndsAt: string | null, now: Date = new Date(
   return new Date(trialEndsAt).getTime() < now.getTime();
 }
 
-// A non-billable plan (currently: any agency tier) is never blocked,
+// A non-billable plan (currently: only agency_enterprise) is never blocked,
 // whatever the subscription status. For a billable plan, blocked once the
 // trial has lapsed with no paid subscription behind it, or once billing has
 // actually failed/lapsed.
