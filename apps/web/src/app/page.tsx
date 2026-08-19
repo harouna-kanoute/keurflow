@@ -245,8 +245,10 @@ export default async function Home() {
   const funded = getTotalFunded(demoFundings);
   const remaining = getRemainingBudget(budgetMinor, demoExpenses);
   const consumedPercent = getBudgetConsumptionPercent(budgetMinor, demoExpenses);
-  const individualPriceMinor = toMinorUnits(9.9, eur.minorUnit);
-  const agencyPriceMinor = toMinorUnits(19.9, eur.minorUnit);
+  const individualPriceMinor = toMinorUnits(14.99, eur.minorUnit);
+  const individualUnlimitedPriceMinor = toMinorUnits(23.99, eur.minorUnit);
+  const agencyStarterPriceMinor = toMinorUnits(30.99, eur.minorUnit);
+  const agencyBusinessPriceMinor = toMinorUnits(44.99, eur.minorUnit);
 
   const softwareApplicationJsonLd = {
     "@context": "https://schema.org",
@@ -262,12 +264,17 @@ export default async function Home() {
         name: "Particulier",
         price: (individualPriceMinor / 10 ** eur.minorUnit).toFixed(2),
         priceCurrency: eur.code,
-        priceValidUntil: undefined,
       },
       {
         "@type": "Offer",
-        name: "Agence immobilière",
-        price: (agencyPriceMinor / 10 ** eur.minorUnit).toFixed(2),
+        name: "Agence — Starter",
+        price: (agencyStarterPriceMinor / 10 ** eur.minorUnit).toFixed(2),
+        priceCurrency: eur.code,
+      },
+      {
+        "@type": "Offer",
+        name: "Agence — Business",
+        price: (agencyBusinessPriceMinor / 10 ** eur.minorUnit).toFixed(2),
         priceCurrency: eur.code,
       },
     ],
@@ -717,7 +724,7 @@ export default async function Home() {
               </h2>
             </div>
 
-            <div className="mt-12 grid gap-6 sm:grid-cols-2">
+            <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="relative rounded-2xl border-2 border-brand-600 bg-canvas p-8 dark:border-brand-500 dark:bg-slate-950">
                 <span className="absolute -top-3 left-8 rounded-full bg-brand-600 px-3 py-1 text-xs font-medium text-white dark:bg-brand-500">
                   Pour commencer
@@ -742,11 +749,16 @@ export default async function Home() {
                     ),
                   )}
                 </ul>
+                <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
+                  Plusieurs projets ?{" "}
+                  {formatMoney(individualUnlimitedPriceMinor, eur.code, eur.minorUnit)} / mois pour des
+                  chantiers illimités.
+                </p>
                 <TrackedLink
                   href="/signup"
                   event="pricing_cta_click"
                   eventParams={{ plan: "individual" }}
-                  className="mt-8 flex h-11 items-center justify-center rounded-full bg-brand-600 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
+                  className="mt-6 flex h-11 items-center justify-center rounded-full bg-brand-600 text-sm font-medium text-white transition-colors hover:bg-brand-700 dark:bg-brand-500 dark:hover:bg-brand-600"
                 >
                   Commencer gratuitement
                 </TrackedLink>
@@ -754,17 +766,17 @@ export default async function Home() {
 
               <div className="rounded-2xl border border-slate-200 bg-canvas p-8 dark:border-slate-800 dark:bg-slate-950">
                 <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
-                  Agence immobilière
+                  Agence — Starter
                 </p>
                 <p className="mt-3 text-4xl font-semibold text-slate-900 dark:text-slate-50">
-                  {formatMoney(agencyPriceMinor, eur.code, eur.minorUnit)}
+                  {formatMoney(agencyStarterPriceMinor, eur.code, eur.minorUnit)}
                   <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
                 </p>
                 <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
                   14 jours d&apos;essai gratuit, sans carte bancaire.
                 </p>
                 <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
-                  {["Plusieurs chantiers", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
+                  {["5 chantiers actifs", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
                     (item) => (
                       <li key={item} className="flex items-center gap-2.5">
                         <CheckIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-600" />
@@ -776,10 +788,72 @@ export default async function Home() {
                 <TrackedLink
                   href="/signup"
                   event="pricing_cta_click"
-                  eventParams={{ plan: "agency" }}
+                  eventParams={{ plan: "agency_starter" }}
                   className="mt-8 flex h-11 items-center justify-center rounded-full border border-slate-300 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
                 >
                   Commencer gratuitement
+                </TrackedLink>
+              </div>
+
+              <div className="relative rounded-2xl border border-slate-200 bg-canvas p-8 dark:border-slate-800 dark:bg-slate-950">
+                <span className="absolute -top-3 left-8 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900">
+                  Populaire
+                </span>
+                <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                  Agence — Business
+                </p>
+                <p className="mt-3 text-4xl font-semibold text-slate-900 dark:text-slate-50">
+                  {formatMoney(agencyBusinessPriceMinor, eur.code, eur.minorUnit)}
+                  <span className="text-base font-normal text-slate-500 dark:text-slate-400"> / mois</span>
+                </p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  14 jours d&apos;essai gratuit, sans carte bancaire.
+                </p>
+                <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                  {["15 chantiers actifs", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
+                    (item) => (
+                      <li key={item} className="flex items-center gap-2.5">
+                        <CheckIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-600" />
+                        {item}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                <TrackedLink
+                  href="/signup"
+                  event="pricing_cta_click"
+                  eventParams={{ plan: "agency_business" }}
+                  className="mt-8 flex h-11 items-center justify-center rounded-full border border-slate-300 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
+                >
+                  Commencer gratuitement
+                </TrackedLink>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-canvas p-8 dark:border-slate-800 dark:bg-slate-950">
+                <p className="text-sm font-medium tracking-wide text-slate-500 uppercase dark:text-slate-400">
+                  Agence — Enterprise
+                </p>
+                <p className="mt-3 text-4xl font-semibold text-slate-900 dark:text-slate-50">Sur devis</p>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  14 jours d&apos;essai gratuit, sans carte bancaire.
+                </p>
+                <ul className="mt-6 flex flex-col gap-2.5 text-sm text-slate-700 dark:text-slate-300">
+                  {["Chantiers illimités", "Tableau de bord agence", "Gestion multi-clients", "Rapports d'avancement"].map(
+                    (item) => (
+                      <li key={item} className="flex items-center gap-2.5">
+                        <CheckIcon className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-600" />
+                        {item}
+                      </li>
+                    ),
+                  )}
+                </ul>
+                <TrackedLink
+                  href="mailto:keurflow@gmail.com?subject=Offre%20Agence%20Enterprise"
+                  event="pricing_cta_click"
+                  eventParams={{ plan: "agency_enterprise" }}
+                  className="mt-8 flex h-11 items-center justify-center rounded-full border border-slate-300 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 dark:border-slate-700 dark:text-slate-100 dark:hover:border-slate-600"
+                >
+                  Nous contacter
                 </TrackedLink>
               </div>
             </div>

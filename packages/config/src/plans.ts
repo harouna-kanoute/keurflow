@@ -18,7 +18,7 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     code: "individual",
     label: "Particulier",
     maxActiveProjects: 1,
-    priceCentsMinor: 990,
+    priceCentsMinor: 1499,
     currencyCode: "EUR",
     trialDays: 0,
     features: { web: true, mobile: true, collaborators: true, reports: true },
@@ -27,7 +27,7 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     code: "individual_unlimited",
     label: "Particulier — Illimité",
     maxActiveProjects: null,
-    priceCentsMinor: 1990, // "individual" (9,90€) + 10€ for unlimited chantiers
+    priceCentsMinor: 2399, // "individual" (14,99€) + 9€ for unlimited chantiers
     currencyCode: "EUR",
     trialDays: 0,
     features: { web: true, mobile: true, collaborators: true, reports: true },
@@ -36,7 +36,7 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     code: "agency_starter",
     label: "Agence — Starter",
     maxActiveProjects: 5,
-    priceCentsMinor: 0, // TODO Phase 15: set real price before B2B launch
+    priceCentsMinor: 3099,
     currencyCode: "EUR",
     trialDays: 14,
     features: { web: true, mobile: true, collaborators: true, reports: true, agencyDashboard: true },
@@ -44,8 +44,8 @@ export const DEFAULT_PLANS: readonly Plan[] = [
   {
     code: "agency_business",
     label: "Agence — Business",
-    maxActiveProjects: 20,
-    priceCentsMinor: 0, // TODO Phase 15: set real price before B2B launch
+    maxActiveProjects: 15,
+    priceCentsMinor: 4499,
     currencyCode: "EUR",
     trialDays: 14,
     features: { web: true, mobile: true, collaborators: true, reports: true, agencyDashboard: true },
@@ -54,7 +54,7 @@ export const DEFAULT_PLANS: readonly Plan[] = [
     code: "agency_enterprise",
     label: "Agence — Enterprise",
     maxActiveProjects: null, // negotiated per customer
-    priceCentsMinor: 0,
+    priceCentsMinor: 0, // sold "sur devis" — never self-serve, no public price
     currencyCode: "EUR",
     trialDays: 14,
     features: {
