@@ -6,6 +6,20 @@ import type { ReportData } from "@keurflow/business";
 import { DownloadIcon, PrintIcon } from "@/components/icons";
 import { ReportPrintLayout } from "./report-print-layout";
 
+// projectName is free text (up to 120 chars, no character restrictions) and
+// ends up inside an HTML string passed to document.write() below — escape it
+// so a project renamed to something like `x" onload="…` can't execute in the
+// print popup, which shares the app's origin (and thus its non-httpOnly
+// session cookie) with window.open("", "_blank").
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function slugify(text: string): string {
   const slug = text
     .normalize("NFD")
@@ -114,7 +128,7 @@ export function ReportActions({
       printWindow.document.write(
         `<!doctype html><html lang="fr"><head><meta charset="utf-8" /><title>${filenameBase}</title>` +
           "<style>@page{margin:12mm;}body{margin:0;display:flex;justify-content:center;background:#fff;}img{width:100%;max-width:800px;height:auto;}</style>" +
-          `</head><body><img src="${dataUrl}" alt="${projectName}" /></body></html>`,
+          `</head><body><img src="${dataUrl}" alt="${escapeHtml(projectName)}" /></body></html>`,
       );
       printWindow.document.close();
       printWindow.onload = () => {
