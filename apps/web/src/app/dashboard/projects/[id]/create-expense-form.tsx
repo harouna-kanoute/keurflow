@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import {
   createExpenseSchema,
+  MAX_UPLOAD_BYTES,
   type CreateExpenseInput,
   type UploadDocumentInput,
 } from "@keurflow/validation";
@@ -15,6 +16,18 @@ import { FormSelect } from "@/components/form-select";
 import { SubmitButton } from "@/components/submit-button";
 import { useModalClose } from "@/components/modal";
 import { attachDocument, createExpense } from "./actions";
+
+// Mirrors uploadDocumentSchema (packages/validation/src/document.ts) — the
+// accept="" attribute below is only a UI hint, not enforcement, so this form
+// needs its own check just like its sibling upload forms (avatar-upload.tsx,
+// photos.tsx, create-support-ticket-form.tsx) already have.
+const ALLOWED_RECEIPT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "application/pdf",
+];
 
 export function CreateExpenseForm({
   projectId,
@@ -32,6 +45,7 @@ export function CreateExpenseForm({
     register,
     handleSubmit,
     setError,
+    clearErrors,
     reset,
     formState: { errors },
   } = useForm<CreateExpenseInput>({
@@ -137,7 +151,19 @@ export function CreateExpenseForm({
           id="expenseReceipt"
           type="file"
           accept="image/jpeg,image/png,image/webp,image/heic,application/pdf"
-          onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const file = e.target.files?.[0] ?? null;
+            if (file && (!ALLOWED_RECEIPT_TYPES.includes(file.type) || file.size > MAX_UPLOAD_BYTES)) {
+              setError("root", {
+                message: "Format ou taille de fichier non supporté (JPEG/PNG/WEBP/HEIC/PDF, 15 Mo max)",
+              });
+              e.target.value = "";
+              setReceiptFile(null);
+              return;
+            }
+            clearErrors("root");
+            setReceiptFile(file);
+          }}
           className="text-sm text-slate-700 dark:text-slate-300"
         />
       </div>

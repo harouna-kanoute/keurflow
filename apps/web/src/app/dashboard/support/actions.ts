@@ -63,9 +63,14 @@ export async function deleteSupportAttachment(
     .maybeSingle();
   if (!ticket) return { error: GENERIC_ERROR };
 
-  const remainingPaths = (ticket.attachment_paths ?? []).filter(
-    (path: string) => path !== parsed.data.path,
-  );
+  // Never trust the client-supplied path for the storage delete below without
+  // first confirming it's actually attached to *this* ticket — otherwise a
+  // stray/mistyped path would still get removed from Storage even though the
+  // ticket row itself is left unchanged.
+  const existingPaths: string[] = ticket.attachment_paths ?? [];
+  if (!existingPaths.includes(parsed.data.path)) return { error: GENERIC_ERROR };
+
+  const remainingPaths = existingPaths.filter((path) => path !== parsed.data.path);
 
   // support_tickets_update_own_attachments (RLS) + a column-level grant are
   // the actual authority here — they let this UPDATE touch attachment_paths
