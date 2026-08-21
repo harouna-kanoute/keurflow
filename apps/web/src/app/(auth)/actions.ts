@@ -16,6 +16,7 @@ import {
   type VerifyEmailOtpInput,
   type WhatsAppNumberInput,
 } from "@keurflow/validation";
+import { isSafeRedirectPath } from "@keurflow/business";
 import { createClient } from "@/lib/supabase/server";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
@@ -149,7 +150,11 @@ export async function verifyEmailOtp(input: VerifyEmailOtpInput): Promise<Action
   // The ?invite=1 marker tells /reset-password to also collect a WhatsApp
   // number, since a freshly-invited collaborator has never had a chance to.
   redirect(
-    parsed.data.type === "invite" ? "/reset-password?invite=1" : (parsed.data.next ?? "/dashboard"),
+    parsed.data.type === "invite"
+      ? "/reset-password?invite=1"
+      : isSafeRedirectPath(parsed.data.next)
+        ? parsed.data.next
+        : "/dashboard",
   );
 }
 

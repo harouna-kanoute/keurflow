@@ -7,3 +7,4 @@ export * from "./documentationStatus";
 export * from "./progress";
 export * from "./report";
 export * from "./subscription";
+export * from "./redirect";
