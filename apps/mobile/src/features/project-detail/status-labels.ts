@@ -27,3 +27,15 @@ export const EXPENSE_TONES: Record<string, "neutral" | "amber" | "success" | "da
   approved: "success",
   rejected: "danger",
 };
+
+// Hand-ported from web's page.tsx PROJECT_ROLE_LABELS — identical wording is
+// duplicated in 4 places on web itself (page.tsx, actions.ts, dashboard
+// page.tsx, member-actions.tsx) with nothing exported from packages/* to
+// import instead, so mirroring the literal map here is the correct move.
+export const PROJECT_ROLE_LABELS: Record<string, string> = {
+  project_owner: "Propriétaire",
+  project_manager: "Responsable",
+  project_approver: "Propriétaire du chantier",
+  project_member: "Collaborateur",
+  project_viewer: "Client (lecture seule)",
+};
