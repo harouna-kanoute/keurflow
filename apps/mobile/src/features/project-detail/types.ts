@@ -5,12 +5,14 @@ export type Project = {
   status: string;
   budget_minor: number;
   currency_code: string;
+  organization_id: string;
 };
 
 export type Milestone = {
   id: string;
   name: string;
   status: "pending" | "in_progress" | "completed" | "delayed";
+  order_index: number;
 };
 
 export type Expense = {
@@ -91,4 +93,8 @@ export type ProjectDetailState =
       members: Member[];
       reports: Report[];
       currentUserId: string | null;
+      // UI-only convenience (never the authoritative check — RLS is, same as
+      // web's own canManageAny/canManageProject in page.tsx). Gates whether
+      // to show the photo-delete icon for photos this user didn't upload.
+      canManageAny: boolean;
     };
