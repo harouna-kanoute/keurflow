@@ -9,6 +9,10 @@ import { EXPENSE_CATEGORIES } from "@keurflow/config";
 import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { Badge } from "../../../src/components/badge";
+import { Card } from "../../../src/components/card";
+import { RadialProgress } from "../../../src/components/radial-progress";
 import { minorUnitFor } from "../../../src/lib/projectSummary";
 import { supabase } from "../../../src/lib/supabase";
 import { useStyles, useTheme, type Theme } from "../../../src/theme";
@@ -28,6 +32,16 @@ const MILESTONE_LABELS: Record<string, string> = {
   delayed: "En retard",
 };
 
+// Mirrors apps/web/src/app/dashboard/projects/[id]/page.tsx's
+// MILESTONE_STATUS_COLORS mapping (pending=neutral, in_progress=amber,
+// completed=success, delayed=danger).
+const MILESTONE_TONES: Record<string, "neutral" | "amber" | "success" | "danger"> = {
+  pending: "neutral",
+  in_progress: "amber",
+  completed: "success",
+  delayed: "danger",
+};
+
 const EXPENSE_STATUS_LABELS: Record<string, string> = {
   pending: "En attente",
   needs_information: "Info requise",
@@ -35,7 +49,19 @@ const EXPENSE_STATUS_LABELS: Record<string, string> = {
   rejected: "Rejetée",
 };
 
+const EXPENSE_TONES: Record<string, "neutral" | "amber" | "success" | "danger"> = {
+  pending: "neutral",
+  needs_information: "amber",
+  approved: "success",
+  rejected: "danger",
+};
+
 const CATEGORY_LABELS = new Map(EXPENSE_CATEGORIES.map((c) => [c.code, c.label]));
+
+// Caps the stagger so a project with many milestones/expenses doesn't take
+// seconds to finish animating in.
+const MAX_STAGGER_INDEX = 6;
+const STAGGER_STEP_MS = 70;
 
 type Project = {
   id: string;
@@ -166,76 +192,90 @@ export default function ProjectDetailScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
       }
     >
-      <View style={styles.headerBlock}>
+      <Animated.View entering={FadeInUp.duration(400)} style={styles.headerBlock}>
         <Text style={styles.title}>{project.name}</Text>
-        <Text style={styles.subtitle}>
-          {[project.city, STATUS_LABELS[project.status] ?? project.status].filter(Boolean).join(" · ")}
-        </Text>
-      </View>
+        <View style={styles.subtitleRow}>
+          {project.city && <Text style={styles.subtitle}>{project.city}</Text>}
+          <Badge label={STATUS_LABELS[project.status] ?? project.status} tone="brand" />
+        </View>
+      </Animated.View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Budget</Text>
-        <Text style={styles.bigValue}>
-          {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
-        </Text>
-
-        <View style={styles.metricRow}>
-          <Text style={styles.metricLabel}>Financé</Text>
-          <Text style={styles.metricValue}>
-            {formatMoney(totalFunded, project.currency_code, minorUnit)} ({coveragePercent}%)
+      <Animated.View entering={FadeInUp.delay(70).duration(400)}>
+        <Card>
+          <Text style={styles.cardLabel}>Budget</Text>
+          <Text style={styles.bigValue}>
+            {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
           </Text>
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${coveragePercent}%` }]} />
-        </View>
 
-        <View style={[styles.metricRow, { marginTop: 12 }]}>
-          <Text style={styles.metricLabel}>Dépensé (approuvé)</Text>
-          <Text style={styles.metricValue}>{consumptionPercent}%</Text>
-        </View>
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${consumptionPercent}%` }]} />
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.cardLabel}>Étapes</Text>
-          <Text style={styles.metricValue}>{milestoneProgress}%</Text>
-        </View>
-        {milestones.length > 0 ? (
-          milestones.map((m) => (
-            <View key={m.id} style={styles.listRow}>
-              <Text style={styles.listRowText}>{m.name}</Text>
-              <Text style={styles.listRowMeta}>{MILESTONE_LABELS[m.status] ?? m.status}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.empty}>Aucune étape.</Text>
-        )}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Dépenses récentes</Text>
-        {expenses.length > 0 ? (
-          expenses.map((e) => (
-            <View key={e.id} style={styles.listRow}>
-              <View style={{ flexShrink: 1 }}>
-                <Text style={styles.listRowText}>
-                  {CATEGORY_LABELS.get(e.category) ?? e.category}
-                  {e.supplier_name ? ` · ${e.supplier_name}` : ""}
-                </Text>
-                <Text style={styles.listRowMeta}>{EXPENSE_STATUS_LABELS[e.status] ?? e.status}</Text>
-              </View>
-              <Text style={styles.listRowText}>
-                {formatMoney(e.amount_minor, e.currency_code, minorUnit)}
+          <View style={styles.donutRow}>
+            <View style={styles.donutBlock}>
+              <RadialProgress percent={coveragePercent} centerLabel={`${coveragePercent}%`} tone="brand" />
+              <Text style={styles.donutLabel}>Financé</Text>
+              <Text style={styles.donutValue}>
+                {formatMoney(totalFunded, project.currency_code, minorUnit)}
               </Text>
             </View>
-          ))
-        ) : (
-          <Text style={styles.empty}>Aucune dépense.</Text>
-        )}
-      </View>
+            <View style={styles.donutBlock}>
+              <RadialProgress percent={consumptionPercent} centerLabel={`${consumptionPercent}%`} tone="amber" />
+              <Text style={styles.donutLabel}>Dépensé (approuvé)</Text>
+            </View>
+          </View>
+        </Card>
+      </Animated.View>
+
+      <Animated.View entering={FadeInUp.delay(140).duration(400)}>
+        <Card style={styles.stackedCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionHeaderLeft}>
+              <RadialProgress percent={milestoneProgress} size={40} strokeWidth={5} centerLabel="" />
+              <Text style={styles.cardLabel}>Étapes</Text>
+            </View>
+            <Text style={styles.metricValue}>{milestoneProgress}%</Text>
+          </View>
+          {milestones.length > 0 ? (
+            milestones.map((m, index) => (
+              <Animated.View
+                key={m.id}
+                entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(300)}
+                style={styles.listRow}
+              >
+                <Text style={styles.listRowText}>{m.name}</Text>
+                <Badge label={MILESTONE_LABELS[m.status] ?? m.status} tone={MILESTONE_TONES[m.status] ?? "neutral"} />
+              </Animated.View>
+            ))
+          ) : (
+            <Text style={styles.empty}>Aucune étape.</Text>
+          )}
+        </Card>
+      </Animated.View>
+
+      <Animated.View entering={FadeInUp.delay(210).duration(400)}>
+        <Card style={styles.stackedCard}>
+          <Text style={styles.cardLabel}>Dépenses récentes</Text>
+          {expenses.length > 0 ? (
+            expenses.map((e, index) => (
+              <Animated.View
+                key={e.id}
+                entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(300)}
+                style={styles.listRow}
+              >
+                <View style={{ flexShrink: 1, gap: 4 }}>
+                  <Text style={styles.listRowText}>
+                    {CATEGORY_LABELS.get(e.category) ?? e.category}
+                    {e.supplier_name ? ` · ${e.supplier_name}` : ""}
+                  </Text>
+                  <Badge label={EXPENSE_STATUS_LABELS[e.status] ?? e.status} tone={EXPENSE_TONES[e.status] ?? "neutral"} />
+                </View>
+                <Text style={styles.listRowText}>
+                  {formatMoney(e.amount_minor, e.currency_code, minorUnit)}
+                </Text>
+              </Animated.View>
+            ))
+          ) : (
+            <Text style={styles.empty}>Aucune dépense.</Text>
+          )}
+        </Card>
+      </Animated.View>
     </ScrollView>
   );
 }
@@ -249,18 +289,12 @@ function createStyles(theme: Theme) {
       alignItems: "center" as const,
       justifyContent: "center" as const,
     },
-    container: { padding: 16, gap: 12 },
-    headerBlock: { marginBottom: 4 },
-    title: { fontSize: 20, fontWeight: "700" as const, color: theme.colors.text },
-    subtitle: { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
-    card: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.radius.md,
-      backgroundColor: theme.colors.card,
-      padding: 16,
-      gap: 8,
-    },
+    container: { padding: theme.spacing.lg, gap: theme.spacing.md },
+    headerBlock: { marginBottom: 4, gap: theme.spacing.sm },
+    title: { ...theme.typography.title, color: theme.colors.text },
+    subtitleRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: theme.spacing.sm },
+    subtitle: { fontSize: 13, color: theme.colors.textMuted },
+    stackedCard: { gap: theme.spacing.sm },
     cardLabel: {
       fontSize: 11,
       fontWeight: "600" as const,
@@ -268,30 +302,32 @@ function createStyles(theme: Theme) {
       color: theme.colors.textMuted,
       textTransform: "uppercase" as const,
     },
-    bigValue: { fontSize: 22, fontWeight: "700" as const, color: theme.colors.text },
-    sectionHeader: { flexDirection: "row" as const, justifyContent: "space-between" as const, alignItems: "center" as const },
-    metricRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
-    metricLabel: { fontSize: 13, color: theme.colors.textMuted },
-    metricValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text },
-    progressTrack: {
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: theme.colors.border,
-      overflow: "hidden" as const,
-      marginTop: 4,
+    bigValue: { fontSize: 24, fontWeight: "700" as const, color: theme.colors.text, marginTop: 2 },
+    donutRow: {
+      flexDirection: "row" as const,
+      justifyContent: "space-around" as const,
+      marginTop: theme.spacing.lg,
     },
-    progressFill: { height: "100%" as const, backgroundColor: theme.colors.primary },
+    donutBlock: { alignItems: "center" as const, gap: 4 },
+    donutLabel: { fontSize: 12, color: theme.colors.textMuted, marginTop: 4 },
+    donutValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text },
+    sectionHeader: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+    },
+    sectionHeaderLeft: { flexDirection: "row" as const, alignItems: "center" as const, gap: theme.spacing.sm },
+    metricValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text },
     listRow: {
       flexDirection: "row" as const,
       justifyContent: "space-between" as const,
       alignItems: "center" as const,
-      paddingVertical: 8,
+      paddingVertical: theme.spacing.sm + 2,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
-      gap: 8,
+      gap: theme.spacing.sm,
     },
     listRowText: { fontSize: 13, color: theme.colors.text },
-    listRowMeta: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
     empty: { fontSize: 13, color: theme.colors.textMuted, paddingVertical: 4 },
   };
 }

@@ -27,6 +27,8 @@ export type ThemeColors = {
   dangerBg: string;
   amber: string;
   amberBg: string;
+  success: string;
+  successBg: string;
   unreadBg: string;
   overlayOnPrimary: string;
 };
@@ -45,6 +47,8 @@ export const lightColors: ThemeColors = {
   dangerBg: "#fef2f2",
   amber: "#92400e",
   amberBg: "#fef3c7",
+  success: "#15803d",
+  successBg: "#dcfce7",
   unreadBg: brand[50],
   overlayOnPrimary: "rgba(255,255,255,0.16)",
 };
@@ -63,6 +67,8 @@ export const darkColors: ThemeColors = {
   dangerBg: "rgba(127,29,29,0.35)",
   amber: "#fcd34d",
   amberBg: "rgba(120,53,15,0.4)",
+  success: "#4ade80",
+  successBg: "rgba(21,128,61,0.3)",
   unreadBg: "rgba(108,92,217,0.16)",
   overlayOnPrimary: "rgba(255,255,255,0.16)",
 };

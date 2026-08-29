@@ -1,7 +1,7 @@
 import { Text, View } from "react-native";
 import { useTheme } from "../theme";
 
-type Tone = "neutral" | "amber" | "brand" | "danger";
+type Tone = "neutral" | "amber" | "brand" | "danger" | "success";
 
 export function Badge({ label, tone = "neutral" }: { label: string; tone?: Tone }) {
   const theme = useTheme();
@@ -11,6 +11,7 @@ export function Badge({ label, tone = "neutral" }: { label: string; tone?: Tone 
     amber: { bg: theme.colors.amberBg, text: theme.colors.amber },
     brand: { bg: theme.colors.brand[100], text: theme.colors.brand[700] },
     danger: { bg: theme.colors.dangerBg, text: theme.colors.danger },
+    success: { bg: theme.colors.successBg, text: theme.colors.success },
   };
   const { bg, text } = tones[tone];
 
