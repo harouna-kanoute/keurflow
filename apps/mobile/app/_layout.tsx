@@ -1,21 +1,25 @@
 import { Slot, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
-import { colors } from "../src/theme";
+import { ThemeProvider, useStyles, useTheme, type Theme } from "../src/theme";
 
 function RootNavigation() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const theme = useTheme();
+  const styles = useStyles(createStyles);
 
   useEffect(() => {
     if (loading) return;
     const inAuthGroup = segments[0] === "(auth)";
 
     if (!session && !inAuthGroup) {
-      router.replace("/login");
+      router.replace("/welcome");
     } else if (session && inAuthGroup) {
       router.replace("/");
     }
@@ -24,7 +28,7 @@ function RootNavigation() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
@@ -35,13 +39,30 @@ function RootNavigation() {
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <RootNavigation />
-      </AuthProvider>
+      <ThemeProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <ThemedStatusBar />
+          <AuthProvider>
+            <RootNavigation />
+          </AuthProvider>
+        </GestureHandlerRootView>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
-});
+function ThemedStatusBar() {
+  const { scheme } = useTheme();
+  return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
+}
+
+function createStyles(theme: Theme) {
+  return {
+    loading: {
+      flex: 1,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      backgroundColor: theme.colors.background,
+    },
+  };
+}

@@ -8,10 +8,10 @@ import {
 import { EXPENSE_CATEGORIES } from "@keurflow/config";
 import { useFocusEffect, useLocalSearchParams, useNavigation } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react-native";
 import { minorUnitFor } from "../../../src/lib/projectSummary";
 import { supabase } from "../../../src/lib/supabase";
-import { colors } from "../../../src/theme";
+import { useStyles, useTheme, type Theme } from "../../../src/theme";
 
 const STATUS_LABELS: Record<string, string> = {
   planning: "Planification",
@@ -76,6 +76,8 @@ export default function ProjectDetailScreen() {
   const navigation = useNavigation();
   const [state, setState] = useState<State>({ status: "loading" });
   const [refreshing, setRefreshing] = useState(false);
+  const theme = useTheme();
+  const styles = useStyles(createStyles);
 
   const load = useCallback(async () => {
     // RLS (projects_select_org_or_project_members) is the authoritative
@@ -139,7 +141,7 @@ export default function ProjectDetailScreen() {
   if (state.status === "loading") {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
@@ -158,9 +160,11 @@ export default function ProjectDetailScreen() {
 
   return (
     <ScrollView
-      style={{ backgroundColor: colors.background }}
+      style={styles.flex}
       contentContainerStyle={styles.container}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+      }
     >
       <View style={styles.headerBlock}>
         <Text style={styles.title}>{project.name}</Text>
@@ -236,38 +240,58 @@ export default function ProjectDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" },
-  container: { padding: 16, gap: 12 },
-  headerBlock: { marginBottom: 4 },
-  title: { fontSize: 20, fontWeight: "700", color: colors.text },
-  subtitle: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.card,
-    padding: 16,
-    gap: 8,
-  },
-  cardLabel: { fontSize: 11, fontWeight: "600", letterSpacing: 0.5, color: colors.textMuted, textTransform: "uppercase" },
-  bigValue: { fontSize: 22, fontWeight: "700", color: colors.text },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  metricRow: { flexDirection: "row", justifyContent: "space-between" },
-  metricLabel: { fontSize: 13, color: colors.textMuted },
-  metricValue: { fontSize: 13, fontWeight: "600", color: colors.text },
-  progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: "hidden", marginTop: 4 },
-  progressFill: { height: "100%", backgroundColor: colors.primary },
-  listRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    gap: 8,
-  },
-  listRowText: { fontSize: 13, color: colors.text },
-  listRowMeta: { fontSize: 11, color: colors.textMuted, marginTop: 2 },
-  empty: { fontSize: 13, color: colors.textMuted, paddingVertical: 4 },
-});
+function createStyles(theme: Theme) {
+  return {
+    flex: { flex: 1, backgroundColor: theme.colors.background },
+    center: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    container: { padding: 16, gap: 12 },
+    headerBlock: { marginBottom: 4 },
+    title: { fontSize: 20, fontWeight: "700" as const, color: theme.colors.text },
+    subtitle: { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
+    card: {
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.card,
+      padding: 16,
+      gap: 8,
+    },
+    cardLabel: {
+      fontSize: 11,
+      fontWeight: "600" as const,
+      letterSpacing: 0.5,
+      color: theme.colors.textMuted,
+      textTransform: "uppercase" as const,
+    },
+    bigValue: { fontSize: 22, fontWeight: "700" as const, color: theme.colors.text },
+    sectionHeader: { flexDirection: "row" as const, justifyContent: "space-between" as const, alignItems: "center" as const },
+    metricRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
+    metricLabel: { fontSize: 13, color: theme.colors.textMuted },
+    metricValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text },
+    progressTrack: {
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: theme.colors.border,
+      overflow: "hidden" as const,
+      marginTop: 4,
+    },
+    progressFill: { height: "100%" as const, backgroundColor: theme.colors.primary },
+    listRow: {
+      flexDirection: "row" as const,
+      justifyContent: "space-between" as const,
+      alignItems: "center" as const,
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
+      gap: 8,
+    },
+    listRowText: { fontSize: 13, color: theme.colors.text },
+    listRowMeta: { fontSize: 11, color: theme.colors.textMuted, marginTop: 2 },
+    empty: { fontSize: 13, color: theme.colors.textMuted, paddingVertical: 4 },
+  };
+}
