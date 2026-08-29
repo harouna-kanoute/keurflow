@@ -135,7 +135,10 @@ export async function createCheckoutSession(
     try {
       existing = await stripe.subscriptions.retrieve(subscription.stripe_subscription_id);
     } catch (error) {
-      console.error("[createCheckoutSession] Stripe retrieve error:", error);
+      console.error(
+        "[createCheckoutSession] Stripe retrieve error:",
+        error instanceof Error ? error.message : error,
+      );
       return { error: GENERIC_ERROR };
     }
     const itemId = existing.items.data[0]?.id;
@@ -166,7 +169,10 @@ export async function createCheckoutSession(
         metadata: { organization_id: organizationId, plan_code: planCode },
       });
     } catch (error) {
-      console.error("[createCheckoutSession] Stripe update error:", error);
+      console.error(
+        "[createCheckoutSession] Stripe update error:",
+        error instanceof Error ? error.message : error,
+      );
       return { error: GENERIC_ERROR };
     }
 
@@ -208,7 +214,10 @@ export async function createCheckoutSession(
       subscription_data: { metadata: { organization_id: organizationId, plan_code: planCode } },
     });
   } catch (error) {
-    console.error("[createCheckoutSession] Stripe error:", error);
+    console.error(
+      "[createCheckoutSession] Stripe error:",
+      error instanceof Error ? error.message : error,
+    );
     return { error: GENERIC_ERROR };
   }
 
@@ -239,7 +248,10 @@ export async function createBillingPortalSession(organizationId: string): Promis
       return_url: `${APP_URL}/dashboard/billing`,
     });
   } catch (error) {
-    console.error("[createBillingPortalSession] Stripe error:", error);
+    console.error(
+      "[createBillingPortalSession] Stripe error:",
+      error instanceof Error ? error.message : error,
+    );
     return { error: GENERIC_ERROR };
   }
 
