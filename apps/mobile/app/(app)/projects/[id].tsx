@@ -4,7 +4,9 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from "react
 import { ProjectTabBar } from "../../../src/components/project-tab-bar";
 import { ApercuTab } from "../../../src/features/project-detail/apercu-tab";
 import { DepensesTab } from "../../../src/features/project-detail/depenses-tab";
+import { EtapesTab } from "../../../src/features/project-detail/etapes-tab";
 import { FinancementsTab } from "../../../src/features/project-detail/financements-tab";
+import { PhotosTab } from "../../../src/features/project-detail/photos-tab";
 import type { ProjectTabId } from "../../../src/features/project-detail/tab-ids";
 import { useProjectDetail } from "../../../src/features/project-detail/use-project-detail";
 import { useStyles, useTheme, type Theme } from "../../../src/theme";
@@ -59,6 +61,12 @@ export default function ProjectDetailScreen() {
         )}
         {activeTab === "depenses" && (
           <DepensesTab state={state} projectId={state.project.id} onChanged={reload} />
+        )}
+        {activeTab === "etapes" && (
+          <EtapesTab state={state} projectId={state.project.id} onChanged={reload} />
+        )}
+        {activeTab === "photos" && (
+          <PhotosTab state={state} projectId={state.project.id} onChanged={reload} />
         )}
       </ScrollView>
     </View>

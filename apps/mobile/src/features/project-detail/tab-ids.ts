@@ -3,11 +3,13 @@
 // incrementally across Phase 1's PRs (see the mobile feature-parity plan) —
 // only list a tab here once its panel actually exists, so this never ships
 // a dead "coming soon" placeholder. Currently: PR 1 (Aperçu/Financements/
-// Dépenses). Étapes/Photos land in PR 2, Équipe/Rapports in PR 3.
+// Dépenses) + PR 2 (Étapes/Photos). Équipe/Rapports land in PR 3.
 export const PROJECT_TABS = [
   { id: "apercu", label: "Aperçu" },
   { id: "financements", label: "Financements" },
   { id: "depenses", label: "Dépenses" },
+  { id: "etapes", label: "Étapes" },
+  { id: "photos", label: "Photos" },
 ] as const;
 
 export type ProjectTabId = (typeof PROJECT_TABS)[number]["id"];
