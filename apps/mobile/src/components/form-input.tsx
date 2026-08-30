@@ -24,6 +24,7 @@ export function FormInput<T extends FieldValues>({
   label,
   error,
   parse,
+  style,
   ...inputProps
 }: Props<T>) {
   const theme = useTheme();
@@ -38,7 +39,7 @@ export function FormInput<T extends FieldValues>({
         <View style={styles.wrapper}>
           <Text style={styles.label}>{label}</Text>
           <TextInput
-            style={[styles.input, error ? styles.inputError : null]}
+            style={[styles.input, error ? styles.inputError : null, style]}
             onBlur={onBlur}
             onChangeText={(text) => {
               if (parse) {
