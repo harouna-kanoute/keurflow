@@ -1,25 +1,28 @@
 import { formatMoney } from "@keurflow/business";
-import { Link, router } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, { FadeInUp } from "react-native-reanimated";
+import { Badge } from "../../src/components/badge";
+import { Card } from "../../src/components/card";
+import { ProgressBar } from "../../src/components/progress-bar";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
-import { colors } from "../../src/theme";
+import { useStyles, useTheme, type Theme } from "../../src/theme";
 
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   individual: "Particulier",
   agency: "Agence immobilière",
   company: "Entreprise",
 };
+
+// Caps the stagger so a long project list doesn't take seconds to finish
+// animating in.
+const MAX_STAGGER_INDEX = 8;
+const STAGGER_STEP_MS = 60;
 
 type State =
   | { status: "loading" }
@@ -30,6 +33,8 @@ export default function ProjectListScreen() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [unreadCount, setUnreadCount] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const theme = useTheme();
+  const styles = useStyles(createStyles);
 
   const load = useCallback(async () => {
     const {
@@ -103,142 +108,166 @@ export default function ProjectListScreen() {
   if (state.status === "loading") {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
 
+  const hero = (
+    <Card variant="hero" style={styles.hero}>
+      <View style={styles.heroTopRow}>
+        <Text style={styles.heroTitle}>Mes chantiers</Text>
+        <View style={styles.heroActions}>
+          <Pressable onPress={() => router.push("/notifications")} style={styles.iconButton}>
+            <Ionicons name="notifications-outline" size={20} color="#ffffff" />
+            {unreadCount > 0 && (
+              <View style={styles.badgeDot}>
+                <Text style={styles.badgeDotText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+              </View>
+            )}
+          </Pressable>
+          <Pressable onPress={() => supabase.auth.signOut()} style={styles.iconButton}>
+            <Ionicons name="log-out-outline" size={20} color="#ffffff" />
+          </Pressable>
+        </View>
+      </View>
+    </Card>
+  );
+
   const header = (
     <View style={styles.header}>
-      <View style={styles.topRow}>
-        <Pressable onPress={() => router.push("/notifications")} style={styles.notifLink}>
-          <Text style={styles.notifText}>Notifications</Text>
-          {unreadCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{unreadCount}</Text>
-            </View>
-          )}
-        </Pressable>
-        <Pressable onPress={() => supabase.auth.signOut()}>
-          <Text style={styles.signOut}>Se déconnecter</Text>
-        </Pressable>
-      </View>
+      {hero}
       {state.status === "ready" && (
-        <View style={styles.orgCard}>
+        <Card style={styles.orgCard}>
           <Text style={styles.orgType}>
             {ORGANIZATION_TYPE_LABELS[state.orgType] ?? state.orgType}
           </Text>
           <Text style={styles.orgName}>{state.orgName}</Text>
-        </View>
+        </Card>
       )}
     </View>
   );
 
   if (state.status === "no-org") {
     return (
-      <View style={styles.center}>
+      <SafeAreaView style={styles.flex} edges={["top"]}>
         {header}
         <Text style={styles.empty}>
           Aucune organisation associée à votre compte. Créez-la depuis l'application web pour
           commencer.
         </Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <FlatList
-      style={{ backgroundColor: colors.background }}
-      contentContainerStyle={styles.list}
-      data={state.projects}
-      keyExtractor={(item) => item.id}
-      ListHeaderComponent={header}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      ListEmptyComponent={<Text style={styles.empty}>Aucun chantier créé.</Text>}
-      renderItem={({ item }) => {
-        const minorUnit = minorUnitFor(item.currency_code);
-        return (
-          <Link href={`/projects/${item.id}`} asChild>
-            <Pressable style={styles.card}>
-              <View style={styles.cardTop}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                {item.toReviewCount > 0 && (
-                  <View style={styles.reviewBadge}>
-                    <Text style={styles.reviewBadgeText}>{item.toReviewCount} à vérifier</Text>
+    <SafeAreaView style={styles.flex} edges={["top"]}>
+      <FlatList
+        style={styles.flex}
+        contentContainerStyle={styles.list}
+        data={state.projects}
+        keyExtractor={(item) => item.id}
+        ListHeaderComponent={header}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />
+        }
+        ListEmptyComponent={<Text style={styles.empty}>Aucun chantier créé.</Text>}
+        renderItem={({ item, index }) => {
+          const minorUnit = minorUnitFor(item.currency_code);
+          return (
+            <Animated.View
+              entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(400)}
+            >
+              <Card onPress={() => router.push(`/projects/${item.id}`)} style={styles.projectCard}>
+                <View style={styles.cardTop}>
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  {item.toReviewCount > 0 && <Badge tone="amber" label={`${item.toReviewCount} à vérifier`} />}
+                </View>
+                <ProgressBar percent={item.progressPercent} />
+                <View style={styles.statsRow}>
+                  <View>
+                    <Text style={styles.statLabel}>Budget</Text>
+                    <Text style={styles.statValue}>
+                      {formatMoney(item.budget_minor, item.currency_code, minorUnit)}
+                    </Text>
                   </View>
-                )}
-              </View>
-              <View style={styles.progressTrack}>
-                <View style={[styles.progressFill, { width: `${item.progressPercent}%` }]} />
-              </View>
-              <View style={styles.statsRow}>
-                <View>
-                  <Text style={styles.statLabel}>Budget</Text>
-                  <Text style={styles.statValue}>
-                    {formatMoney(item.budget_minor, item.currency_code, minorUnit)}
-                  </Text>
+                  <View>
+                    <Text style={styles.statLabel}>Financé</Text>
+                    <Text style={styles.statValue}>
+                      {formatMoney(item.funded, item.currency_code, minorUnit)}
+                    </Text>
+                  </View>
+                  <View>
+                    <Text style={styles.statLabel}>Dépensé</Text>
+                    <Text style={styles.statValue}>
+                      {formatMoney(item.spent, item.currency_code, minorUnit)}
+                    </Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.statLabel}>Financé</Text>
-                  <Text style={styles.statValue}>
-                    {formatMoney(item.funded, item.currency_code, minorUnit)}
-                  </Text>
-                </View>
-                <View>
-                  <Text style={styles.statLabel}>Dépensé</Text>
-                  <Text style={styles.statValue}>
-                    {formatMoney(item.spent, item.currency_code, minorUnit)}
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-          </Link>
-        );
-      }}
-    />
+              </Card>
+            </Animated.View>
+          );
+        }}
+      />
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center", padding: 24 },
-  list: { padding: 16, gap: 12 },
-  header: { gap: 12, marginBottom: 8 },
-  topRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  notifLink: { flexDirection: "row", alignItems: "center", gap: 8 },
-  notifText: { fontSize: 14, fontWeight: "500", color: colors.text },
-  signOut: { fontSize: 13, color: colors.textMuted, textDecorationLine: "underline" },
-  badge: {
-    backgroundColor: colors.primary,
-    borderRadius: 999,
-    paddingHorizontal: 7,
-    paddingVertical: 1,
-  },
-  badgeText: { color: colors.primaryText, fontSize: 11, fontWeight: "600" },
-  orgCard: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.card,
-    padding: 14,
-  },
-  orgType: { fontSize: 11, fontWeight: "600", letterSpacing: 0.5, color: colors.textMuted, textTransform: "uppercase" },
-  orgName: { fontSize: 16, fontWeight: "600", color: colors.text, marginTop: 2 },
-  empty: { fontSize: 14, color: colors.textMuted, textAlign: "center", marginTop: 12 },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.card,
-    padding: 16,
-    gap: 10,
-  },
-  cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  cardTitle: { fontSize: 15, fontWeight: "600", color: colors.text, flexShrink: 1 },
-  reviewBadge: { backgroundColor: colors.amberBg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
-  reviewBadgeText: { fontSize: 11, fontWeight: "600", color: colors.amber },
-  progressTrack: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: "hidden" },
-  progressFill: { height: "100%", backgroundColor: colors.primary },
-  statsRow: { flexDirection: "row", justifyContent: "space-between" },
-  statLabel: { fontSize: 11, color: colors.textMuted },
-  statValue: { fontSize: 13, fontWeight: "600", color: colors.text, marginTop: 2 },
-});
+function createStyles(theme: Theme) {
+  return {
+    flex: { flex: 1, backgroundColor: theme.colors.background },
+    center: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      padding: 24,
+    },
+    list: { padding: theme.spacing.lg, gap: theme.spacing.md },
+    header: { marginBottom: theme.spacing.xs },
+    hero: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
+    heroTopRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+    },
+    heroTitle: { ...theme.typography.title, color: "#ffffff" },
+    heroActions: { flexDirection: "row" as const, gap: theme.spacing.sm },
+    iconButton: {
+      width: 36,
+      height: 36,
+      borderRadius: theme.radius.full,
+      backgroundColor: theme.colors.overlayOnPrimary,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    badgeDot: {
+      position: "absolute" as const,
+      top: -2,
+      right: -2,
+      minWidth: 16,
+      height: 16,
+      borderRadius: theme.radius.full,
+      backgroundColor: theme.colors.danger,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+      paddingHorizontal: 3,
+    },
+    badgeDotText: { color: "#ffffff", fontSize: 9, fontWeight: "700" as const },
+    orgCard: { marginTop: -theme.spacing.lg, marginHorizontal: theme.spacing.lg },
+    orgType: { ...theme.typography.caption, color: theme.colors.textMuted },
+    orgName: { fontSize: 16, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
+    empty: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" as const, marginTop: 12 },
+    projectCard: { gap: theme.spacing.sm + 2 },
+    cardTop: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      gap: theme.spacing.sm,
+    },
+    cardTitle: { fontSize: 15, fontWeight: "600" as const, color: theme.colors.text, flexShrink: 1 },
+    statsRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
+    statLabel: { fontSize: 11, color: theme.colors.textMuted },
+    statValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
+  };
+}

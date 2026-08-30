@@ -4,12 +4,12 @@ import { COUNTRIES } from "@keurflow/config";
 import { Link } from "expo-router";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { FormInput } from "../../src/components/form-input";
 import { SelectField } from "../../src/components/select-field";
 import { PrimaryButton } from "../../src/components/primary-button";
 import { supabase } from "../../src/lib/supabase";
-import { colors } from "../../src/theme";
+import { useStyles, type Theme } from "../../src/theme";
 
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
 
@@ -22,6 +22,7 @@ export default function SignupScreen() {
   const [pending, setPending] = useState(false);
   const [rootError, setRootError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const styles = useStyles(createStyles);
   const {
     control,
     handleSubmit,
@@ -66,10 +67,7 @@ export default function SignupScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
+    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.eyebrow}>KEURFLOW</Text>
         <Text style={styles.title}>Créer un compte</Text>
@@ -130,26 +128,36 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: "center", paddingHorizontal: 24, paddingVertical: 48 },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 1,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  title: { fontSize: 24, fontWeight: "700", color: colors.text, textAlign: "center", marginTop: 6, marginBottom: 32 },
-  form: { gap: 16 },
-  error: { fontSize: 13, color: colors.danger },
-  footer: { marginTop: 32, alignItems: "center", gap: 6 },
-  footerText: { fontSize: 14, color: colors.textMuted, textAlign: "center" },
-  link: { fontSize: 14, fontWeight: "600", color: colors.text, textDecorationLine: "underline" },
-  checkEmail: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    gap: 12,
-    backgroundColor: colors.background,
-  },
-});
+function createStyles(theme: Theme) {
+  return {
+    flex: { flex: 1, backgroundColor: theme.colors.background },
+    container: { flexGrow: 1, justifyContent: "center" as const, paddingHorizontal: 24, paddingVertical: 48 },
+    eyebrow: {
+      fontSize: 12,
+      fontWeight: "600" as const,
+      letterSpacing: 1,
+      color: theme.colors.textMuted,
+      textAlign: "center" as const,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: "700" as const,
+      color: theme.colors.text,
+      textAlign: "center" as const,
+      marginTop: 6,
+      marginBottom: 32,
+    },
+    form: { gap: 16 },
+    error: { fontSize: 13, color: theme.colors.danger },
+    footer: { marginTop: 32, alignItems: "center" as const, gap: 6 },
+    footerText: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" as const },
+    link: { fontSize: 14, fontWeight: "600" as const, color: theme.colors.text, textDecorationLine: "underline" as const },
+    checkEmail: {
+      flex: 1,
+      justifyContent: "center" as const,
+      paddingHorizontal: 24,
+      gap: 12,
+      backgroundColor: theme.colors.background,
+    },
+  };
+}

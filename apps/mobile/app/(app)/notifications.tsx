@@ -1,8 +1,8 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, Text, View } from "react-native";
 import { supabase } from "../../src/lib/supabase";
-import { colors } from "../../src/theme";
+import { useStyles, useTheme, type Theme } from "../../src/theme";
 
 const TYPE_LABELS: Record<string, string> = {
   new_expense: "Nouvelle dépense",
@@ -28,6 +28,8 @@ type Notification = {
 
 export default function NotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[] | null>(null);
+  const theme = useTheme();
+  const styles = useStyles(createStyles);
 
   const load = useCallback(async () => {
     const {
@@ -75,7 +77,7 @@ export default function NotificationsScreen() {
   if (notifications === null) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator color={colors.text} />
+        <ActivityIndicator color={theme.colors.primary} />
       </View>
     );
   }
@@ -84,7 +86,7 @@ export default function NotificationsScreen() {
 
   return (
     <FlatList
-      style={{ backgroundColor: colors.background }}
+      style={styles.flex}
       contentContainerStyle={styles.list}
       data={notifications}
       keyExtractor={(item) => item.id}
@@ -122,40 +124,48 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, backgroundColor: colors.background, alignItems: "center", justifyContent: "center" },
-  list: { padding: 16, gap: 8 },
-  empty: { fontSize: 13, color: colors.textMuted, textAlign: "center", marginTop: 24 },
-  markAllButton: {
-    alignSelf: "flex-end",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginBottom: 8,
-  },
-  markAllText: { fontSize: 13, fontWeight: "600", color: colors.text },
-  card: {
-    flexDirection: "row",
-    gap: 10,
-    alignItems: "flex-start",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    backgroundColor: colors.card,
-    padding: 12,
-  },
-  cardUnread: { backgroundColor: "#f4f4f5", borderColor: colors.borderStrong },
-  cardTitle: { fontSize: 14, fontWeight: "600", color: colors.text },
-  cardBody: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  cardMeta: { fontSize: 11, color: colors.textMuted, marginTop: 6, textDecorationLine: "underline" },
-  readButton: {
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  readButtonText: { fontSize: 11, fontWeight: "600", color: colors.text },
-});
+function createStyles(theme: Theme) {
+  return {
+    flex: { flex: 1, backgroundColor: theme.colors.background },
+    center: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
+    },
+    list: { padding: 16, gap: 8 },
+    empty: { fontSize: 13, color: theme.colors.textMuted, textAlign: "center" as const, marginTop: 24 },
+    markAllButton: {
+      alignSelf: "flex-end" as const,
+      borderWidth: 1,
+      borderColor: theme.colors.borderStrong,
+      borderRadius: theme.radius.full,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      marginBottom: 8,
+    },
+    markAllText: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text },
+    card: {
+      flexDirection: "row" as const,
+      gap: 10,
+      alignItems: "flex-start" as const,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.card,
+      padding: 12,
+    },
+    cardUnread: { backgroundColor: theme.colors.unreadBg, borderColor: theme.colors.brand[300] },
+    cardTitle: { fontSize: 14, fontWeight: "600" as const, color: theme.colors.text },
+    cardBody: { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },
+    cardMeta: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, textDecorationLine: "underline" as const },
+    readButton: {
+      borderWidth: 1,
+      borderColor: theme.colors.borderStrong,
+      borderRadius: theme.radius.full,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    readButtonText: { fontSize: 11, fontWeight: "600" as const, color: theme.colors.text },
+  };
+}
