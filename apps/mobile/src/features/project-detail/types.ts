@@ -97,4 +97,9 @@ export type ProjectDetailState =
       // web's own canManageAny/canManageProject in page.tsx). Gates whether
       // to show the photo-delete icon for photos this user didn't upload.
       canManageAny: boolean;
+      // Trial expired / subscription not active — same client-side gate as
+      // web's Server Action guards, applied here since mobile has no server
+      // layer of its own to enforce it at (RLS remains the only real
+      // authority for mobile writes, unchanged by this feature).
+      isBlocked: boolean;
     };

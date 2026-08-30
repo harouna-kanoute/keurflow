@@ -16,10 +16,12 @@ export function FinancementsTab({
   state,
   projectId,
   onChanged,
+  isBlocked,
 }: {
   state: Extract<ProjectDetailState, { status: "ready" }>;
   projectId: string;
   onChanged: () => void;
+  isBlocked: boolean;
 }) {
   const styles = useStyles(createStyles);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -31,14 +33,16 @@ export function FinancementsTab({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Financements</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={() => setSheetOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter un financement"
-        >
-          <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
-        </Pressable>
+        {!isBlocked && (
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setSheetOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter un financement"
+          >
+            <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
+          </Pressable>
+        )}
       </View>
 
       {fundings.length === 0 && <Text style={styles.empty}>Aucun financement enregistré.</Text>}

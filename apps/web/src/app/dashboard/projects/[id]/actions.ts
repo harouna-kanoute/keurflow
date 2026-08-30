@@ -57,6 +57,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getProjectAudience, notifyUsers } from "@/lib/notifications";
 import { logAudit } from "@/lib/audit";
+import { isOrganizationBlocked } from "@/lib/subscription-guard";
 
 function minorUnitFor(currencyCode: string): number {
   return CURRENCIES.find((c) => c.code === currencyCode)?.minorUnit ?? 2;
@@ -64,14 +65,20 @@ function minorUnitFor(currencyCode: string): number {
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
+const TRIAL_LOCKED_ERROR =
+  "Votre essai gratuit est terminé. Passez à un abonnement pour continuer à modifier vos chantiers.";
 
-export type ActionResult = { error: string } | { error?: undefined };
+export type ActionResult = { error: string; requiresUpgrade?: boolean } | { error?: undefined };
 
 export async function createFunding(input: CreateFundingInput): Promise<ActionResult> {
   const parsed = createFundingSchema.safeParse(input);
   if (!parsed.success) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   const { data: paymentMethod } = await supabase
     .from("payment_methods")
@@ -121,7 +128,7 @@ export async function createFunding(input: CreateFundingInput): Promise<ActionRe
 }
 
 export type CreateExpenseResult =
-  | { error: string; expenseId?: undefined }
+  | { error: string; requiresUpgrade?: boolean; expenseId?: undefined }
   | { error?: undefined; expenseId: string };
 
 export async function createExpense(input: CreateExpenseInput): Promise<CreateExpenseResult> {
@@ -143,6 +150,10 @@ export async function createExpense(input: CreateExpenseInput): Promise<CreateEx
   if (!amountMinor) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   const { data: expense, error } = await supabase
     .from("expenses")
@@ -219,6 +230,11 @@ export async function attachDocument(
   }
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   const { data: document, error } = await supabase
     .from("documents")
     .insert({
@@ -276,6 +292,10 @@ export async function updateExpenseStatus(input: UpdateExpenseStatusInput): Prom
     .select("project_id, created_by, category")
     .eq("id", parsed.data.expenseId)
     .single();
+
+  if (expense && (await isOrganizationBlocked(supabase, { projectId: expense.project_id }))) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // RLS (expenses_update_own_pending_or_managers) is the authoritative check
   // on whether this user may transition this expense's status — this simply
@@ -345,6 +365,10 @@ export async function createExpenseComment(input: CreateExpenseCommentInput): Pr
     .eq("id", parsed.data.expenseId)
     .single();
 
+  if (expense && (await isOrganizationBlocked(supabase, { projectId: expense.project_id }))) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (expense_comments_insert_non_viewers) is the authoritative check.
   const { data: comment, error } = await supabase
     .from("expense_comments")
@@ -383,6 +407,11 @@ export async function createMilestone(input: CreateMilestoneInput): Promise<Acti
   if (!parsed.success) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   const { error } = await supabase.from("milestones").insert({
     project_id: parsed.data.projectId,
     name: parsed.data.name,
@@ -414,6 +443,10 @@ export async function updateMilestoneStatus(
     .select("project_id, name")
     .eq("id", parsed.data.milestoneId)
     .single();
+
+  if (milestone && (await isOrganizationBlocked(supabase, { projectId: milestone.project_id }))) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // RLS (milestones_write_non_viewers) is the authoritative check — updating
   // a milestone's status is meant to be a quick action from the field (§43),
@@ -481,6 +514,11 @@ export async function attachPhoto(
   }
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   const { data: photo, error } = await supabase
     .from("photos")
     .insert({
@@ -533,6 +571,10 @@ export async function deletePhoto(input: DeletePhotoInput): Promise<ActionResult
     .maybeSingle();
   if (!photo) return { error: GENERIC_ERROR };
 
+  if (await isOrganizationBlocked(supabase, { projectId: photo.project_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (photos_delete_own_or_managers) is the authoritative check — the
   // uploader can always remove their own photo, managers can remove any.
   const { error } = await supabase.from("photos").delete().eq("id", parsed.data.photoId);
@@ -579,6 +621,10 @@ export async function deleteDocument(input: DeleteDocumentInput): Promise<Action
     .eq("id", parsed.data.documentId)
     .maybeSingle();
   if (!document) return { error: GENERIC_ERROR };
+
+  if (await isOrganizationBlocked(supabase, { projectId: document.project_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // RLS (documents_delete_own_or_managers) is the authoritative check — the
   // uploader can always remove their own document, managers can remove any.
@@ -697,6 +743,10 @@ export async function inviteProjectMember(input: InviteProjectMemberInput): Prom
     .eq("id", parsed.data.projectId)
     .maybeSingle();
   if (!project) return { error: GENERIC_ERROR };
+
+  if (await isOrganizationBlocked(supabase, { organizationId: project.organization_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // Manual authorization check (mirrors the RLS rule for project_members
   // writes) is required here because the admin client used below bypasses
@@ -831,6 +881,10 @@ export async function updateProjectMemberRole(
   // target, this blocks changing the *current* owner's row entirely.
   if (!member || member.role === "project_owner") return { error: GENERIC_ERROR };
 
+  if (await isOrganizationBlocked(supabase, { projectId: member.project_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (project_members_manage) re-validates authorization on this update.
   const { error } = await supabase
     .from("project_members")
@@ -874,6 +928,10 @@ export async function removeProjectMember(input: RemoveProjectMemberInput): Prom
   // would leave it with no one authorized to manage it.
   if (!member || member.role === "project_owner") return { error: GENERIC_ERROR };
 
+  if (await isOrganizationBlocked(supabase, { projectId: member.project_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (project_members_manage) re-validates authorization on this delete.
   const { error } = await supabase
     .from("project_members")
@@ -902,6 +960,10 @@ export async function createReport(input: CreateReportInput): Promise<ActionResu
   if (!parsed.success) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
+
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   const { data: project } = await supabase
     .from("projects")
@@ -1034,6 +1096,10 @@ export async function updateProject(input: UpdateProjectInput): Promise<ActionRe
   } = await supabase.auth.getUser();
   if (!user) return { error: GENERIC_ERROR };
 
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (projects_update_org_managers_or_project_owners) is the actual
   // authority here — org managers+ or the project's own manager/owner.
   const { data: updated, error } = await supabase
@@ -1083,6 +1149,10 @@ export async function updateProjectStatus(input: UpdateProjectStatusInput): Prom
   } = await supabase.auth.getUser();
   if (!user) return { error: GENERIC_ERROR };
 
+  if (await isOrganizationBlocked(supabase, { projectId: parsed.data.projectId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
+
   // RLS (projects_update_org_managers_or_project_owners) is the actual
   // authority here — org managers+ or the project's own manager/owner.
   const { data: updated, error } = await supabase
@@ -1128,6 +1198,10 @@ export async function deleteProject(input: DeleteProjectInput): Promise<ActionRe
     .eq("id", parsed.data.projectId)
     .maybeSingle();
   if (!project) return { error: GENERIC_ERROR };
+
+  if (await isOrganizationBlocked(supabase, { organizationId: project.organization_id })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // Manual pre-check for a clear error message — the RLS delete policy
   // (projects_delete_org_admins_or_project_owners) is the actual authority,

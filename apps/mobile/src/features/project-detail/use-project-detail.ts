@@ -5,8 +5,9 @@ import {
   getTotalFunded,
   hasOrgRoleAtLeast,
   hasProjectRoleAtLeast,
+  isSubscriptionBlocked,
 } from "@keurflow/business";
-import type { OrganizationRole, ProjectRole } from "@keurflow/types";
+import type { OrganizationRole, ProjectRole, SubscriptionStatus } from "@keurflow/types";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -48,6 +49,7 @@ export function useProjectDetail(id: string | undefined) {
       { data: photoRows },
       { data: memberRows },
       { data: reportRows },
+      { data: subscription },
       orgRoleResult,
       projectRoleResult,
     ] = await Promise.all([
@@ -84,6 +86,11 @@ export function useProjectDetail(id: string | undefined) {
         .select("id, period_start, period_end, summary, metrics, created_at")
         .eq("project_id", id)
         .order("created_at", { ascending: false }),
+      supabase
+        .from("subscriptions")
+        .select("status, trial_ends_at, plan_code")
+        .eq("organization_id", project.organization_id)
+        .maybeSingle(),
       user
         ? supabase
             .from("organization_members")
@@ -159,6 +166,16 @@ export function useProjectDetail(id: string | undefined) {
     const canManageAny =
       hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_manager");
 
+    // Client-side-only gate, same as web's Server Action guards but without
+    // a server layer to enforce it at — mobile already writes straight to
+    // Supabase with RLS as the sole authority, unchanged by this feature.
+    const isBlocked = subscription
+      ? isSubscriptionBlocked(
+          { status: subscription.status as SubscriptionStatus, trialEndsAt: subscription.trial_ends_at },
+          subscription.plan_code,
+        )
+      : false;
+
     setState({
       status: "ready",
       project,
@@ -177,6 +194,7 @@ export function useProjectDetail(id: string | undefined) {
       reports,
       currentUserId: user?.id ?? null,
       canManageAny,
+      isBlocked,
     });
   }, [id]);
 

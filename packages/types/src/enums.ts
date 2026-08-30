@@ -42,6 +42,7 @@ export const NOTIFICATION_TYPES = [
   "milestone_delayed",
   "report_created",
   "member_invited",
+  "trial_ending_soon",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
