@@ -1,8 +1,8 @@
-import { formatMoney } from "@keurflow/business";
 import { Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Badge } from "../../components/badge";
 import { Card } from "../../components/card";
+import { Money } from "../../components/money";
 import { RadialProgress } from "../../components/radial-progress";
 import { minorUnitFor } from "../../lib/projectSummary";
 import { useStyles, type Theme } from "../../theme";
@@ -19,17 +19,23 @@ export function ApercuTab({ state }: { state: Extract<ProjectDetailState, { stat
       <Animated.View entering={FadeInUp.duration(300)}>
         <Card>
           <Text style={styles.cardLabel}>Budget</Text>
-          <Text style={styles.bigValue}>
-            {formatMoney(project.budget_minor, project.currency_code, minorUnit)}
-          </Text>
+          <Money
+            amountMinor={project.budget_minor}
+            currencyCode={project.currency_code}
+            minorUnit={minorUnit}
+            style={styles.bigValue}
+          />
 
           <View style={styles.donutRow}>
             <View style={styles.donutBlock}>
               <RadialProgress percent={coveragePercent} centerLabel={`${coveragePercent}%`} tone="brand" />
               <Text style={styles.donutLabel}>Financé</Text>
-              <Text style={styles.donutValue}>
-                {formatMoney(totalFunded, project.currency_code, minorUnit)}
-              </Text>
+              <Money
+                amountMinor={totalFunded}
+                currencyCode={project.currency_code}
+                minorUnit={minorUnit}
+                style={styles.donutValue}
+              />
             </View>
             <View style={styles.donutBlock}>
               <RadialProgress percent={consumptionPercent} centerLabel={`${consumptionPercent}%`} tone="amber" />

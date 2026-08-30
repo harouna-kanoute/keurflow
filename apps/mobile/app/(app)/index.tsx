@@ -1,4 +1,4 @@
-import { formatMoney, isSubscriptionBlocked } from "@keurflow/business";
+import { isSubscriptionBlocked } from "@keurflow/business";
 import type { SubscriptionStatus } from "@keurflow/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -9,6 +9,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
+import { Money } from "../../src/components/money";
 import { ProgressBar } from "../../src/components/progress-bar";
 import { TrialLockedBanner } from "../../src/components/trial-locked-banner";
 import { useDrawer } from "../../src/lib/drawer-context";
@@ -218,21 +219,30 @@ export default function ProjectListScreen() {
                 <View style={styles.statsRow}>
                   <View>
                     <Text style={styles.statLabel}>Budget</Text>
-                    <Text style={styles.statValue}>
-                      {formatMoney(item.budget_minor, item.currency_code, minorUnit)}
-                    </Text>
+                    <Money
+                      amountMinor={item.budget_minor}
+                      currencyCode={item.currency_code}
+                      minorUnit={minorUnit}
+                      style={styles.statValue}
+                    />
                   </View>
                   <View>
                     <Text style={styles.statLabel}>Financé</Text>
-                    <Text style={styles.statValue}>
-                      {formatMoney(item.funded, item.currency_code, minorUnit)}
-                    </Text>
+                    <Money
+                      amountMinor={item.funded}
+                      currencyCode={item.currency_code}
+                      minorUnit={minorUnit}
+                      style={styles.statValue}
+                    />
                   </View>
                   <View>
                     <Text style={styles.statLabel}>Dépensé</Text>
-                    <Text style={styles.statValue}>
-                      {formatMoney(item.spent, item.currency_code, minorUnit)}
-                    </Text>
+                    <Money
+                      amountMinor={item.spent}
+                      currencyCode={item.currency_code}
+                      minorUnit={minorUnit}
+                      style={styles.statValue}
+                    />
                   </View>
                 </View>
               </Card>

@@ -1,9 +1,9 @@
-import { formatMoney } from "@keurflow/business";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../components/card";
+import { Money } from "../../components/money";
 import { minorUnitFor } from "../../lib/projectSummary";
 import { useStyles, type Theme } from "../../theme";
 import { AddFundingSheet } from "./add-funding-sheet";
@@ -58,7 +58,7 @@ export function FinancementsTab({
               {f.reference ? <Text style={styles.rowMeta}>{f.reference}</Text> : null}
               <Text style={styles.rowMeta}>{f.funding_date}</Text>
             </View>
-            <Text style={styles.rowAmount}>{formatMoney(f.amount_minor, f.currency_code, minorUnit)}</Text>
+            <Money amountMinor={f.amount_minor} currencyCode={f.currency_code} minorUnit={minorUnit} style={styles.rowAmount} />
           </Card>
         </Animated.View>
       ))}

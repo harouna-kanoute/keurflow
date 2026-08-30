@@ -18,6 +18,7 @@ export default function AppLayout() {
             headerTintColor: theme.colors.text,
             headerTitleStyle: { color: theme.colors.text },
             headerRight: () => <MenuButton />,
+            contentStyle: { backgroundColor: theme.colors.background },
           }}
         >
           {/* No native header here — the screen renders its own hero banner
@@ -27,6 +28,7 @@ export default function AppLayout() {
           <Stack.Screen name="projects/[id]" options={{ title: "" }} />
           <Stack.Screen name="billing" options={{ title: "Abonnement" }} />
           <Stack.Screen name="profile" options={{ title: "Mon profil" }} />
+          <Stack.Screen name="settings" options={{ title: "Paramètres" }} />
           <Stack.Screen name="support" options={{ title: "Support" }} />
           <Stack.Screen name="audit-log" options={{ title: "Journal d'activité" }} />
         </Stack>

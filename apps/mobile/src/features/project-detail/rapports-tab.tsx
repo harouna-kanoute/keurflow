@@ -1,9 +1,9 @@
-import { formatMoney } from "@keurflow/business";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../components/card";
+import { Money } from "../../components/money";
 import { RadialProgress } from "../../components/radial-progress";
 import { useStyles, type Theme } from "../../theme";
 import type { ProjectDetailState, Report } from "./types";
@@ -68,15 +68,21 @@ function ReportDetail({ report }: { report: Report }) {
           <View style={styles.statList}>
             <StatLine
               label="Budget"
-              value={formatMoney(metrics.budgetMinor, metrics.currencyCode, metrics.minorUnit)}
+              value={
+                <Money amountMinor={metrics.budgetMinor} currencyCode={metrics.currencyCode} minorUnit={metrics.minorUnit} />
+              }
             />
             <StatLine
               label="Financé (période)"
-              value={formatMoney(metrics.fundedInPeriodMinor, metrics.currencyCode, metrics.minorUnit)}
+              value={
+                <Money amountMinor={metrics.fundedInPeriodMinor} currencyCode={metrics.currencyCode} minorUnit={metrics.minorUnit} />
+              }
             />
             <StatLine
               label="Dépensé approuvé (période)"
-              value={formatMoney(metrics.approvedInPeriodMinor, metrics.currencyCode, metrics.minorUnit)}
+              value={
+                <Money amountMinor={metrics.approvedInPeriodMinor} currencyCode={metrics.currencyCode} minorUnit={metrics.minorUnit} />
+              }
             />
             <StatLine label="Étapes" value={`${metrics.milestonesCompleted}/${metrics.milestonesTotal}`} />
             <StatLine label="Documents manquants" value={String(metrics.documentsMissingCount)} />
@@ -89,7 +95,7 @@ function ReportDetail({ report }: { report: Report }) {
   );
 }
 
-function StatLine({ label, value }: { label: string; value: string }) {
+function StatLine({ label, value }: { label: string; value: ReactNode }) {
   const styles = useStyles(createStyles);
   return (
     <View style={styles.statLine}>

@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
+import { DisplayCurrencyProvider } from "../src/lib/display-currency-context";
 import { ThemeProvider, useStyles, useTheme, type Theme } from "../src/theme";
 
 function RootNavigation() {
@@ -40,12 +41,14 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <ThemedStatusBar />
-          <AuthProvider>
-            <RootNavigation />
-          </AuthProvider>
-        </GestureHandlerRootView>
+        <DisplayCurrencyProvider>
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <ThemedStatusBar />
+            <AuthProvider>
+              <RootNavigation />
+            </AuthProvider>
+          </GestureHandlerRootView>
+        </DisplayCurrencyProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

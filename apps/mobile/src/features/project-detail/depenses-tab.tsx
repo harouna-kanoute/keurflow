@@ -1,4 +1,3 @@
-import { formatMoney } from "@keurflow/business";
 import { EXPENSE_CATEGORIES } from "@keurflow/config";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -6,6 +5,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Badge } from "../../components/badge";
 import { Card } from "../../components/card";
+import { Money } from "../../components/money";
 import { minorUnitFor } from "../../lib/projectSummary";
 import { useStyles, type Theme } from "../../theme";
 import { AddExpenseSheet } from "./add-expense-sheet";
@@ -63,7 +63,7 @@ export function DepensesTab({
               </Text>
               <Badge label={EXPENSE_STATUS_LABELS[e.status] ?? e.status} tone={EXPENSE_TONES[e.status] ?? "neutral"} />
             </View>
-            <Text style={styles.rowAmount}>{formatMoney(e.amount_minor, e.currency_code, minorUnit)}</Text>
+            <Money amountMinor={e.amount_minor} currencyCode={e.currency_code} minorUnit={minorUnit} style={styles.rowAmount} />
           </Card>
         </Animated.View>
       ))}
