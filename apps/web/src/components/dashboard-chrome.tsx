@@ -20,7 +20,6 @@ import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { CurrencySettings } from "@/components/currency-settings";
 import { KeurFlowMark } from "@/components/keurflow-mark";
-import { SubscriptionLockOverlay } from "@/components/subscription-lock-overlay";
 import { TeamModal } from "@/components/team-modal";
 
 // Routes that must stay fully interactive even when isBlocked — the user
@@ -281,10 +280,7 @@ export function DashboardChrome({
           </div>
           </div>
         </div>
-        <main className="relative flex flex-1 flex-col">
-          {children}
-          {showLock && <SubscriptionLockOverlay />}
-        </main>
+        <main className="flex flex-1 flex-col">{children}</main>
       </div>
     </div>
   );
