@@ -20,7 +20,14 @@ import { Modal } from "@/components/modal";
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { CurrencySettings } from "@/components/currency-settings";
 import { KeurFlowMark } from "@/components/keurflow-mark";
+import { SubscriptionLockOverlay } from "@/components/subscription-lock-overlay";
 import { TeamModal } from "@/components/team-modal";
+
+// Routes that must stay fully interactive even when isBlocked — the user
+// needs to be able to pay, manage their account, or ask for help regardless
+// of subscription state. Mirrors the exact exclusion list from the
+// Server Action guards (dashboard/billing|settings|support/actions.ts).
+const UNLOCKED_ROUTE_PREFIXES = ["/dashboard/billing", "/dashboard/settings", "/dashboard/support"];
 
 function getInitials(displayName: string): string {
   const parts = displayName.trim().split(/\s+/).filter(Boolean);
@@ -37,6 +44,7 @@ export function DashboardChrome({
   organizationTypeLabel,
   unreadNotificationCount,
   hasOrganization,
+  isBlocked,
   children,
 }: {
   userName: string | null;
@@ -46,12 +54,15 @@ export function DashboardChrome({
   organizationTypeLabel: string | null;
   unreadNotificationCount: number;
   hasOrganization: boolean;
+  isBlocked: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const displayName = userName || userEmail;
+  const isUnlockedRoute = UNLOCKED_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  const showLock = isBlocked && !isUnlockedRoute;
 
   // Only meaningful while viewing one specific chantier — extracted from the
   // URL rather than fetched, so the global chrome never needs to know about
@@ -190,7 +201,19 @@ export function DashboardChrome({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 sm:px-6">
+        <div className="sticky top-0 z-20 flex flex-col border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          {showLock && (
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-amber-50 px-4 py-2 text-sm text-amber-900 sm:px-6 dark:bg-amber-900/30 dark:text-amber-200">
+              <span>
+                ⏳ Votre essai gratuit a fait son temps ! Vos chantiers vous attendent bien au
+                chaud — passez à l&apos;abonnement pour reprendre la main.
+              </span>
+              <Link href="/dashboard/billing" className="shrink-0 font-medium underline">
+                Voir les abonnements
+              </Link>
+            </div>
+          )}
+          <div className="flex h-16 shrink-0 items-center justify-between gap-3 px-4 sm:px-6">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -256,8 +279,12 @@ export function DashboardChrome({
               </div>
             </details>
           </div>
+          </div>
         </div>
-        <main className="flex flex-1 flex-col">{children}</main>
+        <main className="relative flex flex-1 flex-col">
+          {children}
+          {showLock && <SubscriptionLockOverlay />}
+        </main>
       </div>
     </div>
   );

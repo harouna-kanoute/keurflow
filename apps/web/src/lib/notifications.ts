@@ -48,7 +48,10 @@ export async function getProjectAudience(
 
 export async function notifyUsers(params: {
   userIds: readonly string[];
-  projectId: string;
+  // null for organization-level events with no single project to attach to
+  // (e.g. the trial-ending-soon reminder) — notifications.project_id is
+  // nullable for exactly this case.
+  projectId: string | null;
   type: NotificationType;
   title: string;
   body?: string;

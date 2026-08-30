@@ -1,4 +1,5 @@
-import { formatMoney } from "@keurflow/business";
+import { formatMoney, isSubscriptionBlocked } from "@keurflow/business";
+import type { SubscriptionStatus } from "@keurflow/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
@@ -9,6 +10,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
 import { ProgressBar } from "../../src/components/progress-bar";
+import { TrialLockedBanner } from "../../src/components/trial-locked-banner";
 import { useDrawer } from "../../src/lib/drawer-context";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
@@ -28,7 +30,13 @@ const STAGGER_STEP_MS = 60;
 type State =
   | { status: "loading" }
   | { status: "no-org" }
-  | { status: "ready"; orgName: string; orgType: string; projects: ProjectSummary[] };
+  | {
+      status: "ready";
+      orgName: string;
+      orgType: string;
+      projects: ProjectSummary[];
+      isBlocked: boolean;
+    };
 
 export default function ProjectListScreen() {
   const [state, setState] = useState<State>({ status: "loading" });
@@ -79,11 +87,18 @@ export default function ProjectListScreen() {
 
     // RLS (projects_select_org_or_project_members) filters this to projects
     // this user can actually see.
-    const { data: projects } = await supabase
-      .from("projects")
-      .select("id, name, status, budget_minor, currency_code")
-      .eq("organization_id", organization.id)
-      .order("created_at", { ascending: false });
+    const [{ data: projects }, { data: subscription }] = await Promise.all([
+      supabase
+        .from("projects")
+        .select("id, name, status, budget_minor, currency_code")
+        .eq("organization_id", organization.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("subscriptions")
+        .select("status, trial_ends_at, plan_code")
+        .eq("organization_id", organization.id)
+        .maybeSingle(),
+    ]);
 
     const summaries = await Promise.all((projects ?? []).map(loadProjectSummary));
 
@@ -92,6 +107,12 @@ export default function ProjectListScreen() {
       orgName: organization.name,
       orgType: organization.type,
       projects: summaries,
+      isBlocked: subscription
+        ? isSubscriptionBlocked(
+            { status: subscription.status as SubscriptionStatus, trialEndsAt: subscription.trial_ends_at },
+            subscription.plan_code,
+          )
+        : false,
     });
   }, []);
 
@@ -149,6 +170,11 @@ export default function ProjectListScreen() {
           </Text>
           <Text style={styles.orgName}>{state.orgName}</Text>
         </Card>
+      )}
+      {state.status === "ready" && state.isBlocked && (
+        <View style={styles.bannerWrap}>
+          <TrialLockedBanner />
+        </View>
       )}
     </View>
   );
@@ -260,6 +286,7 @@ function createStyles(theme: Theme) {
     },
     badgeDotText: { color: "#ffffff", fontSize: 9, fontWeight: "700" as const },
     orgCard: { marginTop: -theme.spacing.lg, marginHorizontal: theme.spacing.lg },
+    bannerWrap: { marginTop: theme.spacing.md, marginHorizontal: theme.spacing.lg },
     orgType: { ...theme.typography.caption, color: theme.colors.textMuted },
     orgName: { fontSize: 16, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
     empty: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" as const, marginTop: 12 },

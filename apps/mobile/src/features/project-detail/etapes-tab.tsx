@@ -17,10 +17,12 @@ export function EtapesTab({
   state,
   projectId,
   onChanged,
+  isBlocked,
 }: {
   state: Extract<ProjectDetailState, { status: "ready" }>;
   projectId: string;
   onChanged: () => void;
+  isBlocked: boolean;
 }) {
   const styles = useStyles(createStyles);
   const [addOpen, setAddOpen] = useState(false);
@@ -32,14 +34,16 @@ export function EtapesTab({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Étapes</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={() => setAddOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter une étape"
-        >
-          <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
-        </Pressable>
+        {!isBlocked && (
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setAddOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une étape"
+          >
+            <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
+          </Pressable>
+        )}
       </View>
 
       {milestones.length === 0 && <Text style={styles.empty}>Aucune étape.</Text>}
@@ -52,7 +56,7 @@ export function EtapesTab({
             style={styles.row}
           >
             <Text style={styles.rowText}>{m.name}</Text>
-            <Pressable onPress={() => setStatusTarget(m)}>
+            <Pressable onPress={() => setStatusTarget(m)} disabled={isBlocked}>
               <Badge label={MILESTONE_LABELS[m.status] ?? m.status} tone={MILESTONE_TONES[m.status] ?? "neutral"} />
             </Pressable>
           </Animated.View>

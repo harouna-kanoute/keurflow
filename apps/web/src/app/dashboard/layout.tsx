@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardChrome } from "@/components/dashboard-chrome";
+import { isOrganizationBlocked } from "@/lib/subscription-guard";
 
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   individual: "Particulier",
@@ -56,6 +57,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
         .single()
     : { data: null };
 
+  const isBlocked = membership
+    ? await isOrganizationBlocked(supabase, { organizationId: membership.organization_id })
+    : false;
+
   return (
     <DashboardChrome
       userName={profile?.full_name ?? null}
@@ -67,6 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }
       unreadNotificationCount={unreadNotificationCount ?? 0}
       hasOrganization={!!organization}
+      isBlocked={isBlocked}
     >
       {children}
     </DashboardChrome>

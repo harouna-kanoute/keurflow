@@ -20,10 +20,12 @@ export function DepensesTab({
   state,
   projectId,
   onChanged,
+  isBlocked,
 }: {
   state: Extract<ProjectDetailState, { status: "ready" }>;
   projectId: string;
   onChanged: () => void;
+  isBlocked: boolean;
 }) {
   const styles = useStyles(createStyles);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -34,14 +36,16 @@ export function DepensesTab({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Dépenses récentes</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={() => setSheetOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter une dépense"
-        >
-          <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
-        </Pressable>
+        {!isBlocked && (
+          <Pressable
+            style={styles.addButton}
+            onPress={() => setSheetOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une dépense"
+          >
+            <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
+          </Pressable>
+        )}
       </View>
 
       {expenses.length === 0 && <Text style={styles.empty}>Aucune dépense.</Text>}

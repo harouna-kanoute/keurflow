@@ -11,6 +11,7 @@ import { PhotosTab } from "../../../src/features/project-detail/photos-tab";
 import { RapportsTab } from "../../../src/features/project-detail/rapports-tab";
 import type { ProjectTabId } from "../../../src/features/project-detail/tab-ids";
 import { useProjectDetail } from "../../../src/features/project-detail/use-project-detail";
+import { TrialLockedBanner } from "../../../src/components/trial-locked-banner";
 import { useStyles, useTheme, type Theme } from "../../../src/theme";
 
 export default function ProjectDetailScreen() {
@@ -46,6 +47,11 @@ export default function ProjectDetailScreen() {
       <View style={styles.headerBlock}>
         <Text style={styles.title}>{state.project.name}</Text>
         {state.project.city ? <Text style={styles.subtitle}>{state.project.city}</Text> : null}
+        {state.isBlocked && (
+          <View style={styles.bannerWrap}>
+            <TrialLockedBanner />
+          </View>
+        )}
       </View>
 
       <ProjectTabBar active={activeTab} onChange={setActiveTab} />
@@ -59,16 +65,36 @@ export default function ProjectDetailScreen() {
       >
         {activeTab === "apercu" && <ApercuTab state={state} />}
         {activeTab === "financements" && (
-          <FinancementsTab state={state} projectId={state.project.id} onChanged={reload} />
+          <FinancementsTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
         )}
         {activeTab === "depenses" && (
-          <DepensesTab state={state} projectId={state.project.id} onChanged={reload} />
+          <DepensesTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
         )}
         {activeTab === "etapes" && (
-          <EtapesTab state={state} projectId={state.project.id} onChanged={reload} />
+          <EtapesTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
         )}
         {activeTab === "photos" && (
-          <PhotosTab state={state} projectId={state.project.id} onChanged={reload} />
+          <PhotosTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
         )}
         {activeTab === "equipe" && <EquipeTab state={state} />}
         {activeTab === "rapports" && <RapportsTab state={state} />}
@@ -87,6 +113,7 @@ function createStyles(theme: Theme) {
       justifyContent: "center" as const,
     },
     headerBlock: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, gap: 2 },
+    bannerWrap: { marginTop: theme.spacing.sm },
     title: { ...theme.typography.title, color: theme.colors.text },
     subtitle: { fontSize: 13, color: theme.colors.textMuted },
     container: { padding: theme.spacing.lg, gap: theme.spacing.md },

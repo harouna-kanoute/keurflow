@@ -12,10 +12,12 @@ export function PhotosTab({
   state,
   projectId,
   onChanged,
+  isBlocked,
 }: {
   state: Extract<ProjectDetailState, { status: "ready" }>;
   projectId: string;
   onChanged: () => void;
+  isBlocked: boolean;
 }) {
   const styles = useStyles(createStyles);
   const [pickedAsset, setPickedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -46,21 +48,23 @@ export function PhotosTab({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Photos</Text>
-        <Pressable
-          style={styles.addButton}
-          onPress={pickPhoto}
-          accessibilityRole="button"
-          accessibilityLabel="Ajouter une photo"
-        >
-          <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
-        </Pressable>
+        {!isBlocked && (
+          <Pressable
+            style={styles.addButton}
+            onPress={pickPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Ajouter une photo"
+          >
+            <Ionicons name="add" size={18} color={styles.addButtonIcon.color} />
+          </Pressable>
+        )}
       </View>
 
       {photos.length === 0 && <Text style={styles.empty}>Aucune photo.</Text>}
 
       <View style={styles.grid}>
         {photos.map((photo, index) => {
-          const canDelete = canManageAny || photo.uploaded_by === currentUserId;
+          const canDelete = !isBlocked && (canManageAny || photo.uploaded_by === currentUserId);
           return (
             <Animated.View
               key={photo.id}

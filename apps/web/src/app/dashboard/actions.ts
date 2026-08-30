@@ -11,9 +11,12 @@ import {
 } from "@keurflow/validation";
 import { createClient } from "@/lib/supabase/server";
 import { logAudit } from "@/lib/audit";
+import { isOrganizationBlocked } from "@/lib/subscription-guard";
 
 // Generic fallback per §68 — real Supabase error details never reach the client.
 const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
+const TRIAL_LOCKED_ERROR =
+  "Votre essai gratuit est terminé. Passez à un abonnement pour continuer à modifier vos chantiers.";
 
 export type ActionResult =
   | { error: string; requiresUpgrade?: boolean }
@@ -61,6 +64,10 @@ export async function updateOrganization(input: UpdateOrganizationInput): Promis
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: GENERIC_ERROR };
+
+  if (await isOrganizationBlocked(supabase, { organizationId: parsed.data.organizationId })) {
+    return { error: TRIAL_LOCKED_ERROR, requiresUpgrade: true };
+  }
 
   // RLS (organizations_update_admins) is the actual authority here — only
   // an owner/admin of this organization can update it.
