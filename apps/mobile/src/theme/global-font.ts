@@ -78,9 +78,17 @@ export function setGlobalFont(font: FontChoice) {
     // An explicit fontFamily already set by the component wins (e.g. an
     // icon font) — this only fills in the gap for plain text.
     if (!family || flat.fontFamily) return origin;
+    // Returning a plain merged object here, not [origin.props.style, {...}] —
+    // react-native-web's nested-Text ("<Text> inside another <Text>", e.g.
+    // Money rendered as a StatLine's value) takes a lower-level DOM path
+    // that doesn't run a raw style array through StyleSheet.flatten first,
+    // and ends up trying to assign the array's own numeric keys ("0", "1")
+    // as CSS properties directly — "Failed to set an indexed property [0]
+    // on CSSStyleDeclaration". flat is already the fully-merged object from
+    // above, so this is a safe, real object either way.
     return {
       ...origin,
-      props: { ...origin.props, style: [origin.props.style, { fontFamily: family }] },
+      props: { ...origin.props, style: { ...flat, fontFamily: family } },
     };
   };
 }
