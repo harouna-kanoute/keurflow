@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Badge } from "../../components/badge";
 import { Card } from "../../components/card";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { AddMilestoneSheet } from "./add-milestone-sheet";
 import { MilestoneStatusSheet } from "./milestone-status-sheet";
 import { MILESTONE_LABELS, MILESTONE_TONES } from "./status-labels";
@@ -24,6 +24,7 @@ export function EtapesTab({
   onChanged: () => void;
   isBlocked: boolean;
 }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [addOpen, setAddOpen] = useState(false);
   const [statusTarget, setStatusTarget] = useState<Milestone | null>(null);
@@ -52,7 +53,12 @@ export function EtapesTab({
         {milestones.map((m, index) => (
           <Animated.View
             key={m.id}
-            entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(250)}
+            entering={entranceAnimation(theme.reducedMotion, {
+              index,
+              maxStaggerIndex: MAX_STAGGER_INDEX,
+              stepMs: STAGGER_STEP_MS,
+              duration: 250,
+            })}
             style={styles.row}
           >
             <Text style={styles.rowText}>{m.name}</Text>

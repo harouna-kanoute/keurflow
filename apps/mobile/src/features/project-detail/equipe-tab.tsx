@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Card } from "../../components/card";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { MemberProfileSheet } from "./member-profile-sheet";
 import { PROJECT_ROLE_LABELS } from "./status-labels";
 import type { Member, ProjectDetailState } from "./types";
@@ -21,6 +21,7 @@ function initialsFor(name: string) {
 
 // Read-only in Phase 1 — invite/edit-role/remove are deferred to Phase 2.
 export function EquipeTab({ state }: { state: Extract<ProjectDetailState, { status: "ready" }> }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [selected, setSelected] = useState<Member | null>(null);
   const { members } = state;
@@ -35,7 +36,12 @@ export function EquipeTab({ state }: { state: Extract<ProjectDetailState, { stat
         {members.map((m, index) => (
           <Animated.View
             key={m.id}
-            entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(250)}
+            entering={entranceAnimation(theme.reducedMotion, {
+              index,
+              maxStaggerIndex: MAX_STAGGER_INDEX,
+              stepMs: STAGGER_STEP_MS,
+              duration: 250,
+            })}
           >
             <Pressable style={styles.row} onPress={() => setSelected(m)}>
               {m.avatarSignedUrl ? (

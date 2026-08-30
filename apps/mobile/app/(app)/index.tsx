@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
 import { Money } from "../../src/components/money";
@@ -15,7 +15,7 @@ import { TrialLockedBanner } from "../../src/components/trial-locked-banner";
 import { useDrawer } from "../../src/lib/drawer-context";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
-import { useStyles, useTheme, type Theme } from "../../src/theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../src/theme";
 
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   individual: "Particulier",
@@ -208,7 +208,12 @@ export default function ProjectListScreen() {
           const minorUnit = minorUnitFor(item.currency_code);
           return (
             <Animated.View
-              entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(400)}
+              entering={entranceAnimation(theme.reducedMotion, {
+                index,
+                maxStaggerIndex: MAX_STAGGER_INDEX,
+                stepMs: STAGGER_STEP_MS,
+                duration: 400,
+              })}
             >
               <Card onPress={() => router.push(`/projects/${item.id}`)} style={styles.projectCard}>
                 <View style={styles.cardTop}>
