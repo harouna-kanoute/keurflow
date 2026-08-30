@@ -1,9 +1,10 @@
-import { formatMoney, getTrialDaysRemaining, hasOrgRoleAtLeast } from "@keurflow/business";
+import { getTrialDaysRemaining, hasOrgRoleAtLeast } from "@keurflow/business";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Linking, ScrollView, Text, View } from "react-native";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
+import { Money } from "../../src/components/money";
 import { PrimaryButton } from "../../src/components/primary-button";
 import { useOrgMembership } from "../../src/features/navigation/use-org-membership";
 import { minorUnitFor } from "../../src/lib/projectSummary";
@@ -161,7 +162,7 @@ export default function BillingScreen() {
 
         {displayPriceMinor > 0 && (
           <Text style={styles.price}>
-            {formatMoney(displayPriceMinor, subscription.currency_code, minorUnit)}
+            <Money amountMinor={displayPriceMinor} currencyCode={subscription.currency_code} minorUnit={minorUnit} />
             <Text style={styles.pricePeriod}>
               {" "}
               / {PERIOD_LABELS[subscription.billing_period] ?? subscription.billing_period}

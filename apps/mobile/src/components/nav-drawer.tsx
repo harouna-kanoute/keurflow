@@ -11,7 +11,14 @@ import { useStyles, type Theme } from "../theme";
 
 const DRAWER_WIDTH = 280;
 
-type NavHref = "/" | "/notifications" | "/billing" | "/profile" | "/audit-log" | "/support";
+type NavHref =
+  | "/"
+  | "/notifications"
+  | "/billing"
+  | "/profile"
+  | "/settings"
+  | "/audit-log"
+  | "/support";
 type NavItem = { label: string; href: NavHref; icon: keyof typeof Ionicons.glyphMap };
 
 const GENERAL_ITEMS: NavItem[] = [
@@ -48,6 +55,7 @@ export function NavDrawer() {
 
   const accountItems: NavItem[] = [
     { label: "Mon profil", href: "/profile", icon: "person-outline" },
+    { label: "Paramètres", href: "/settings", icon: "settings-outline" },
     ...(membership
       ? [{ label: "Journal d'activité", href: "/audit-log", icon: "time-outline" } as NavItem]
       : []),
