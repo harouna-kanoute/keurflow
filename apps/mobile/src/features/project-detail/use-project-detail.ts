@@ -10,15 +10,14 @@ import type { OrganizationRole, ProjectRole } from "@keurflow/types";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import type { Expense, Photo, ProjectDetailState } from "./types";
+import type { Expense, Member, Photo, ProjectDetailState, Report } from "./types";
 
 const PHOTO_LIMIT = 30;
 
 // Fetches everything the project detail screen's 7 tabs need in one pass —
 // mirrors web's own model (all tabs pre-rendered from data fetched once;
 // switching tabs never re-fetches). Extended incrementally as each tab's PR
-// lands rather than fetching data no tab uses yet (members/reports arrive
-// empty until PR 3 wires up the corresponding queries).
+// lands rather than fetching data no tab uses yet.
 export function useProjectDetail(id: string | undefined) {
   const [state, setState] = useState<ProjectDetailState>({ status: "loading" });
   const [refreshing, setRefreshing] = useState(false);
@@ -47,6 +46,8 @@ export function useProjectDetail(id: string | undefined) {
       { data: milestones },
       { data: paymentMethods },
       { data: photoRows },
+      { data: memberRows },
+      { data: reportRows },
       orgRoleResult,
       projectRoleResult,
     ] = await Promise.all([
@@ -73,6 +74,16 @@ export function useProjectDetail(id: string | undefined) {
         .eq("project_id", id)
         .order("created_at", { ascending: false })
         .limit(PHOTO_LIMIT),
+      supabase
+        .from("project_members")
+        .select("id, user_id, role, status")
+        .eq("project_id", id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("reports")
+        .select("id, period_start, period_end, summary, metrics, created_at")
+        .eq("project_id", id)
+        .order("created_at", { ascending: false }),
       user
         ? supabase
             .from("organization_members")
@@ -110,6 +121,39 @@ export function useProjectDetail(id: string | undefined) {
       photos = photos.map((p, i) => ({ ...p, signedUrl: signed?.[i]?.signedUrl ?? null }));
     }
 
+    // Web fetches profiles as a separate .in() query rather than an embedded
+    // join — project_members.user_id FKs to auth.users, not profiles, so
+    // PostgREST can't traverse it in one select. Mirrored here exactly.
+    const memberUserIds = (memberRows ?? []).map((m) => m.user_id);
+    const { data: memberProfiles } = memberUserIds.length
+      ? await supabase.from("profiles").select("id, full_name, avatar_url, phone").in("id", memberUserIds)
+      : { data: [] as { id: string; full_name: string | null; avatar_url: string | null; phone: string | null }[] };
+
+    const avatarPaths = (memberProfiles ?? []).map((p) => p.avatar_url).filter((p): p is string => !!p);
+    const { data: avatarSigned } =
+      avatarPaths.length > 0
+        ? await supabase.storage.from("avatars").createSignedUrls(avatarPaths, 3600)
+        : { data: [] as { signedUrl: string }[] };
+    const avatarUrlByPath = new Map(avatarPaths.map((path, i) => [path, avatarSigned?.[i]?.signedUrl ?? null]));
+
+    const members: Member[] = (memberRows ?? []).map((m) => {
+      const profile = memberProfiles?.find((p) => p.id === m.user_id);
+      return {
+        id: m.id,
+        user_id: m.user_id,
+        role: m.role,
+        status: m.status,
+        fullName: profile?.full_name ?? "Utilisateur",
+        phone: profile?.phone ?? null,
+        avatarSignedUrl: profile?.avatar_url ? (avatarUrlByPath.get(profile.avatar_url) ?? null) : null,
+      };
+    });
+
+    const reports: Report[] = (reportRows ?? []).map((r) => ({
+      ...r,
+      metrics: r.metrics as Report["metrics"],
+    }));
+
     const orgRole = (orgRoleResult.data?.role as OrganizationRole | undefined) ?? "viewer";
     const projectRole = (projectRoleResult.data?.role as ProjectRole | undefined) ?? "project_viewer";
     const canManageAny =
@@ -129,8 +173,8 @@ export function useProjectDetail(id: string | undefined) {
       fundings: fundings ?? [],
       paymentMethods: paymentMethods ?? [],
       photos,
-      members: [],
-      reports: [],
+      members,
+      reports,
       currentUserId: user?.id ?? null,
       canManageAny,
     });
