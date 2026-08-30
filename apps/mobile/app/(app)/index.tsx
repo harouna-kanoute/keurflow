@@ -9,6 +9,7 @@ import Animated, { FadeInUp } from "react-native-reanimated";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
 import { ProgressBar } from "../../src/components/progress-bar";
+import { useDrawer } from "../../src/lib/drawer-context";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
 import { useStyles, useTheme, type Theme } from "../../src/theme";
@@ -35,6 +36,7 @@ export default function ProjectListScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const theme = useTheme();
   const styles = useStyles(createStyles);
+  const { open: openDrawer } = useDrawer();
 
   const load = useCallback(async () => {
     const {
@@ -118,6 +120,9 @@ export default function ProjectListScreen() {
       <View style={styles.heroTopRow}>
         <Text style={styles.heroTitle}>Mes chantiers</Text>
         <View style={styles.heroActions}>
+          <Pressable onPress={openDrawer} style={styles.iconButton} accessibilityLabel="Ouvrir le menu">
+            <Ionicons name="menu-outline" size={20} color="#ffffff" />
+          </Pressable>
           <Pressable onPress={() => router.push("/notifications")} style={styles.iconButton}>
             <Ionicons name="notifications-outline" size={20} color="#ffffff" />
             {unreadCount > 0 && (
