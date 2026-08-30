@@ -102,7 +102,7 @@ export default function NotificationsScreen() {
         <View style={[styles.card, !item.read_at && styles.cardUnread]}>
           <View style={{ flex: 1 }}>
             <Text style={styles.cardTitle}>{item.title}</Text>
-            {item.body && <Text style={styles.cardBody}>{item.body}</Text>}
+            {item.body ? <Text style={styles.cardBody}>{item.body}</Text> : null}
             <Pressable
               disabled={!item.project_id}
               onPress={() => item.project_id && router.push(`/projects/${item.project_id}`)}
