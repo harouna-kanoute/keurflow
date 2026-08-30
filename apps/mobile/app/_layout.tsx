@@ -1,3 +1,16 @@
+import {
+  Geist_100Thin,
+  Geist_200ExtraLight,
+  Geist_300Light,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+  Geist_800ExtraBold,
+  Geist_900Black,
+} from "@expo-google-fonts/geist";
+import { Lora_400Regular, Lora_500Medium, Lora_600SemiBold, Lora_700Bold } from "@expo-google-fonts/lora";
+import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -38,6 +51,34 @@ function RootNavigation() {
 }
 
 export default function RootLayout() {
+  // Both font choices ("Moderne"/"Classique") need their files loaded up
+  // front — the choice itself is only known once ThemeProvider reads it from
+  // AsyncStorage, which happens *after* this, so there's no way to load just
+  // the active one. "Système" needs nothing (native OS font).
+  const [fontsLoaded] = useFonts({
+    Geist_100Thin,
+    Geist_200ExtraLight,
+    Geist_300Light,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    Geist_800ExtraBold,
+    Geist_900Black,
+    Lora_400Regular,
+    Lora_500Medium,
+    Lora_600SemiBold,
+    Lora_700Bold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#08090d" }}>
+        <ActivityIndicator color="#6c5cd9" />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>

@@ -3,9 +3,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { PrimaryButton } from "../../src/components/primary-button";
-import { useStyles, useTheme, type Theme } from "../../src/theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../src/theme";
 
 const VALUE_PROPS: { icon: keyof typeof Ionicons.glyphMap; text: string }[] = [
   { icon: "wallet-outline", text: "Suivi budgétaire en temps réel" },
@@ -25,17 +25,23 @@ export default function WelcomeScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <Animated.View entering={FadeInDown.duration(500)}>
+        <Animated.View entering={entranceAnimation(theme.reducedMotion, { direction: "down", duration: 500 })}>
           <View style={styles.eyebrow}>
             <Text style={styles.eyebrowText}>Pensé pour la diaspora africaine</Text>
           </View>
         </Animated.View>
 
-        <Animated.Text entering={FadeInDown.delay(90).duration(500)} style={styles.title}>
+        <Animated.Text
+          entering={entranceAnimation(theme.reducedMotion, { direction: "down", delay: 90, duration: 500 })}
+          style={styles.title}
+        >
           Votre projet en Afrique. Votre visibilité, où que vous soyez.
         </Animated.Text>
 
-        <Animated.View entering={FadeInDown.delay(180).duration(500)} style={styles.propsList}>
+        <Animated.View
+          entering={entranceAnimation(theme.reducedMotion, { direction: "down", delay: 180, duration: 500 })}
+          style={styles.propsList}
+        >
           {VALUE_PROPS.map((item) => (
             <View key={item.text} style={styles.propRow}>
               <View style={styles.propIcon}>
@@ -47,7 +53,10 @@ export default function WelcomeScreen() {
         </Animated.View>
       </LinearGradient>
 
-      <Animated.View entering={FadeInDown.delay(270).duration(500)} style={styles.actions}>
+      <Animated.View
+        entering={entranceAnimation(theme.reducedMotion, { direction: "down", delay: 270, duration: 500 })}
+        style={styles.actions}
+      >
         <PrimaryButton size="lg" onPress={() => router.push("/signup")}>
           Commencer gratuitement
         </PrimaryButton>

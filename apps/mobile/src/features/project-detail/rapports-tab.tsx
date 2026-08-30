@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../components/card";
 import { Money } from "../../components/money";
 import { RadialProgress } from "../../components/radial-progress";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import type { ProjectDetailState, Report } from "./types";
 
 const MAX_STAGGER_INDEX = 8;
@@ -14,6 +14,7 @@ const STAGGER_STEP_MS = 50;
 // Read-only in Phase 1 — creating a report and PDF/print export (web's
 // html2canvas + jsPDF pipeline, browser-only) are out of scope for mobile.
 export function RapportsTab({ state }: { state: Extract<ProjectDetailState, { status: "ready" }> }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { reports } = state;
@@ -29,7 +30,12 @@ export function RapportsTab({ state }: { state: Extract<ProjectDetailState, { st
         return (
           <Animated.View
             key={report.id}
-            entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(250)}
+            entering={entranceAnimation(theme.reducedMotion, {
+              index,
+              maxStaggerIndex: MAX_STAGGER_INDEX,
+              stepMs: STAGGER_STEP_MS,
+              duration: 250,
+            })}
           >
             <Card style={styles.card}>
               <Pressable

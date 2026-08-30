@@ -1,22 +1,23 @@
 import { Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Badge } from "../../components/badge";
 import { Card } from "../../components/card";
 import { Money } from "../../components/money";
 import { RadialProgress } from "../../components/radial-progress";
 import { minorUnitFor } from "../../lib/projectSummary";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { MILESTONE_LABELS, MILESTONE_TONES } from "./status-labels";
 import type { ProjectDetailState } from "./types";
 
 export function ApercuTab({ state }: { state: Extract<ProjectDetailState, { status: "ready" }> }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const { project, totalFunded, coveragePercent, consumptionPercent, milestoneProgress, milestones } = state;
   const minorUnit = minorUnitFor(project.currency_code);
 
   return (
     <View style={styles.container}>
-      <Animated.View entering={FadeInUp.duration(300)}>
+      <Animated.View entering={entranceAnimation(theme.reducedMotion, { duration: 300 })}>
         <Card>
           <Text style={styles.cardLabel}>Budget</Text>
           <Money
@@ -45,7 +46,7 @@ export function ApercuTab({ state }: { state: Extract<ProjectDetailState, { stat
         </Card>
       </Animated.View>
 
-      <Animated.View entering={FadeInUp.delay(70).duration(300)}>
+      <Animated.View entering={entranceAnimation(theme.reducedMotion, { delay: 70, duration: 300 })}>
         <Card style={styles.stackedCard}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionHeaderLeft}>

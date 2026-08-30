@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Card } from "../../components/card";
 import { Money } from "../../components/money";
 import { minorUnitFor } from "../../lib/projectSummary";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { AddFundingSheet } from "./add-funding-sheet";
 import type { ProjectDetailState } from "./types";
 
@@ -23,6 +23,7 @@ export function FinancementsTab({
   onChanged: () => void;
   isBlocked: boolean;
 }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { project, fundings, paymentMethods } = state;
@@ -50,7 +51,12 @@ export function FinancementsTab({
       {fundings.map((f, index) => (
         <Animated.View
           key={f.id}
-          entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(300)}
+          entering={entranceAnimation(theme.reducedMotion, {
+            index,
+            maxStaggerIndex: MAX_STAGGER_INDEX,
+            stepMs: STAGGER_STEP_MS,
+            duration: 300,
+          })}
         >
           <Card style={styles.row}>
             <View style={{ flexShrink: 1 }}>

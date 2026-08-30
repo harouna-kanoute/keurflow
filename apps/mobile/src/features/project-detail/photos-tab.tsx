@@ -1,10 +1,10 @@
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { UploadPhotoSheet } from "./upload-photo-sheet";
 import type { ProjectDetailState } from "./types";
 
@@ -19,6 +19,7 @@ export function PhotosTab({
   onChanged: () => void;
   isBlocked: boolean;
 }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [pickedAsset, setPickedAsset] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const { photos, currentUserId, canManageAny } = state;
@@ -68,7 +69,12 @@ export function PhotosTab({
           return (
             <Animated.View
               key={photo.id}
-              entering={FadeInUp.delay(Math.min(index, 12) * 30).duration(250)}
+              entering={entranceAnimation(theme.reducedMotion, {
+                index,
+                maxStaggerIndex: 12,
+                stepMs: 30,
+                duration: 250,
+              })}
               style={styles.tile}
             >
               {photo.signedUrl && (
