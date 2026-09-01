@@ -1,13 +1,13 @@
-import { formatMoney } from "@keurflow/business";
 import { EXPENSE_CATEGORIES } from "@keurflow/config";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import Animated, { FadeInUp } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Badge } from "../../components/badge";
 import { Card } from "../../components/card";
+import { Money } from "../../components/money";
 import { minorUnitFor } from "../../lib/projectSummary";
-import { useStyles, type Theme } from "../../theme";
+import { entranceAnimation, useStyles, useTheme, type Theme } from "../../theme";
 import { AddExpenseSheet } from "./add-expense-sheet";
 import { EXPENSE_STATUS_LABELS, EXPENSE_TONES } from "./status-labels";
 import type { ProjectDetailState } from "./types";
@@ -27,6 +27,7 @@ export function DepensesTab({
   onChanged: () => void;
   isBlocked: boolean;
 }) {
+  const theme = useTheme();
   const styles = useStyles(createStyles);
   const [sheetOpen, setSheetOpen] = useState(false);
   const { project, expenses } = state;
@@ -53,7 +54,12 @@ export function DepensesTab({
       {expenses.map((e, index) => (
         <Animated.View
           key={e.id}
-          entering={FadeInUp.delay(Math.min(index, MAX_STAGGER_INDEX) * STAGGER_STEP_MS).duration(300)}
+          entering={entranceAnimation(theme.reducedMotion, {
+            index,
+            maxStaggerIndex: MAX_STAGGER_INDEX,
+            stepMs: STAGGER_STEP_MS,
+            duration: 300,
+          })}
         >
           <Card style={styles.row}>
             <View style={{ flexShrink: 1, gap: 4 }}>
@@ -63,7 +69,7 @@ export function DepensesTab({
               </Text>
               <Badge label={EXPENSE_STATUS_LABELS[e.status] ?? e.status} tone={EXPENSE_TONES[e.status] ?? "neutral"} />
             </View>
-            <Text style={styles.rowAmount}>{formatMoney(e.amount_minor, e.currency_code, minorUnit)}</Text>
+            <Money amountMinor={e.amount_minor} currencyCode={e.currency_code} minorUnit={minorUnit} style={styles.rowAmount} />
           </Card>
         </Animated.View>
       ))}
