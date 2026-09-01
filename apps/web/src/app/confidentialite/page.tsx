@@ -35,20 +35,26 @@ export default function ConfidentialitePage() {
             <ul className="list-disc pl-5">
               <li>À l&apos;inscription : email, nom complet, pays.</li>
               <li>
+                Profil (optionnel) : numéro WhatsApp, photo de profil que vous choisissez
+                d&apos;ajouter.
+              </li>
+              <li>
                 Données de projet que vous saisissez vous-même : nom et budget d&apos;un
                 chantier, financements, dépenses, catégories, dates, étapes, photos et
-                documents justificatifs que vous choisissez d&apos;ajouter.
+                documents justificatifs que vous choisissez d&apos;ajouter — y compris les
+                photos prises ou choisies depuis la galerie de votre téléphone dans
+                l&apos;application mobile.
               </li>
               <li>
                 Facturation : gérée directement par Stripe — KeurFlow ne stocke jamais de
                 numéro de carte bancaire, seulement l&apos;identifiant client Stripe et le
                 statut de l&apos;abonnement.
               </li>
-              <li>Cookies techniques strictement nécessaires à la connexion (session).</li>
+              <li>Cookies techniques strictement nécessaires à la connexion (session, application web uniquement).</li>
             </ul>
             <p className="mt-2">
               Aucun outil de suivi publicitaire ou d&apos;analyse comportementale
-              n&apos;est utilisé au moment de la rédaction.
+              n&apos;est utilisé au moment de la rédaction, sur le web comme sur mobile.
             </p>
           </section>
 
@@ -103,8 +109,18 @@ export default function ConfidentialitePage() {
             <h2 className="mb-1 font-semibold text-slate-900 dark:text-slate-50">Vos droits</h2>
             <p>
               Conformément au RGPD, vous disposez d&apos;un droit d&apos;accès, de
-              rectification, d&apos;effacement et de portabilité de vos données. Pour
-              exercer ces droits : [À COMPLÉTER — adresse email de contact dédiée].
+              rectification, d&apos;effacement et de portabilité de vos données. Votre
+              compte est partagé entre l&apos;application web et l&apos;application mobile
+              : vous pouvez le supprimer, ainsi que toutes ses données, depuis les réglages
+              de l&apos;application web sur{" "}
+              <a
+                href="https://web-keurflow.vercel.app/dashboard/settings"
+                className="underline"
+              >
+                web-keurflow.vercel.app/dashboard/settings
+              </a>
+              , même si vous utilisez principalement l&apos;app mobile. Pour exercer ces
+              droits ou toute autre question : harounaniaka@gmail.com.
             </p>
           </section>
         </div>
