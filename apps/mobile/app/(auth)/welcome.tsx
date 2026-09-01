@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
+import { KeurFlowMark } from "../../src/components/keurflow-mark";
 import { PrimaryButton } from "../../src/components/primary-button";
 import { entranceAnimation, useStyles, useTheme, type Theme } from "../../src/theme";
 
@@ -25,7 +26,16 @@ export default function WelcomeScreen() {
         end={{ x: 1, y: 1 }}
         style={styles.hero}
       >
-        <Animated.View entering={entranceAnimation(theme.reducedMotion, { direction: "down", duration: 500 })}>
+        <Animated.View
+          entering={entranceAnimation(theme.reducedMotion, { direction: "down", duration: 400 })}
+          style={styles.markWrap}
+        >
+          <KeurFlowMark size={48} />
+        </Animated.View>
+
+        <Animated.View
+          entering={entranceAnimation(theme.reducedMotion, { direction: "down", delay: 60, duration: 500 })}
+        >
           <View style={styles.eyebrow}>
             <Text style={styles.eyebrowText}>Pensé pour la diaspora africaine</Text>
           </View>
@@ -82,6 +92,7 @@ function createStyles(theme: Theme) {
       borderBottomLeftRadius: theme.radius.lg,
       borderBottomRightRadius: theme.radius.lg,
     },
+    markWrap: { marginBottom: theme.spacing.lg },
     eyebrow: {
       alignSelf: "flex-start" as const,
       backgroundColor: theme.colors.overlayOnPrimary,

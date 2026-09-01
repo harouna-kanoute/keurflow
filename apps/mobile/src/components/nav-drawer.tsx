@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect } from "react";
-import { Pressable, ScrollView, Text } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeurFlowMark } from "./keurflow-mark";
 import { useOrgMembership } from "../features/navigation/use-org-membership";
 import { supabase } from "../lib/supabase";
 import { useDrawer } from "../lib/drawer-context";
@@ -73,7 +74,10 @@ export function NavDrawer() {
         style={[styles.drawer, drawerStyle, { paddingTop: insets.top + 16 }]}
       >
         <ScrollView contentContainerStyle={styles.content}>
-          <Text style={styles.brand}>KeurFlow</Text>
+          <View style={styles.brandRow}>
+            <KeurFlowMark size={28} />
+            <Text style={styles.brand}>KeurFlow</Text>
+          </View>
 
           <Text style={styles.groupLabel}>Général</Text>
           {GENERAL_ITEMS.map((item) => (
@@ -132,11 +136,16 @@ function createStyles(theme: Theme) {
       paddingBottom: 16,
     },
     content: { paddingHorizontal: theme.spacing.lg, gap: 2 },
+    brandRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.lg,
+    },
     brand: {
       fontSize: 18,
       fontWeight: "700" as const,
       color: theme.colors.text,
-      marginBottom: theme.spacing.lg,
     },
     groupLabel: {
       fontSize: 11,

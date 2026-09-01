@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { FormInput } from "../../src/components/form-input";
+import { KeurFlowMark } from "../../src/components/keurflow-mark";
 import { SelectField } from "../../src/components/select-field";
 import { PrimaryButton } from "../../src/components/primary-button";
 import { supabase } from "../../src/lib/supabase";
@@ -69,7 +70,9 @@ export default function SignupScreen() {
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.eyebrow}>KEURFLOW</Text>
+        <View style={styles.markWrap}>
+          <KeurFlowMark size={56} />
+        </View>
         <Text style={styles.title}>Créer un compte</Text>
 
         <View style={styles.form}>
@@ -132,19 +135,13 @@ function createStyles(theme: Theme) {
   return {
     flex: { flex: 1, backgroundColor: theme.colors.background },
     container: { flexGrow: 1, justifyContent: "center" as const, paddingHorizontal: 24, paddingVertical: 48 },
-    eyebrow: {
-      fontSize: 12,
-      fontWeight: "600" as const,
-      letterSpacing: 1,
-      color: theme.colors.textMuted,
-      textAlign: "center" as const,
-    },
+    markWrap: { alignItems: "center" as const },
     title: {
       fontSize: 24,
       fontWeight: "700" as const,
       color: theme.colors.text,
       textAlign: "center" as const,
-      marginTop: 6,
+      marginTop: 16,
       marginBottom: 32,
     },
     form: { gap: 16 },
