@@ -97,6 +97,14 @@ export default async function BillingPage({
       ? await supabase.from("plans").select("price_minor").eq("code", "individual_unlimited").single()
       : { data: null };
 
+  // subscription.plan_code is the *current* plan, which can be a trial-only
+  // code (individual_trial) that Stripe checkout can never target directly —
+  // CHECKOUT_PLAN_CODES in actions.ts deliberately excludes it. Resolve to
+  // the real paid plan the trial converts to before handing it to
+  // BillingPlanCards, which passes it straight through to the checkout button.
+  const checkoutPlanCode =
+    subscription?.plan_code === "individual_trial" ? "individual" : subscription?.plan_code;
+
   const canManageBilling = hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin");
   const trialDaysRemaining = subscription
     ? getTrialDaysRemaining(subscription.trial_ends_at)
@@ -130,7 +138,7 @@ export default async function BillingPage({
           <BillingPlanCards
             organizationId={membership.organization_id}
             canManageBilling={canManageBilling}
-            planCode={subscription.plan_code}
+            planCode={checkoutPlanCode ?? subscription.plan_code}
             planLabel={plan.label}
             subscriptionStatus={subscription.status}
             billingPeriod={subscription.billing_period as BillingPeriod}
