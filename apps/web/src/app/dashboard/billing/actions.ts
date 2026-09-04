@@ -27,9 +27,12 @@ async function requireOrgAdmin(organizationId: string) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) {
+    console.error("[requireOrgAdmin] no authenticated user for organizationId:", organizationId);
+    return null;
+  }
 
-  const { data: membership } = await supabase
+  const { data: membership, error } = await supabase
     .from("organization_members")
     .select("role")
     .eq("organization_id", organizationId)
@@ -38,6 +41,16 @@ async function requireOrgAdmin(organizationId: string) {
     .maybeSingle();
 
   if (!membership || !hasOrgRoleAtLeast(membership.role as OrganizationRole, "admin")) {
+    console.error(
+      "[requireOrgAdmin] denied — userId:",
+      user.id,
+      "organizationId:",
+      organizationId,
+      "membership:",
+      membership,
+      "queryError:",
+      error?.message,
+    );
     return null;
   }
   return { supabase, user };
@@ -63,30 +76,52 @@ export async function createCheckoutSession(
   if (!auth) return { error: GENERIC_ERROR };
   const { supabase, user } = auth;
 
-  if (!CHECKOUT_PLAN_CODES.has(planCode)) return { error: GENERIC_ERROR };
-  if (!BILLING_PERIODS.has(billingPeriod)) return { error: GENERIC_ERROR };
+  if (!CHECKOUT_PLAN_CODES.has(planCode)) {
+    console.error("[createCheckoutSession] invalid planCode:", planCode);
+    return { error: GENERIC_ERROR };
+  }
+  if (!BILLING_PERIODS.has(billingPeriod)) {
+    console.error("[createCheckoutSession] invalid billingPeriod:", billingPeriod);
+    return { error: GENERIC_ERROR };
+  }
 
   // Shared across every plan family (individual and agency alike) — one
   // Stripe Product ("KeurFlow subscription"), differentiated by price and
   // plan_code metadata, not by a separate Product per plan.
   const productId = process.env.STRIPE_PRODUCT_ID_INDIVIDUAL;
-  if (!productId) return { error: GENERIC_ERROR };
+  if (!productId) {
+    console.error("[createCheckoutSession] STRIPE_PRODUCT_ID_INDIVIDUAL is not set");
+    return { error: GENERIC_ERROR };
+  }
 
-  const { data: subscription } = await supabase
+  const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
     .select("plan_code, stripe_customer_id, stripe_subscription_id, currency_code")
     .eq("organization_id", organizationId)
     .single();
   // isBillablePlan, not a plain "does a row exist" check: individual_trial
   // is itself priced at 0 (it's the trial row).
-  if (!subscription || !isBillablePlan(subscription.plan_code)) return { error: GENERIC_ERROR };
+  if (!subscription || !isBillablePlan(subscription.plan_code)) {
+    console.error(
+      "[createCheckoutSession] no billable subscription — organizationId:",
+      organizationId,
+      "subscription:",
+      subscription,
+      "queryError:",
+      subscriptionError?.message,
+    );
+    return { error: GENERIC_ERROR };
+  }
 
   const { data: plan } = await supabase
     .from("plans")
     .select("price_minor")
     .eq("code", planCode)
     .single();
-  if (!plan || plan.price_minor <= 0) return { error: GENERIC_ERROR };
+  if (!plan || plan.price_minor <= 0) {
+    console.error("[createCheckoutSession] invalid plan for checkout — planCode:", planCode, "plan:", plan);
+    return { error: GENERIC_ERROR };
+  }
 
   // plans.price_minor is always the canonical EUR monthly price — the
   // annual price is a 20% discount off 12x that, computed here rather than
