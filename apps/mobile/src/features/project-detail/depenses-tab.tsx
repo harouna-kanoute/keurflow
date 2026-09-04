@@ -38,7 +38,7 @@ export function DepensesTab({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [waError, setWaError] = useState<string | null>(null);
-  const { project, expenses, canApprove } = state;
+  const { project, expenses, canApprove, currentUserId } = state;
   const minorUnit = minorUnitFor(project.currency_code);
   const projectUrl = `${WEB_URL}/dashboard/projects/${projectId}`;
 
@@ -60,7 +60,14 @@ export function DepensesTab({
   // explicit message instead of only changing the status silently.
   const requestInfo = async (e: Expense) => {
     setWaError(null);
-    if (!e.submitterPhone) {
+    if (e.created_by === currentUserId) {
+      // WhatsApp refuses to open a chat with your own number — wa.me
+      // silently no-ops instead of erroring, which otherwise looks exactly
+      // like a broken button. Only reachable when the approver is also the
+      // expense's own submitter (e.g. testing solo); a real reviewer
+      // approving someone else's expense never hits this.
+      setWaError("C'est votre propre dépense : WhatsApp ne peut pas ouvrir une conversation avec votre propre numéro.");
+    } else if (!e.submitterPhone) {
       setWaError("Aucun numéro WhatsApp renseigné pour l'auteur de cette dépense.");
     } else {
       const digits = e.submitterPhone.replace(/\D/g, "");
