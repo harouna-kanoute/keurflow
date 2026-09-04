@@ -111,6 +111,11 @@ export type ProjectDetailState =
       // manager+, or a project role canApproveExpense() accepts). RLS
       // (expenses_update_own_pending_or_managers) is the real authority.
       canApprove: boolean;
+      // Mirrors web's canEdit/canDelete — RLS
+      // (projects_update_org_managers_or_project_owners /
+      // projects_delete_org_admins_or_project_owners) is the real authority.
+      canEdit: boolean;
+      canDelete: boolean;
       // Trial expired / subscription not active — same client-side gate as
       // web's Server Action guards, applied here since mobile has no server
       // layer of its own to enforce it at (RLS remains the only real

@@ -184,6 +184,14 @@ export function useProjectDetail(id: string | undefined) {
     const canManageAny =
       hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_manager");
     const canApprove = hasOrgRoleAtLeast(orgRole, "manager") || canApproveExpense(projectRole);
+    // Matches web's canEdit/canDelete bars exactly (page.tsx) —
+    // projects_update_org_managers_or_project_owners and
+    // projects_delete_org_admins_or_project_owners (RLS) are the real
+    // authority either way. Deletion is a higher org-role bar than edit
+    // (admin, not manager) since it cascades every expense/funding/
+    // document/photo under the project.
+    const canEdit = hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_owner");
+    const canDelete = hasOrgRoleAtLeast(orgRole, "admin") || hasProjectRoleAtLeast(projectRole, "project_owner");
 
     // Client-side-only gate, same as web's Server Action guards but without
     // a server layer to enforce it at — mobile already writes straight to
@@ -218,6 +226,8 @@ export function useProjectDetail(id: string | undefined) {
       currentUserId: user?.id ?? null,
       canManageAny,
       canApprove,
+      canEdit,
+      canDelete,
       isBlocked,
     });
   }, [id]);
