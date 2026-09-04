@@ -107,9 +107,15 @@ export async function requestPasswordReset(
   if (!parsed.success) return { error: GENERIC_ERROR };
 
   const supabase = await createClient();
-  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${APP_URL}/auth/callback?next=/reset-password`,
   });
+  if (error) {
+    // Logged only — never surfaced to the client (see the comment below),
+    // but a silent failure here (e.g. hitting Supabase's email rate limit)
+    // was previously undiagnosable from a "I never got the email" report.
+    console.error("[requestPasswordReset] Supabase error:", error.status, error.code, error.message);
+  }
 
   // Always succeeds from the caller's perspective, whether or not the email
   // is registered — prevents using this endpoint to enumerate accounts.
