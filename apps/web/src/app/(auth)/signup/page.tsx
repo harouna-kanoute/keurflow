@@ -73,7 +73,7 @@ export default function SignUpPage() {
         </FormSelect>
         <FormSelect
           id="countryCode"
-          label="Pays du projet"
+          label="Pays"
           autoComplete="country"
           defaultValue=""
           error={errors.countryCode?.message}
