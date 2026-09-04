@@ -96,8 +96,15 @@ export default function ProjectDetailScreen() {
             isBlocked={state.isBlocked}
           />
         )}
-        {activeTab === "equipe" && <EquipeTab state={state} />}
-        {activeTab === "rapports" && <RapportsTab state={state} />}
+        {activeTab === "equipe" && <EquipeTab state={state} projectId={state.project.id} />}
+        {activeTab === "rapports" && (
+          <RapportsTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
+        )}
       </ScrollView>
     </View>
   );

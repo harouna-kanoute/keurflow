@@ -1,8 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createExpenseSchema, type CreateExpenseInput } from "@keurflow/validation";
 import { EXPENSE_CATEGORIES } from "@keurflow/config";
+import { getCurrencyMinorUnit } from "@keurflow/business";
 import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -10,6 +11,7 @@ import { FormInput } from "../../components/form-input";
 import { PrimaryButton } from "../../components/primary-button";
 import { SelectField } from "../../components/select-field";
 import { SheetModal } from "../../components/sheet-modal";
+import { useDisplayCurrency } from "../../lib/display-currency-context";
 import { supabase } from "../../lib/supabase";
 import { useStyles, type Theme } from "../../theme";
 
@@ -21,8 +23,8 @@ export function AddExpenseSheet({
   onClose,
   onCreated,
   projectId,
-  currencyCode,
-  minorUnit,
+  currencyCode: projectCurrencyCode,
+  minorUnit: projectMinorUnit,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -35,10 +37,20 @@ export function AddExpenseSheet({
   const [pending, setPending] = useState(false);
   const [rootError, setRootError] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ImagePicker.ImagePickerAsset | null>(null);
+  const { displayCurrency } = useDisplayCurrency();
+
+  // The expense's own currency follows the user's chosen display-currency
+  // preference (Settings) rather than always being forced into the
+  // project's native one — same preference already respected everywhere
+  // else amounts are shown (Money, MultiCurrencyAmount).
+  const currencyCode = displayCurrency !== "native" ? displayCurrency : projectCurrencyCode;
+  const minorUnit = displayCurrency !== "native" ? getCurrencyMinorUnit(displayCurrency) : projectMinorUnit;
+
   const {
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateExpenseInput>({
     resolver: zodResolver(createExpenseSchema),
@@ -49,6 +61,12 @@ export function AddExpenseSheet({
       expenseDate: new Date().toISOString().slice(0, 10),
     },
   });
+
+  // Keep the form's hidden currencyCode in sync if the display-currency
+  // preference changes while the sheet happens to be open.
+  useEffect(() => {
+    setValue("currencyCode", currencyCode);
+  }, [currencyCode, setValue]);
 
   const pickReceipt = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
