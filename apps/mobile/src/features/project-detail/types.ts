@@ -1,7 +1,14 @@
 export type Project = {
   id: string;
   name: string;
+  description: string | null;
+  project_type: string;
   city: string | null;
+  address: string | null;
+  surface_area: number | null;
+  start_date: string | null;
+  expected_end_date: string | null;
+  countryName: string | null;
   status: string;
   budget_minor: number;
   currency_code: string;

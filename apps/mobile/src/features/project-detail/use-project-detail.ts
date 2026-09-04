@@ -11,7 +11,7 @@ import type { OrganizationRole, ProjectRole, SubscriptionStatus } from "@keurflo
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import type { Expense, Member, Photo, ProjectDetailState, Report } from "./types";
+import type { Expense, Member, Photo, Project, ProjectDetailState, Report } from "./types";
 
 const PHOTO_LIMIT = 30;
 
@@ -26,16 +26,24 @@ export function useProjectDetail(id: string | undefined) {
   const load = useCallback(async () => {
     if (!id) return;
 
-    const { data: project } = await supabase
+    const { data: projectRow } = await supabase
       .from("projects")
-      .select("id, name, city, status, budget_minor, currency_code, organization_id")
+      .select(
+        "id, name, description, project_type, city, address, surface_area, start_date, expected_end_date, country_id, status, budget_minor, currency_code, organization_id",
+      )
       .eq("id", id)
       .maybeSingle();
 
-    if (!project) {
+    if (!projectRow) {
       setState({ status: "not-found" });
       return;
     }
+
+    const { data: country } = projectRow.country_id
+      ? await supabase.from("countries").select("name").eq("id", projectRow.country_id).maybeSingle()
+      : { data: null };
+
+    const project: Project = { ...projectRow, countryName: country?.name ?? null };
 
     const {
       data: { user },
