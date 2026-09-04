@@ -26,12 +26,21 @@ export default function LoginScreen() {
   const onSubmit = handleSubmit(async (data) => {
     setPending(true);
     setRootError(null);
-    const { error } = await supabase.auth.signInWithPassword(data);
-    setPending(false);
-    if (error) {
-      setRootError("Email ou mot de passe incorrect.");
+    // Same class of bug fixed in signup.tsx: an uncaught rejection here
+    // (e.g. a network failure, not a returned `{ error }`) would leave the
+    // button stuck on "Connexion…" forever with no feedback at all.
+    try {
+      const { error } = await supabase.auth.signInWithPassword(data);
+      if (error) {
+        setRootError("Email ou mot de passe incorrect.");
+      }
+      // On success, RootNavigation's auth-state listener handles the redirect.
+    } catch (err) {
+      console.error("[login] unexpected error:", err);
+      setRootError(GENERIC_ERROR);
+    } finally {
+      setPending(false);
     }
-    // On success, RootNavigation's auth-state listener handles the redirect.
   });
 
   return (

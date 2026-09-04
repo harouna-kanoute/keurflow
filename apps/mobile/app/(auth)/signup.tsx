@@ -33,23 +33,33 @@ export default function SignupScreen() {
   const onSubmit = handleSubmit(async (data) => {
     setPending(true);
     setRootError(null);
-    const { error } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: { data: { full_name: data.fullName, country_code: data.countryCode } },
-    });
-    setPending(false);
-    if (error) {
-      if (error.code === "over_email_send_rate_limit") {
-        setRootError("Trop de tentatives. Réessayez dans quelques minutes.");
-      } else if (error.message.toLowerCase().includes("already")) {
-        setRootError("Un compte existe déjà avec cet email.");
-      } else {
-        setRootError(GENERIC_ERROR);
+    // Reported by beta testers: tapping "Créer mon compte" did nothing, no
+    // error shown — signUp() rejecting (a thrown error, not a returned
+    // `{ error }`, e.g. a network failure) was never caught, so the button
+    // stayed stuck on "Création…" forever with no feedback at all.
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: { data: { full_name: data.fullName, country_code: data.countryCode } },
+      });
+      if (error) {
+        if (error.code === "over_email_send_rate_limit") {
+          setRootError("Trop de tentatives. Réessayez dans quelques minutes.");
+        } else if (error.message.toLowerCase().includes("already")) {
+          setRootError("Un compte existe déjà avec cet email.");
+        } else {
+          setRootError(GENERIC_ERROR);
+        }
+        return;
       }
-      return;
+      setDone(true);
+    } catch (err) {
+      console.error("[signup] unexpected error:", err);
+      setRootError(GENERIC_ERROR);
+    } finally {
+      setPending(false);
     }
-    setDone(true);
   });
 
   if (done) {
