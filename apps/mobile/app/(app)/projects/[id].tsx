@@ -127,7 +127,9 @@ export default function ProjectDetailScreen() {
             isBlocked={state.isBlocked}
           />
         )}
-        {activeTab === "equipe" && <EquipeTab state={state} projectId={state.project.id} />}
+        {activeTab === "equipe" && (
+          <EquipeTab state={state} projectId={state.project.id} onChanged={reload} />
+        )}
         {activeTab === "rapports" && (
           <RapportsTab
             state={state}

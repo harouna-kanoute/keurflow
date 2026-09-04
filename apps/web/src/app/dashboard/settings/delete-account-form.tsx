@@ -14,8 +14,9 @@ export function DeleteAccountForm({ email }: { email: string }) {
     <div className="rounded-2xl border border-red-200 bg-red-50/50 p-5 dark:border-red-900/50 dark:bg-red-900/10">
       <p className="text-sm font-medium text-red-900 dark:text-red-300">Supprimer mon compte</p>
       <p className="mt-1 text-sm text-red-700 dark:text-red-400">
-        Cette action est irréversible. Elle supprime définitivement votre compte et votre profil.
-        Si vous êtes propriétaire d&apos;une organisation, transférez-la ou supprimez-la d&apos;abord.
+        Cette action est irréversible. Elle supprime définitivement votre compte et votre profil. Si
+        vous êtes seul·e dans votre organisation, elle sera supprimée avec tous ses chantiers ; sinon
+        sa propriété est transférée automatiquement à un autre administrateur ou responsable actif.
       </p>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end">
         <div className="flex flex-1 flex-col gap-1.5">
