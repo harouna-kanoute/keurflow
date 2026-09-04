@@ -30,6 +30,9 @@ export type Expense = {
   supplier_name: string | null;
   expense_date: string;
   status: "pending" | "needs_information" | "approved" | "rejected";
+  created_by: string;
+  submitterName: string | null;
+  submitterPhone: string | null;
 };
 
 export type Funding = {
@@ -104,6 +107,15 @@ export type ProjectDetailState =
       // web's own canManageAny/canManageProject in page.tsx). Gates whether
       // to show the photo-delete icon for photos this user didn't upload.
       canManageAny: boolean;
+      // UI-only convenience mirroring web's own canApprove in page.tsx (org
+      // manager+, or a project role canApproveExpense() accepts). RLS
+      // (expenses_update_own_pending_or_managers) is the real authority.
+      canApprove: boolean;
+      // Mirrors web's canEdit/canDelete — RLS
+      // (projects_update_org_managers_or_project_owners /
+      // projects_delete_org_admins_or_project_owners) is the real authority.
+      canEdit: boolean;
+      canDelete: boolean;
       // Trial expired / subscription not active — same client-side gate as
       // web's Server Action guards, applied here since mobile has no server
       // layer of its own to enforce it at (RLS remains the only real

@@ -1,4 +1,5 @@
 import {
+  canApproveExpense,
   getBudgetConsumptionPercent,
   getFundingCoveragePercent,
   getMilestoneProgressPercent,
@@ -68,7 +69,7 @@ export function useProjectDetail(id: string | undefined) {
         .order("funding_date", { ascending: false }),
       supabase
         .from("expenses")
-        .select("id, amount_minor, currency_code, category, supplier_name, expense_date, status")
+        .select("id, amount_minor, currency_code, category, supplier_name, expense_date, status, created_by")
         .eq("project_id", id)
         .order("expense_date", { ascending: false })
         .limit(10),
@@ -151,6 +152,15 @@ export function useProjectDetail(id: string | undefined) {
         : { data: [] as { signedUrl: string }[] };
     const avatarUrlByPath = new Map(avatarPaths.map((path, i) => [path, avatarSigned?.[i]?.signedUrl ?? null]));
 
+    // Same reasoning as memberProfiles above — expenses.created_by FKs to
+    // auth.users, not profiles, so this needs its own .in() query rather
+    // than an embedded select. Mirrors web's submitterById in page.tsx.
+    const submitterIds = [...new Set((expenses ?? []).map((e) => e.created_by))];
+    const { data: submitterProfiles } = submitterIds.length
+      ? await supabase.from("profiles").select("id, full_name, phone").in("id", submitterIds)
+      : { data: [] as { id: string; full_name: string | null; phone: string | null }[] };
+    const submitterById = new Map((submitterProfiles ?? []).map((p) => [p.id, p]));
+
     const members: Member[] = (memberRows ?? []).map((m) => {
       const profile = memberProfiles?.find((p) => p.id === m.user_id);
       return {
@@ -173,6 +183,15 @@ export function useProjectDetail(id: string | undefined) {
     const projectRole = (projectRoleResult.data?.role as ProjectRole | undefined) ?? "project_viewer";
     const canManageAny =
       hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_manager");
+    const canApprove = hasOrgRoleAtLeast(orgRole, "manager") || canApproveExpense(projectRole);
+    // Matches web's canEdit/canDelete bars exactly (page.tsx) —
+    // projects_update_org_managers_or_project_owners and
+    // projects_delete_org_admins_or_project_owners (RLS) are the real
+    // authority either way. Deletion is a higher org-role bar than edit
+    // (admin, not manager) since it cascades every expense/funding/
+    // document/photo under the project.
+    const canEdit = hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_owner");
+    const canDelete = hasOrgRoleAtLeast(orgRole, "admin") || hasProjectRoleAtLeast(projectRole, "project_owner");
 
     // Client-side-only gate, same as web's Server Action guards but without
     // a server layer to enforce it at — mobile already writes straight to
@@ -194,7 +213,11 @@ export function useProjectDetail(id: string | undefined) {
         (milestones ?? []).map((m) => ({ status: m.status as never })),
       ),
       milestones: milestones ?? [],
-      expenses: (expenses ?? []) as Expense[],
+      expenses: (expenses ?? []).map((e) => ({
+        ...e,
+        submitterName: submitterById.get(e.created_by)?.full_name ?? null,
+        submitterPhone: submitterById.get(e.created_by)?.phone ?? null,
+      })) as Expense[],
       fundings: fundings ?? [],
       paymentMethods: paymentMethods ?? [],
       photos,
@@ -202,6 +225,9 @@ export function useProjectDetail(id: string | undefined) {
       reports,
       currentUserId: user?.id ?? null,
       canManageAny,
+      canApprove,
+      canEdit,
+      canDelete,
       isBlocked,
     });
   }, [id]);

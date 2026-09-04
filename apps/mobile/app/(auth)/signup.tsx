@@ -19,6 +19,18 @@ const COUNTRY_OPTIONS = COUNTRIES.filter((c) => c.active).map((c) => ({
   label: c.name,
 }));
 
+// Matches web's signup/page.tsx exactly — signUpSchema (shared) requires
+// organizationType, and the handle_new_user() trigger reads it from
+// raw_user_meta_data as "organization_type" to decide what kind of
+// organization to provision. This field was missing entirely on mobile,
+// so zod validation silently rejected every submission before onSubmit
+// ever ran — no error could show because no field existed to attach it to.
+const ORGANIZATION_TYPE_OPTIONS = [
+  { value: "individual", label: "Particulier" },
+  { value: "agency", label: "Agence immobilière" },
+  { value: "company", label: "Entreprise" },
+];
+
 export default function SignupScreen() {
   const [pending, setPending] = useState(false);
   const [rootError, setRootError] = useState<string | null>(null);
@@ -28,7 +40,10 @@ export default function SignupScreen() {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignUpInput>({ resolver: zodResolver(signUpSchema) });
+  } = useForm<SignUpInput>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { organizationType: "individual" },
+  });
 
   const onSubmit = handleSubmit(async (data) => {
     setPending(true);
@@ -41,7 +56,13 @@ export default function SignupScreen() {
       const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
-        options: { data: { full_name: data.fullName, country_code: data.countryCode } },
+        options: {
+          data: {
+            full_name: data.fullName,
+            country_code: data.countryCode,
+            organization_type: data.organizationType,
+          },
+        },
       });
       if (error) {
         if (error.code === "over_email_send_rate_limit") {
@@ -100,6 +121,13 @@ export default function SignupScreen() {
             keyboardType="email-address"
             autoComplete="email"
             error={errors.email?.message}
+          />
+          <SelectField
+            control={control}
+            name="organizationType"
+            label="Vous êtes"
+            options={ORGANIZATION_TYPE_OPTIONS}
+            error={errors.organizationType?.message}
           />
           <SelectField
             control={control}

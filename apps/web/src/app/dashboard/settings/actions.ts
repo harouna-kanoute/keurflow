@@ -165,19 +165,71 @@ export async function deleteAccount(input: DeleteAccountInput): Promise<ActionRe
     return { error: "L'adresse email ne correspond pas." };
   }
 
-  // organizations.owner_id has no ON DELETE CASCADE from auth.users (by
-  // design — losing an owner must never silently vaporize an entire
-  // organization's chantiers). Block instead of erroring out on the FK.
+  // organizations.owner_id / projects.owner_id have no ON DELETE CASCADE
+  // from auth.users (by design — losing an owner must never silently
+  // vaporize a shared organization's chantiers for its other members).
+  // prepare_account_deletion() (SECURITY DEFINER, scoped to auth.uid())
+  // resolves this per organization/project the caller owns: transfers
+  // ownership to another active admin/manager if one exists, deletes the
+  // organization outright if it's solely theirs (the common case — every
+  // individual gets their own personal org at signup), or raises a
+  // distinguishable error if there's simply nobody eligible to hand off to.
+  //
+  // Solo organizations about to cascade-delete are identified here, before
+  // calling it, so their projects' storage files (photos/receipts/funding
+  // proofs — the cascade only removes database rows) can still be cleaned
+  // up afterward; once the org row is gone there's no DB path left to find them by.
   const { data: ownedOrgs } = await supabase
     .from("organizations")
     .select("id")
-    .eq("owner_id", user.id)
-    .limit(1);
-  if (ownedOrgs && ownedOrgs.length > 0) {
-    return {
-      error:
-        "Vous êtes propriétaire d'une organisation. Transférez-la ou supprimez-la avant de supprimer votre compte.",
-    };
+    .eq("owner_id", user.id);
+
+  const soloOrgIds: string[] = [];
+  for (const org of ownedOrgs ?? []) {
+    const { count } = await supabase
+      .from("organization_members")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", org.id)
+      .eq("status", "active")
+      .neq("user_id", user.id);
+    if (!count) soloOrgIds.push(org.id);
+  }
+
+  const { data: soloProjects } =
+    soloOrgIds.length > 0
+      ? await supabase.from("projects").select("id").in("organization_id", soloOrgIds)
+      : { data: [] as { id: string }[] };
+  const soloProjectIds = (soloProjects ?? []).map((p) => p.id);
+
+  const [{ data: photoRows }, { data: documentRows }, { data: fundingRows }] =
+    soloProjectIds.length > 0
+      ? await Promise.all([
+          supabase.from("photos").select("storage_path").in("project_id", soloProjectIds),
+          supabase.from("documents").select("storage_path").in("project_id", soloProjectIds),
+          supabase
+            .from("fundings")
+            .select("proof_url")
+            .in("project_id", soloProjectIds)
+            .not("proof_url", "is", null),
+        ])
+      : [{ data: [] }, { data: [] }, { data: [] }];
+
+  const { error: prepError } = await supabase.rpc("prepare_account_deletion");
+  if (prepError) {
+    console.error("[deleteAccount] prepare_account_deletion error:", prepError.code, prepError.message);
+    if (prepError.message.includes("ORG_TRANSFER_BLOCKED")) {
+      const orgName = prepError.message.split(":").slice(1).join(":");
+      return {
+        error: `Impossible de transférer la propriété de "${orgName}" : aucun administrateur ou responsable actif pour la reprendre. Promouvez d'abord un membre, ou supprimez l'organisation.`,
+      };
+    }
+    if (prepError.message.includes("PROJECT_TRANSFER_BLOCKED")) {
+      const projectName = prepError.message.split(":").slice(1).join(":");
+      return {
+        error: `Impossible de transférer le chantier "${projectName}" : aucun responsable pour le reprendre.`,
+      };
+    }
+    return { error: GENERIC_ERROR };
   }
 
   // Captured before the delete — profiles cascades away with auth.users, so
@@ -198,13 +250,23 @@ export async function deleteAccount(input: DeleteAccountInput): Promise<ActionRe
     return { error: GENERIC_ERROR };
   }
 
-  // Best-effort: the account is already gone either way, an orphaned avatar
-  // file isn't worth surfacing an error for at this point.
-  if (profile?.avatar_url) {
-    const { error: storageError } = await admin.storage.from("avatars").remove([profile.avatar_url]);
-    if (storageError) {
-      console.error("[deleteAccount] avatar cleanup error:", storageError.message);
-    }
+  // Best-effort — the account is already gone either way, orphaned files
+  // aren't worth surfacing an error for at this point.
+  const photoPaths = (photoRows ?? []).map((p) => p.storage_path);
+  const documentPaths = (documentRows ?? []).map((d) => d.storage_path);
+  const fundingPaths = (fundingRows ?? []).map((f) => f.proof_url).filter((p): p is string => !!p);
+  const cleanupResults = await Promise.all([
+    profile?.avatar_url ? admin.storage.from("avatars").remove([profile.avatar_url]) : Promise.resolve({ error: null }),
+    photoPaths.length > 0 ? admin.storage.from("project-photos").remove(photoPaths) : Promise.resolve({ error: null }),
+    documentPaths.length > 0
+      ? admin.storage.from("expense-receipts").remove(documentPaths)
+      : Promise.resolve({ error: null }),
+    fundingPaths.length > 0
+      ? admin.storage.from("funding-proofs").remove(fundingPaths)
+      : Promise.resolve({ error: null }),
+  ]);
+  for (const result of cleanupResults) {
+    if (result.error) console.error("[deleteAccount] Storage cleanup error:", result.error.message);
   }
 
   await supabase.auth.signOut();
