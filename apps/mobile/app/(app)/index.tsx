@@ -182,6 +182,13 @@ export default function ProjectListScreen() {
               </View>
             )}
           </Pressable>
+          <Pressable
+            onPress={() => router.push("/projects/new")}
+            style={styles.iconButton}
+            accessibilityLabel="Nouveau chantier"
+          >
+            <Ionicons name="add" size={22} color="#ffffff" />
+          </Pressable>
           <Pressable onPress={() => supabase.auth.signOut()} style={styles.iconButton}>
             <Ionicons name="log-out-outline" size={20} color="#ffffff" />
           </Pressable>
