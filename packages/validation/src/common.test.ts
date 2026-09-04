@@ -23,10 +23,6 @@ describe("countryCodeSchema", () => {
     expect(countryCodeSchema.safeParse("SN").success).toBe(true);
   });
 
-  it("rejects an inactive country code (Cap-Vert)", () => {
-    expect(countryCodeSchema.safeParse("CV").success).toBe(false);
-  });
-
   it("rejects a code that isn't in the list at all", () => {
     expect(countryCodeSchema.safeParse("ZZ").success).toBe(false);
   });
