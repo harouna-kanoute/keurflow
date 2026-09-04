@@ -46,7 +46,13 @@ export async function signIn(input: SignInInput): Promise<ActionResult> {
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) return { error: "Email ou mot de passe incorrect." };
+  if (error) {
+    console.error("[signIn] Supabase error:", error.status, error.code, error.message);
+    if (error.code === "email_not_confirmed") {
+      return { error: "Confirmez d'abord votre email — vérifiez votre boîte de réception." };
+    }
+    return { error: "Email ou mot de passe incorrect." };
+  }
 
   await acceptPendingInvites(supabase);
 
