@@ -11,7 +11,12 @@ import { minorUnitFor } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
 import { useStyles, useTheme, type Theme } from "../../src/theme";
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? "https://web-keurflow.vercel.app";
+// The default .vercel.app domain stays behind Vercel Authentication even
+// when the custom domain is public (Vercel's "Standard Protection" only
+// exempts the assigned production domain) — keurflow.com is the one that's
+// actually reachable without a Vercel team login. See the web app's own
+// confidentialite page, fixed for the same reason.
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL ?? "https://keurflow.com";
 
 // Same wording as web's billing-plan-cards.tsx STATUS_LABELS — local-only
 // duplicate there too, nothing exported from packages/* for it.

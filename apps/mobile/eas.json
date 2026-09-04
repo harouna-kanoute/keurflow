@@ -18,6 +18,9 @@
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      "env": {
+        "EXPO_PUBLIC_WEB_URL": "https://keurflow.com"
       }
     }
   },
