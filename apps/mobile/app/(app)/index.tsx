@@ -13,10 +13,14 @@ import { Money } from "../../src/components/money";
 import { ProgressBar } from "../../src/components/progress-bar";
 import { Skeleton } from "../../src/components/skeleton";
 import { TrialLockedBanner } from "../../src/components/trial-locked-banner";
+import { AgencyStatsGrid } from "../../src/features/dashboard/agency-stats-grid";
+import { loadAgencyStats, type AgencyStats } from "../../src/lib/agencyStats";
 import { useDrawer } from "../../src/lib/drawer-context";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
 import { supabase } from "../../src/lib/supabase";
 import { entranceAnimation, useStyles, useTheme, type Theme } from "../../src/theme";
+
+const AGENCY_ORG_TYPES = new Set(["agency", "company"]);
 
 const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
   individual: "Particulier",
@@ -38,6 +42,7 @@ type State =
       orgType: string;
       projects: ProjectSummary[];
       isBlocked: boolean;
+      agencyStats: AgencyStats | null;
     };
 
 export default function ProjectListScreen() {
@@ -92,7 +97,7 @@ export default function ProjectListScreen() {
     const [{ data: projects }, { data: subscription }] = await Promise.all([
       supabase
         .from("projects")
-        .select("id, name, status, budget_minor, currency_code")
+        .select("id, name, status, budget_minor, currency_code, expected_end_date")
         .eq("organization_id", organization.id)
         .order("created_at", { ascending: false }),
       supabase
@@ -103,6 +108,9 @@ export default function ProjectListScreen() {
     ]);
 
     const summaries = await Promise.all((projects ?? []).map(loadProjectSummary));
+    const agencyStats = AGENCY_ORG_TYPES.has(organization.type)
+      ? await loadAgencyStats(organization.id, projects ?? [])
+      : null;
 
     setState({
       status: "ready",
@@ -115,6 +123,7 @@ export default function ProjectListScreen() {
             subscription.plan_code,
           )
         : false,
+      agencyStats,
     });
   }, []);
 
@@ -193,23 +202,30 @@ export default function ProjectListScreen() {
             {ORGANIZATION_TYPE_LABELS[state.orgType] ?? state.orgType}
           </Text>
           <Text style={styles.orgName}>{state.orgName}</Text>
-          <View style={styles.statsStrip}>
-            <View style={styles.statChip}>
-              <Ionicons name="business-outline" size={14} color={theme.colors.textMuted} />
-              <Text style={styles.statChipText}>
-                {state.projects.length} chantier{state.projects.length > 1 ? "s" : ""}
-              </Text>
-            </View>
-            {totalToReview > 0 && (
-              <View style={[styles.statChip, styles.statChipAmber]}>
-                <Ionicons name="alert-circle-outline" size={14} color={theme.colors.amber} />
-                <Text style={[styles.statChipText, { color: theme.colors.amber }]}>
-                  {totalToReview} à vérifier
+          {state.agencyStats ? null : (
+            <View style={styles.statsStrip}>
+              <View style={styles.statChip}>
+                <Ionicons name="business-outline" size={14} color={theme.colors.textMuted} />
+                <Text style={styles.statChipText}>
+                  {state.projects.length} chantier{state.projects.length > 1 ? "s" : ""}
                 </Text>
               </View>
-            )}
-          </View>
+              {totalToReview > 0 && (
+                <View style={[styles.statChip, styles.statChipAmber]}>
+                  <Ionicons name="alert-circle-outline" size={14} color={theme.colors.amber} />
+                  <Text style={[styles.statChipText, { color: theme.colors.amber }]}>
+                    {totalToReview} à vérifier
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </Card>
+      )}
+      {state.status === "ready" && state.agencyStats && (
+        <View style={styles.agencyStatsWrap}>
+          <AgencyStatsGrid stats={state.agencyStats} />
+        </View>
       )}
       {state.status === "ready" && state.isBlocked && (
         <View style={styles.bannerWrap}>
@@ -353,6 +369,7 @@ function createStyles(theme: Theme) {
     badgeDotText: { color: "#ffffff", fontSize: 9, fontWeight: "700" as const },
     orgCard: { marginTop: -theme.spacing.lg, marginHorizontal: theme.spacing.lg },
     bannerWrap: { marginTop: theme.spacing.md, marginHorizontal: theme.spacing.lg },
+    agencyStatsWrap: { marginTop: theme.spacing.md, marginHorizontal: theme.spacing.lg },
     orgType: { ...theme.typography.caption, color: theme.colors.textMuted },
     orgName: { fontSize: 16, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
     statsStrip: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: theme.spacing.sm, marginTop: theme.spacing.md },
