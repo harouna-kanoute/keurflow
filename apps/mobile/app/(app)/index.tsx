@@ -4,13 +4,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Animated from "react-native-reanimated";
 import { Badge } from "../../src/components/badge";
 import { Card } from "../../src/components/card";
 import { Money } from "../../src/components/money";
 import { ProgressBar } from "../../src/components/progress-bar";
+import { Skeleton } from "../../src/components/skeleton";
 import { TrialLockedBanner } from "../../src/components/trial-locked-banner";
 import { useDrawer } from "../../src/lib/drawer-context";
 import { minorUnitFor, loadProjectSummary, type ProjectSummary } from "../../src/lib/projectSummary";
@@ -131,9 +132,28 @@ export default function ProjectListScreen() {
 
   if (state.status === "loading") {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator color={theme.colors.primary} />
-      </View>
+      <SafeAreaView style={styles.flex} edges={["top"]}>
+        <View style={styles.list}>
+          <View style={[styles.hero, styles.heroSkeleton]}>
+            <Skeleton width={140} height={26} style={{ backgroundColor: theme.colors.overlayOnPrimary }} />
+          </View>
+          <Card style={styles.orgCard}>
+            <Skeleton width={90} height={11} />
+            <Skeleton width={160} height={16} style={{ marginTop: theme.spacing.sm }} />
+          </Card>
+          {[0, 1].map((i) => (
+            <Card key={i} style={styles.projectCard}>
+              <Skeleton width="60%" height={16} />
+              <Skeleton height={6} radius={theme.radius.full} style={{ marginTop: theme.spacing.sm }} />
+              <View style={[styles.statsRow, { marginTop: theme.spacing.md }]}>
+                <Skeleton width={60} height={28} />
+                <Skeleton width={60} height={28} />
+                <Skeleton width={60} height={28} />
+              </View>
+            </Card>
+          ))}
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -161,6 +181,9 @@ export default function ProjectListScreen() {
     </Card>
   );
 
+  const totalToReview =
+    state.status === "ready" ? state.projects.reduce((sum, p) => sum + p.toReviewCount, 0) : 0;
+
   const header = (
     <View style={styles.header}>
       {hero}
@@ -170,6 +193,22 @@ export default function ProjectListScreen() {
             {ORGANIZATION_TYPE_LABELS[state.orgType] ?? state.orgType}
           </Text>
           <Text style={styles.orgName}>{state.orgName}</Text>
+          <View style={styles.statsStrip}>
+            <View style={styles.statChip}>
+              <Ionicons name="business-outline" size={14} color={theme.colors.textMuted} />
+              <Text style={styles.statChipText}>
+                {state.projects.length} chantier{state.projects.length > 1 ? "s" : ""}
+              </Text>
+            </View>
+            {totalToReview > 0 && (
+              <View style={[styles.statChip, styles.statChipAmber]}>
+                <Ionicons name="alert-circle-outline" size={14} color={theme.colors.amber} />
+                <Text style={[styles.statChipText, { color: theme.colors.amber }]}>
+                  {totalToReview} à vérifier
+                </Text>
+              </View>
+            )}
+          </View>
         </Card>
       )}
       {state.status === "ready" && state.isBlocked && (
@@ -222,8 +261,11 @@ export default function ProjectListScreen() {
                 </View>
                 <ProgressBar percent={item.progressPercent} />
                 <View style={styles.statsRow}>
-                  <View>
-                    <Text style={styles.statLabel}>Budget</Text>
+                  <View style={styles.statCol}>
+                    <View style={styles.statLabelRow}>
+                      <Ionicons name="wallet-outline" size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.statLabel}>Budget</Text>
+                    </View>
                     <Money
                       amountMinor={item.budget_minor}
                       currencyCode={item.currency_code}
@@ -231,8 +273,11 @@ export default function ProjectListScreen() {
                       style={styles.statValue}
                     />
                   </View>
-                  <View>
-                    <Text style={styles.statLabel}>Financé</Text>
+                  <View style={styles.statCol}>
+                    <View style={styles.statLabelRow}>
+                      <Ionicons name="trending-up-outline" size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.statLabel}>Financé</Text>
+                    </View>
                     <Money
                       amountMinor={item.funded}
                       currencyCode={item.currency_code}
@@ -240,13 +285,19 @@ export default function ProjectListScreen() {
                       style={styles.statValue}
                     />
                   </View>
-                  <View>
-                    <Text style={styles.statLabel}>Dépensé</Text>
+                  <View style={styles.statCol}>
+                    <View style={styles.statLabelRow}>
+                      <Ionicons name="receipt-outline" size={12} color={theme.colors.textMuted} />
+                      <Text style={styles.statLabel}>Dépensé</Text>
+                    </View>
                     <Money
                       amountMinor={item.spent}
                       currencyCode={item.currency_code}
                       minorUnit={minorUnit}
-                      style={styles.statValue}
+                      style={[
+                        styles.statValue,
+                        item.spent > item.budget_minor && { color: theme.colors.danger },
+                      ]}
                     />
                   </View>
                 </View>
@@ -304,6 +355,23 @@ function createStyles(theme: Theme) {
     bannerWrap: { marginTop: theme.spacing.md, marginHorizontal: theme.spacing.lg },
     orgType: { ...theme.typography.caption, color: theme.colors.textMuted },
     orgName: { fontSize: 16, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
+    statsStrip: { flexDirection: "row" as const, flexWrap: "wrap" as const, gap: theme.spacing.sm, marginTop: theme.spacing.md },
+    statChip: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 5,
+      backgroundColor: theme.colors.background,
+      borderRadius: theme.radius.full,
+      paddingHorizontal: theme.spacing.sm + 2,
+      paddingVertical: 5,
+    },
+    statChipAmber: { backgroundColor: theme.colors.amberBg },
+    statChipText: { fontSize: 12, fontWeight: "600" as const, color: theme.colors.textMuted },
+    heroSkeleton: {
+      backgroundColor: theme.colors.brand[600],
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing.xl,
+    },
     empty: { fontSize: 14, color: theme.colors.textMuted, textAlign: "center" as const, marginTop: 12 },
     projectCard: { gap: theme.spacing.sm + 2 },
     cardTop: {
@@ -314,6 +382,8 @@ function createStyles(theme: Theme) {
     },
     cardTitle: { fontSize: 15, fontWeight: "600" as const, color: theme.colors.text, flexShrink: 1 },
     statsRow: { flexDirection: "row" as const, justifyContent: "space-between" as const },
+    statCol: { gap: 2 },
+    statLabelRow: { flexDirection: "row" as const, alignItems: "center" as const, gap: 4 },
     statLabel: { fontSize: 11, color: theme.colors.textMuted },
     statValue: { fontSize: 13, fontWeight: "600" as const, color: theme.colors.text, marginTop: 2 },
   };
