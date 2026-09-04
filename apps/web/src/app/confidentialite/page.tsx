@@ -113,12 +113,9 @@ export default function ConfidentialitePage() {
               compte est partagé entre l&apos;application web et l&apos;application mobile
               : vous pouvez le supprimer, ainsi que toutes ses données, depuis les réglages
               de l&apos;application web sur{" "}
-              <a
-                href="https://web-keurflow.vercel.app/dashboard/settings"
-                className="underline"
-              >
-                web-keurflow.vercel.app/dashboard/settings
-              </a>
+              <Link href="/dashboard/settings" className="underline">
+                keurflow.com/dashboard/settings
+              </Link>
               , même si vous utilisez principalement l&apos;app mobile. Pour exercer ces
               droits ou toute autre question : harounaniaka@gmail.com.
             </p>
