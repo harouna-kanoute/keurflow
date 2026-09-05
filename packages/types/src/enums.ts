@@ -69,6 +69,11 @@ export const AUDIT_ACTIONS = [
   "report_created",
   "organization_updated",
   "document_deleted",
+  "supplier_created",
+  "supplier_updated",
+  "purchase_created",
+  "purchase_updated",
+  "purchase_deleted",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 
@@ -100,6 +105,27 @@ export const DOCUMENT_TYPES = [
   "other",
 ] as const;
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
+
+// Suppliers are deactivated, never deleted, once they carry purchase history
+// (the purchases.supplier_id FK is ON DELETE RESTRICT).
+export const SUPPLIER_STATUSES = ["active", "inactive"] as const;
+export type SupplierStatus = (typeof SUPPLIER_STATUSES)[number];
+
+// Units a material is bought in. Kept short on purpose — "autre" covers the
+// long tail rather than growing this list into a unit catalog.
+export const PURCHASE_UNITS = [
+  "sac",
+  "kg",
+  "tonne",
+  "m",
+  "m²",
+  "m³",
+  "pièce",
+  "litre",
+  "carton",
+  "autre",
+] as const;
+export type PurchaseUnit = (typeof PURCHASE_UNITS)[number];
 
 // Role hierarchy, weakest first. Used by @keurflow/business for UI-only checks —
 // the authoritative check always happens server-side via RLS / SECURITY DEFINER helpers.

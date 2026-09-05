@@ -1,11 +1,11 @@
 import { z } from "zod";
+import { PHONE_MESSAGE, PHONE_REGEX } from "./common";
 
 // Reuses profiles.phone as the WhatsApp contact number — nothing in the app
 // renders it as a general "phone" today, so there's no dual-meaning risk.
-// E.164-ish: optional leading +, 8-15 digits total, no spaces/dashes (kept
-// simple since its only real consumer is a wa.me deep link).
-const WHATSAPP_PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
-const WHATSAPP_PHONE_MESSAGE = "Numéro invalide. Utilisez le format international, ex. +221771234567";
+// The pattern itself now lives in common.ts, shared with supplier contacts.
+const WHATSAPP_PHONE_REGEX = PHONE_REGEX;
+const WHATSAPP_PHONE_MESSAGE = PHONE_MESSAGE;
 
 export const updateProfileSchema = z.object({
   fullName: z.string().trim().min(2, "2 caractères minimum").max(120, "120 caractères maximum"),
