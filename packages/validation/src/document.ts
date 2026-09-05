@@ -20,6 +20,7 @@ export const uploadDocumentSchema = z.object({
   size: z.number().int().positive().max(MAX_UPLOAD_BYTES),
   expenseId: uuidSchema.optional(),
   fundingId: uuidSchema.optional(),
+  purchaseId: uuidSchema.optional(),
 });
 export type UploadDocumentInput = z.infer<typeof uploadDocumentSchema>;
 

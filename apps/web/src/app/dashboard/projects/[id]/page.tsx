@@ -52,6 +52,7 @@ import { ReportActions } from "./report-actions";
 import { DeleteProjectForm } from "./delete-project-form";
 import { ProjectStatusSelect, PROJECT_STATUS_COLORS } from "./project-status";
 import { ProjectTabs } from "./project-tabs";
+import { SuppliersPanel } from "./suppliers-panel";
 import { PROJECT_TAB_IDS, type ProjectTabId } from "./project-tab-ids";
 import { MemberProfileTrigger } from "./member-profile";
 
@@ -288,6 +289,107 @@ export default async function ProjectDetailPage({
     (documentSignedUrls ?? []).map((s) => [s.path, s.signedUrl] as const),
   );
 
+  // Suppliers are organization-scoped (reusable across the tenant's
+  // chantiers), so this reads the org's directory, not the project's.
+  // RLS (suppliers_select_org_or_purchase_collaborators) decides what comes
+  // back — another tenant's suppliers simply aren't in the result.
+  const { data: supplierRows } = await supabase
+    .from("suppliers")
+    .select(
+      "id, name, contact_name, phone, whatsapp, email, address, city, country_id, specialties, notes, status",
+    )
+    .eq("organization_id", project.organization_id)
+    .order("name", { ascending: true });
+
+  // Every purchase from those suppliers (not just this chantier's) so the
+  // supplier sheet can show its full history and recorded average prices —
+  // again bounded by RLS, which only returns purchases on projects the caller
+  // can already see.
+  const supplierIds = (supplierRows ?? []).map((s) => s.id);
+  const { data: purchaseRows } =
+    supplierIds.length > 0
+      ? await supabase
+          .from("purchases")
+          .select(
+            "id, project_id, supplier_id, material_code, material_name, purchase_date, quantity, unit, unit_price_minor, currency_code, total_amount_minor, payment_method_id, expense_id",
+          )
+          .in("supplier_id", supplierIds)
+          .order("purchase_date", { ascending: false })
+      : { data: [] };
+
+  const purchaseProjectIds = [...new Set((purchaseRows ?? []).map((p) => p.project_id))];
+  const { data: purchaseProjects } =
+    purchaseProjectIds.length > 0
+      ? await supabase.from("projects").select("id, name").in("id", purchaseProjectIds)
+      : { data: [] };
+  const projectNameById = new Map((purchaseProjects ?? []).map((p) => [p.id, p.name]));
+
+  const purchaseIds = (purchaseRows ?? []).map((p) => p.id);
+  const { data: purchaseDocuments } =
+    purchaseIds.length > 0
+      ? await supabase.from("documents").select("purchase_id").in("purchase_id", purchaseIds)
+      : { data: [] };
+  const documentCountByPurchase = new Map<string, number>();
+  for (const doc of purchaseDocuments ?? []) {
+    if (!doc.purchase_id) continue;
+    documentCountByPurchase.set(
+      doc.purchase_id,
+      (documentCountByPurchase.get(doc.purchase_id) ?? 0) + 1,
+    );
+  }
+
+  const supplierCountryIds = [...new Set((supplierRows ?? []).map((s) => s.country_id))];
+  const { data: supplierCountries } =
+    supplierCountryIds.length > 0
+      ? await supabase.from("countries").select("id, code, name").in("id", supplierCountryIds)
+      : { data: [] };
+  const countryById = new Map((supplierCountries ?? []).map((c) => [c.id, c]));
+
+  const suppliers = (supplierRows ?? []).map((s) => ({
+    id: s.id,
+    name: s.name,
+    contactName: s.contact_name,
+    phone: s.phone,
+    whatsapp: s.whatsapp,
+    email: s.email,
+    address: s.address,
+    city: s.city,
+    countryCode: countryById.get(s.country_id)?.code ?? "",
+    countryName: countryById.get(s.country_id)?.name ?? "",
+    specialties: s.specialties,
+    notes: s.notes,
+    status: s.status as "active" | "inactive",
+  }));
+
+  const supplierNameById = new Map((supplierRows ?? []).map((s) => [s.id, s.name]));
+  const purchases = (purchaseRows ?? []).map((p) => ({
+    id: p.id,
+    projectId: p.project_id,
+    projectName: projectNameById.get(p.project_id) ?? "",
+    supplierId: p.supplier_id,
+    supplierName: supplierNameById.get(p.supplier_id) ?? "",
+    materialCode: p.material_code,
+    materialName: p.material_name,
+    purchaseDate: p.purchase_date,
+    quantity: Number(p.quantity),
+    unit: p.unit,
+    unitPriceMinor: p.unit_price_minor,
+    currencyCode: p.currency_code,
+    totalAmountMinor: p.total_amount_minor,
+    paymentMethodLabel: p.payment_method_id
+      ? (paymentMethodLabels.get(p.payment_method_id) ?? null)
+      : null,
+    expenseId: p.expense_id,
+    documentCount: documentCountByPurchase.get(p.id) ?? 0,
+  }));
+
+  const purchaseCurrencyCodes = [
+    ...new Set([project.currency_code, ...purchases.map((p) => p.currencyCode)]),
+  ];
+  const purchaseMinorUnits = Object.fromEntries(
+    purchaseCurrencyCodes.map((code) => [code, minorUnitFor(code)]),
+  );
+
   const documentCountByExpense = new Map<string, number>();
   const documentsByExpense = new Map<string, ExpenseDocumentView[]>();
   for (const doc of documents ?? []) {
@@ -380,6 +482,19 @@ export default async function ProjectDetailPage({
     (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager")) ||
     (!!projectMembership &&
       hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_owner"));
+
+  // Mirrors suppliers_insert_org_managers / suppliers_update_org_managers:
+  // the supplier directory belongs to the organization, so managing it is an
+  // org-level right — a project-only collaborator reads it, never edits it.
+  const canManageSuppliers =
+    !!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "manager");
+
+  // Same bar as logging an expense (purchases_insert_non_viewers): anyone who
+  // really works on the chantier can record what was bought.
+  const canCreatePurchase =
+    (!!orgMembership && hasOrgRoleAtLeast(orgMembership.role as OrganizationRole, "member")) ||
+    (!!projectMembership &&
+      hasProjectRoleAtLeast(projectMembership.role as ProjectRole, "project_member"));
 
   const expenseList = (expenses ?? []).map((e) => ({
     amountMinor: e.amount_minor,
@@ -716,6 +831,7 @@ export default async function ProjectDetailPage({
             apercu: 0,
             financements: fundings?.length ?? 0,
             depenses: expenses?.length ?? 0,
+            fournisseurs: suppliers.length,
             etapes: milestones?.length ?? 0,
             photos: photos.length,
             membres: members?.length ?? 0,
@@ -921,6 +1037,22 @@ export default async function ProjectDetailPage({
                   </p>
                 )}
               </div>
+            ),
+            fournisseurs: (
+              <SuppliersPanel
+                projectId={project.id}
+                organizationId={project.organization_id}
+                currencyCode={project.currency_code}
+                minorUnits={purchaseMinorUnits}
+                suppliers={suppliers}
+                purchases={purchases}
+                expenses={(expenses ?? []).map((e) => ({
+                  id: e.id,
+                  label: `${CATEGORY_LABELS.get(e.category) ?? e.category} · ${formatMoney(e.amount_minor, e.currency_code, minorUnitFor(e.currency_code))} · ${e.expense_date}`,
+                }))}
+                canManageSuppliers={canManageSuppliers}
+                canCreatePurchase={canCreatePurchase}
+              />
             ),
             etapes: (
               <div>
