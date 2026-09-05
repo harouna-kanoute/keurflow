@@ -12,7 +12,16 @@ import type { OrganizationRole, ProjectRole, SubscriptionStatus } from "@keurflo
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import type { Expense, Member, Photo, Project, ProjectDetailState, Report } from "./types";
+import type {
+  Expense,
+  Member,
+  Photo,
+  Project,
+  ProjectDetailState,
+  Purchase,
+  Report,
+  Supplier,
+} from "./types";
 
 const PHOTO_LIMIT = 30;
 
@@ -179,6 +188,72 @@ export function useProjectDetail(id: string | undefined) {
       metrics: r.metrics as Report["metrics"],
     }));
 
+    // Suppliers are organization-scoped and private: RLS
+    // (suppliers_select_org_or_purchase_collaborators) is what decides this
+    // returns anything at all — another tenant's rows are never in the result.
+    const { data: supplierRows } = await supabase
+      .from("suppliers")
+      .select(
+        "id, name, contact_name, phone, whatsapp, email, address, city, country_id, specialties, notes, status",
+      )
+      .eq("organization_id", project.organization_id)
+      .order("name", { ascending: true });
+
+    const supplierCountryIds = [...new Set((supplierRows ?? []).map((s) => s.country_id))];
+    const { data: supplierCountries } = supplierCountryIds.length
+      ? await supabase.from("countries").select("id, name").in("id", supplierCountryIds)
+      : { data: [] as { id: string; name: string }[] };
+    const countryNameById = new Map((supplierCountries ?? []).map((c) => [c.id, c.name]));
+
+    const suppliers: Supplier[] = (supplierRows ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      contact_name: s.contact_name,
+      phone: s.phone,
+      whatsapp: s.whatsapp,
+      email: s.email,
+      address: s.address,
+      city: s.city,
+      countryName: countryNameById.get(s.country_id) ?? null,
+      specialties: s.specialties,
+      notes: s.notes,
+      status: s.status as Supplier["status"],
+    }));
+
+    const supplierIds = suppliers.map((s) => s.id);
+    const { data: purchaseRows } = supplierIds.length
+      ? await supabase
+          .from("purchases")
+          .select(
+            "id, project_id, supplier_id, material_code, material_name, purchase_date, quantity, unit, unit_price_minor, currency_code, total_amount_minor, expense_id, payment_method_id",
+          )
+          .in("supplier_id", supplierIds)
+          .order("purchase_date", { ascending: false })
+      : { data: [] };
+
+    const supplierNameById = new Map(suppliers.map((s) => [s.id, s.name]));
+    const paymentMethodLabelById = new Map(
+      (paymentMethods ?? []).map((m) => [m.id, m.label] as const),
+    );
+    const purchases: Purchase[] = (purchaseRows ?? []).map((p) => ({
+      id: p.id,
+      project_id: p.project_id,
+      supplier_id: p.supplier_id,
+      supplierName: supplierNameById.get(p.supplier_id) ?? "",
+      material_code: p.material_code,
+      material_name: p.material_name,
+      purchase_date: p.purchase_date,
+      quantity: Number(p.quantity),
+      unit: p.unit,
+      unit_price_minor: p.unit_price_minor,
+      currency_code: p.currency_code,
+      total_amount_minor: p.total_amount_minor,
+      expense_id: p.expense_id,
+      paymentMethodLabel: p.payment_method_id
+        ? (paymentMethodLabelById.get(p.payment_method_id) ?? null)
+        : null,
+    }));
+
     const orgRole = (orgRoleResult.data?.role as OrganizationRole | undefined) ?? "viewer";
     const projectRole = (projectRoleResult.data?.role as ProjectRole | undefined) ?? "project_viewer";
     const canManageAny =
@@ -192,6 +267,9 @@ export function useProjectDetail(id: string | undefined) {
     // document/photo under the project.
     const canEdit = hasOrgRoleAtLeast(orgRole, "manager") || hasProjectRoleAtLeast(projectRole, "project_owner");
     const canDelete = hasOrgRoleAtLeast(orgRole, "admin") || hasProjectRoleAtLeast(projectRole, "project_owner");
+    // Org-level right only, mirroring suppliers_insert_org_managers — a
+    // project role never grants managing the tenant's supplier directory.
+    const canManageSuppliers = hasOrgRoleAtLeast(orgRole, "manager");
 
     // Client-side-only gate, same as web's Server Action guards but without
     // a server layer to enforce it at — mobile already writes straight to
@@ -223,11 +301,15 @@ export function useProjectDetail(id: string | undefined) {
       photos,
       members,
       reports,
+      suppliers,
+      purchases,
+      organizationId: project.organization_id,
       currentUserId: user?.id ?? null,
       canManageAny,
       canApprove,
       canEdit,
       canDelete,
+      canManageSuppliers,
       isBlocked,
     });
   }, [id]);
