@@ -246,6 +246,7 @@ export async function attachDocument(
       size: parsed.data.size,
       expense_id: parsed.data.expenseId ?? null,
       funding_id: parsed.data.fundingId ?? null,
+      purchase_id: parsed.data.purchaseId ?? null,
     })
     .select("id")
     .single();
