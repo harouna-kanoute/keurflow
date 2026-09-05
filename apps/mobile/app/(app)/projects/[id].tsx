@@ -9,6 +9,7 @@ import { DepensesTab } from "../../../src/features/project-detail/depenses-tab";
 import { EditProjectSheet } from "../../../src/features/project-detail/edit-project-sheet";
 import { EquipeTab } from "../../../src/features/project-detail/equipe-tab";
 import { EtapesTab } from "../../../src/features/project-detail/etapes-tab";
+import { FournisseursTab } from "../../../src/features/project-detail/fournisseurs-tab";
 import { FinancementsTab } from "../../../src/features/project-detail/financements-tab";
 import { PhotosTab } from "../../../src/features/project-detail/photos-tab";
 import { RapportsTab } from "../../../src/features/project-detail/rapports-tab";
@@ -105,6 +106,14 @@ export default function ProjectDetailScreen() {
         )}
         {activeTab === "depenses" && (
           <DepensesTab
+            state={state}
+            projectId={state.project.id}
+            onChanged={reload}
+            isBlocked={state.isBlocked}
+          />
+        )}
+        {activeTab === "fournisseurs" && (
+          <FournisseursTab
             state={state}
             projectId={state.project.id}
             onChanged={reload}
