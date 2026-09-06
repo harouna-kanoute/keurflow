@@ -85,6 +85,40 @@ export type Report = {
 
 export type PaymentMethod = { id: string; code: string; label: string };
 
+// Organization-scoped, never public: what comes back is already filtered by
+// suppliers_select_org_or_purchase_collaborators (RLS).
+export type Supplier = {
+  id: string;
+  name: string;
+  contact_name: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  countryName: string | null;
+  specialties: string | null;
+  notes: string | null;
+  status: "active" | "inactive";
+};
+
+export type Purchase = {
+  id: string;
+  project_id: string;
+  supplier_id: string;
+  supplierName: string;
+  material_code: string;
+  material_name: string | null;
+  purchase_date: string;
+  quantity: number;
+  unit: string;
+  unit_price_minor: number;
+  currency_code: string;
+  total_amount_minor: number;
+  expense_id: string | null;
+  paymentMethodLabel: string | null;
+};
+
 export type ProjectDetailState =
   | { status: "loading" }
   | { status: "not-found" }
@@ -102,6 +136,11 @@ export type ProjectDetailState =
       photos: Photo[];
       members: Member[];
       reports: Report[];
+      suppliers: Supplier[];
+      // Every purchase from this tenant's suppliers (not just this chantier's)
+      // so a supplier's own history and recorded average prices are complete.
+      purchases: Purchase[];
+      organizationId: string;
       currentUserId: string | null;
       // UI-only convenience (never the authoritative check — RLS is, same as
       // web's own canManageAny/canManageProject in page.tsx). Gates whether
@@ -116,6 +155,10 @@ export type ProjectDetailState =
       // projects_delete_org_admins_or_project_owners) is the real authority.
       canEdit: boolean;
       canDelete: boolean;
+      // Mirrors suppliers_insert_org_managers: the supplier directory is
+      // organization-level, so a project-only collaborator reads it, never
+      // edits it. RLS remains the authority.
+      canManageSuppliers: boolean;
       // Trial expired / subscription not active — same client-side gate as
       // web's Server Action guards, applied here since mobile has no server
       // layer of its own to enforce it at (RLS remains the only real

@@ -18,6 +18,13 @@ export const paymentMethodCodeSchema = z
   .string()
   .refine((code) => activePaymentMethodCodes.has(code), "Moyen de paiement invalide");
 
+// E.164-ish: optional leading +, 8-15 digits total, no spaces/dashes. Shared
+// by the profile's WhatsApp number and supplier contact numbers so a number
+// that works as a wa.me deep link in one place works in the other.
+export const PHONE_REGEX = /^\+?[1-9]\d{7,14}$/;
+export const PHONE_MESSAGE = "Numéro invalide. Utilisez le format international, ex. +221771234567";
+export const phoneSchema = z.string().trim().regex(PHONE_REGEX, PHONE_MESSAGE);
+
 // Amounts are always integers in the currency's minor unit — never floats.
 export const amountMinorSchema = z.number().int().positive().max(1_000_000_000_00);
 

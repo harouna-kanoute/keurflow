@@ -8,5 +8,6 @@ export const PAYMENT_METHODS: readonly Omit<PaymentMethod, "id">[] = [
   { code: "orange_money", label: "Orange Money", active: true },
   { code: "mobile_money", label: "Mobile Money", active: true },
   { code: "cash", label: "Espèces", active: true },
+  { code: "cheque", label: "Chèque", active: true },
   { code: "other", label: "Autre", active: true },
 ] as const;

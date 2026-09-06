@@ -51,6 +51,15 @@ export async function signIn(input: SignInInput): Promise<ActionResult> {
     if (error.code === "email_not_confirmed") {
       return { error: "Confirmez d'abord votre email — vérifiez votre boîte de réception." };
     }
+    // status 0 means the request never reached Supabase (DNS, TLS, offline).
+    // Blaming the password there sends people to reset a password that was
+    // never wrong — say it's the connection instead, without leaking why.
+    if (error.status === 0 || error.name === "AuthRetryableFetchError") {
+      return { error: "Connexion au serveur impossible. Vérifiez votre connexion et réessayez." };
+    }
+    if (error.status === 429 || error.code === "over_request_rate_limit") {
+      return { error: "Trop de tentatives. Patientez quelques instants avant de réessayer." };
+    }
     return { error: "Email ou mot de passe incorrect." };
   }
 

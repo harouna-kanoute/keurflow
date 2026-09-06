@@ -32,7 +32,18 @@ export default function LoginScreen() {
     try {
       const { error } = await supabase.auth.signInWithPassword(data);
       if (error) {
-        setRootError("Email ou mot de passe incorrect.");
+        // Don't blame the password for something that never reached the
+        // server: status 0 / AuthRetryableFetchError is a connectivity
+        // failure, and on mobile that is the common case, not the rare one.
+        if (error.status === 0 || error.name === "AuthRetryableFetchError") {
+          setRootError("Connexion au serveur impossible. Vérifiez votre connexion et réessayez.");
+        } else if (error.status === 429 || error.code === "over_request_rate_limit") {
+          setRootError("Trop de tentatives. Patientez quelques instants avant de réessayer.");
+        } else if (error.code === "email_not_confirmed") {
+          setRootError("Confirmez d'abord votre email — vérifiez votre boîte de réception.");
+        } else {
+          setRootError("Email ou mot de passe incorrect.");
+        }
       }
       // On success, RootNavigation's auth-state listener handles the redirect.
     } catch (err) {
