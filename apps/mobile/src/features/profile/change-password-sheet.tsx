@@ -1,9 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { updatePasswordSchema, type UpdatePasswordInput } from "@keurflow/validation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Text } from "react-native";
 import { FormInput } from "../../components/form-input";
+import { PasswordStrengthMeter } from "../../components/password-strength-meter";
 import { PrimaryButton } from "../../components/primary-button";
 import { SheetModal } from "../../components/sheet-modal";
 import { supabase } from "../../lib/supabase";
@@ -22,6 +23,8 @@ export function ChangePasswordSheet({ visible, onClose }: { visible: boolean; on
     reset,
     formState: { errors },
   } = useForm<UpdatePasswordInput>({ resolver: zodResolver(updatePasswordSchema) });
+
+  const password = useWatch({ control, name: "password" }) ?? "";
 
   const close = () => {
     reset();
@@ -63,6 +66,7 @@ export function ChangePasswordSheet({ visible, onClose }: { visible: boolean; on
             autoComplete="new-password"
             error={errors.password?.message}
           />
+          <PasswordStrengthMeter password={password} />
           <FormInput
             control={control}
             name="confirmPassword"

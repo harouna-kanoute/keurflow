@@ -3,10 +3,11 @@ import { signUpSchema, type SignUpInput } from "@keurflow/validation";
 import { COUNTRIES } from "@keurflow/config";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { FormInput } from "../../src/components/form-input";
 import { KeurFlowMark } from "../../src/components/keurflow-mark";
+import { PasswordStrengthMeter } from "../../src/components/password-strength-meter";
 import { SelectField } from "../../src/components/select-field";
 import { PrimaryButton } from "../../src/components/primary-button";
 import { supabase } from "../../src/lib/supabase";
@@ -44,6 +45,10 @@ export default function SignupScreen() {
     resolver: zodResolver(signUpSchema),
     defaultValues: { organizationType: "individual" },
   });
+
+  // useWatch rather than watch() so only the meter re-renders on each
+  // keystroke, not the whole form.
+  const password = useWatch({ control, name: "password" }) ?? "";
 
   const onSubmit = handleSubmit(async (data) => {
     setPending(true);
@@ -144,6 +149,7 @@ export default function SignupScreen() {
             autoComplete="new-password"
             error={errors.password?.message}
           />
+          <PasswordStrengthMeter password={password} />
           <FormInput
             control={control}
             name="confirmPassword"

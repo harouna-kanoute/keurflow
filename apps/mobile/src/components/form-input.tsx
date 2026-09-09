@@ -1,6 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
-import { Text, TextInput, TextInputProps, View } from "react-native";
+import { Pressable, Text, TextInput, TextInputProps, View } from "react-native";
 import { useStyles, useTheme, type Theme } from "../theme";
 
 type Props<T extends FieldValues> = {
@@ -25,11 +26,17 @@ export function FormInput<T extends FieldValues>({
   error,
   parse,
   style,
+  secureTextEntry,
   ...inputProps
 }: Props<T>) {
   const theme = useTheme();
   const styles = useStyles(createStyles);
   const [rawText, setRawText] = useState("");
+  const [revealed, setRevealed] = useState(false);
+
+  // Every masked field gets the reveal toggle — typing a password blind on a
+  // phone keyboard is where most failed sign-ins come from.
+  const maskable = Boolean(secureTextEntry);
 
   return (
     <Controller
@@ -38,22 +45,49 @@ export function FormInput<T extends FieldValues>({
       render={({ field: { onChange, onBlur, value } }) => (
         <View style={styles.wrapper}>
           <Text style={styles.label}>{label}</Text>
-          <TextInput
-            style={[styles.input, error ? styles.inputError : null, style]}
-            onBlur={onBlur}
-            onChangeText={(text) => {
-              if (parse) {
-                setRawText(text);
-                onChange(text === "" ? undefined : parse(text));
-              } else {
-                onChange(text);
-              }
-            }}
-            value={parse ? rawText : typeof value === "string" ? value : (value ?? "")}
-            placeholderTextColor={theme.colors.textMuted}
-            autoCapitalize="none"
-            {...inputProps}
-          />
+          <View>
+            <TextInput
+              style={[
+                styles.input,
+                error ? styles.inputError : null,
+                maskable ? styles.inputWithToggle : null,
+                style,
+              ]}
+              onBlur={onBlur}
+              onChangeText={(text) => {
+                if (parse) {
+                  setRawText(text);
+                  onChange(text === "" ? undefined : parse(text));
+                } else {
+                  onChange(text);
+                }
+              }}
+              value={parse ? rawText : typeof value === "string" ? value : (value ?? "")}
+              placeholderTextColor={theme.colors.textMuted}
+              autoCapitalize="none"
+              secureTextEntry={maskable && !revealed}
+              {...inputProps}
+            />
+            {maskable && (
+              <Pressable
+                style={styles.toggle}
+                onPress={() => setRevealed((r) => !r)}
+                // The toggle sits inside the field, so its own touch target is
+                // small — hitSlop brings it back to a comfortable size without
+                // widening the input's padding.
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={revealed ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                accessibilityState={{ selected: revealed }}
+              >
+                <Ionicons
+                  name={revealed ? "eye-off-outline" : "eye-outline"}
+                  size={20}
+                  color={theme.colors.textMuted}
+                />
+              </Pressable>
+            )}
+          </View>
           {error && <Text style={styles.error}>{error}</Text>}
         </View>
       )}
@@ -74,6 +108,17 @@ function createStyles(theme: Theme) {
       fontSize: 15,
       color: theme.colors.text,
       backgroundColor: theme.colors.card,
+    },
+    // Keeps the text from running under the reveal button.
+    inputWithToggle: { paddingRight: 44 },
+    toggle: {
+      position: "absolute" as const,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 44,
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
     },
     inputError: { borderColor: theme.colors.danger },
     error: { fontSize: 12, color: theme.colors.danger },
