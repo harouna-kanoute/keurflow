@@ -30,11 +30,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-      if (data.session) acceptPendingInvites();
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        setSession(data.session);
+        setLoading(false);
+        if (data.session) acceptPendingInvites();
+      })
+      .catch((error) => {
+        // The splash screen stays up until `loading` clears, so a rejection
+        // here would strand the user on it forever. Treat it as signed out.
+        console.error("[AuthProvider] getSession failed:", error);
+        setSession(null);
+        setLoading(false);
+      });
 
     const { data: subscription } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);

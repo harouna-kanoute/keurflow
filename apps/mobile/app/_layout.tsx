@@ -12,21 +12,26 @@ import {
 import { Lora_400Regular, Lora_500Medium, Lora_600SemiBold, Lora_700Bold } from "@expo-google-fonts/lora";
 import { useFonts } from "expo-font";
 import { Slot, useRouter, useSegments } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { useCallback, useEffect } from "react";
+import { View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/lib/auth-context";
 import { DisplayCurrencyProvider } from "../src/lib/display-currency-context";
-import { ThemeProvider, useStyles, useTheme, type Theme } from "../src/theme";
+import { ThemeProvider, useTheme } from "../src/theme";
+
+// Must run in global scope, not in an effect — by the time a component mounts
+// the splash may already have auto-hidden, which is what left the first launch
+// showing a bare white screen followed by two spinner flashes.
+SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 300, fade: true });
 
 function RootNavigation() {
   const { session, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
-  const theme = useTheme();
-  const styles = useStyles(createStyles);
 
   useEffect(() => {
     if (loading) return;
@@ -39,15 +44,22 @@ function RootNavigation() {
     }
   }, [session, loading, segments, router]);
 
-  if (loading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={theme.colors.primary} />
-      </View>
-    );
-  }
+  // Hide on layout rather than in an effect: this fires once the first real
+  // frame is measured, so the splash never lifts onto an empty screen.
+  const onLayout = useCallback(() => {
+    SplashScreen.hideAsync();
+  }, []);
 
-  return <Slot />;
+  // The splash stays up for both waits — fonts (RootLayout) and the session
+  // lookup here — so there is one branded screen instead of a white flash, a
+  // dark flash, then a themed spinner.
+  if (loading) return null;
+
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      <Slot />
+    </View>
+  );
 }
 
 export default function RootLayout() {
@@ -55,7 +67,7 @@ export default function RootLayout() {
   // front — the choice itself is only known once ThemeProvider reads it from
   // AsyncStorage, which happens *after* this, so there's no way to load just
   // the active one. "Système" needs nothing (native OS font).
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     Geist_100Thin,
     Geist_200ExtraLight,
     Geist_300Light,
@@ -71,13 +83,11 @@ export default function RootLayout() {
     Lora_700Bold,
   });
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#08090d" }}>
-        <ActivityIndicator color="#6c5cd9" />
-      </View>
-    );
-  }
+  // null, not a spinner: the native splash is still up and covers this. Carry
+  // on when the fonts fail rather than waiting forever — the splash only lifts
+  // once this renders, so hanging here would strand the user on it. The theme's
+  // "Système" option is a working fallback.
+  if (!fontsLoaded && !fontError) return null;
 
   return (
     <SafeAreaProvider>
@@ -98,15 +108,4 @@ export default function RootLayout() {
 function ThemedStatusBar() {
   const { scheme } = useTheme();
   return <StatusBar style={scheme === "dark" ? "light" : "dark"} />;
-}
-
-function createStyles(theme: Theme) {
-  return {
-    loading: {
-      flex: 1,
-      alignItems: "center" as const,
-      justifyContent: "center" as const,
-      backgroundColor: theme.colors.background,
-    },
-  };
 }
