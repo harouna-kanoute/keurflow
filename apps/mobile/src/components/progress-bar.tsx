@@ -3,7 +3,7 @@ import { View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useTheme } from "../theme";
 
-type Tone = "brand" | "amber" | "danger";
+type Tone = "brand" | "amber" | "danger" | "success";
 
 export function ProgressBar({
   percent,
@@ -31,7 +31,13 @@ export function ProgressBar({
   }));
 
   const fillColor =
-    tone === "amber" ? theme.colors.amber : tone === "danger" ? theme.colors.danger : theme.colors.primary;
+    tone === "amber"
+      ? theme.colors.amber
+      : tone === "danger"
+        ? theme.colors.danger
+        : tone === "success"
+          ? theme.colors.success
+          : theme.colors.primary;
 
   return (
     <View

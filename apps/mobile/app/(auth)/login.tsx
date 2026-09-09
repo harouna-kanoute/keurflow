@@ -1,12 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signInSchema, type SignInInput } from "@keurflow/validation";
 import { Link } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { Checkbox } from "../../src/components/checkbox";
 import { FormInput } from "../../src/components/form-input";
 import { KeurFlowMark } from "../../src/components/keurflow-mark";
 import { PrimaryButton } from "../../src/components/primary-button";
+import { clearRememberedEmail, getRememberedEmail, setRememberedEmail } from "../../src/lib/remembered-email";
 import { supabase } from "../../src/lib/supabase";
 import { useStyles, type Theme } from "../../src/theme";
 
@@ -16,12 +18,28 @@ const GENERIC_ERROR = "Une erreur est survenue. Veuillez réessayer.";
 export default function LoginScreen() {
   const [pending, setPending] = useState(false);
   const [rootError, setRootError] = useState<string | null>(null);
+  const [remember, setRemember] = useState(false);
   const styles = useStyles(createStyles);
   const {
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<SignInInput>({ resolver: zodResolver(signInSchema) });
+
+  // Pre-fill from the last "remember me" sign-in. Can't go through
+  // defaultValues — the read is async and useForm needs its defaults up front.
+  useEffect(() => {
+    let cancelled = false;
+    getRememberedEmail().then((email) => {
+      if (cancelled || !email) return;
+      setValue("email", email);
+      setRemember(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [setValue]);
 
   const onSubmit = handleSubmit(async (data) => {
     setPending(true);
@@ -44,6 +62,11 @@ export default function LoginScreen() {
         } else {
           setRootError("Email ou mot de passe incorrect.");
         }
+      } else {
+        // Only remember an address that actually signed in — persisting on
+        // every attempt would pre-fill whatever typo just got rejected.
+        if (remember) await setRememberedEmail(data.email);
+        else await clearRememberedEmail();
       }
       // On success, RootNavigation's auth-state listener handles the redirect.
     } catch (err) {
@@ -78,6 +101,12 @@ export default function LoginScreen() {
             secureTextEntry
             autoComplete="current-password"
             error={errors.password?.message}
+          />
+          <Checkbox
+            checked={remember}
+            onChange={setRemember}
+            label="Se souvenir de mon email"
+            disabled={pending}
           />
           {rootError && <Text style={styles.error}>{rootError}</Text>}
           <PrimaryButton onPress={onSubmit} pending={pending}>
